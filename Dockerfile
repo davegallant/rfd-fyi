@@ -10,7 +10,7 @@ COPY . .
 
 RUN npm run build
 
-FROM caddy:2.7.6-alpine as runtime
+FROM caddy:2.8.4-alpine as runtime
 
 WORKDIR /my-site
 
