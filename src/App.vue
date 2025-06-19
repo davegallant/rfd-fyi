@@ -2,7 +2,6 @@
 import axios from "axios";
 import moment from "moment";
 import Loading from "vue-loading-overlay";
-import GithubButton from "vue-github-button";
 import { install } from "@github/hotkey";
 
 import "vue-loading-overlay/dist/css/index.css";
@@ -118,10 +117,14 @@ export default {
         return v.replace(re, (matchedText) => `<mark>${matchedText}</mark>`);
       };
     },
+    showBeforeTargetDate() {
+      const now = new Date();
+      const target = new Date('2025-08-20T00:00:00');
+      return now < target;
+    }
   },
   components: {
     Loading,
-    GithubButton,
   },
 };
 </script>
@@ -206,21 +209,9 @@ export default {
         </tr>
       </tbody>
     </table>
-    <div v-if="!isMobile()">
+    <div v-if="showBeforeTargetDate">
       <footer class="fixed-bottom">
-        <small
-          >Press '/' to begin filtering (i.e.
-          <a
-            href="/#/filter=costco"
-            onclick="setTimeout(location.reload.bind(location), 1)"
-            >/#/filter=costco</a
-          >)</small
-        >
-        <div class="footer-right">
-          <github-button href="https://github.com/davegallant/rfd-fyi"
-            ></github-button
-          >
-        </div>
+        PSA: <a href="https://rfd.fyi">rfd.fyi</a> will not be renewed after 2025-08-20. Please use <a href="https://rfd.davegallant.ca">rfd.davegallant.ca</a>.
       </footer>
     </div>
   </body>
@@ -234,4 +225,10 @@ export default {
   text-align: center;
   color: #2c3e50;
 }
+
+.fixed-bottom {
+  background: #ffc;
+  color: black;
+}
+
 </style>
