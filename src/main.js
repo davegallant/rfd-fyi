@@ -2,10 +2,9 @@ import { createApp } from "vue";
 import App from "./App.vue";
 import { createRouter, createWebHashHistory } from "vue-router";
 
-import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap/dist/js/bootstrap.min.js";
-
 import "./theme.css";
+
+import { registerPlugins } from "@/plugins";
 
 const routes = [];
 
@@ -15,6 +14,8 @@ const router = createRouter({
 });
 
 const app = createApp(App);
+
+registerPlugins(app);
 
 app.use(router);
 app.mount("#app");
