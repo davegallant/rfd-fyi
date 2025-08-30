@@ -45,8 +45,10 @@ a:visited {
   color: #53514f;
 }
 
-.v-data-table-header th,
-.v-data-table__td,
-.v-data-footer {
-  font-size: 1.2rem;
+@media (min-width: 769px) {
+  .v-data-table-header th,
+  .v-data-table__td,
+  .v-data-footer {
+    font-size: 1.2rem;
+  }
 }
