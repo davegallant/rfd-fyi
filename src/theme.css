@@ -9,16 +9,6 @@ html {
   -ms-text-size-adjust: 100%;
 }
 
-a {
-  color: #96ada5; /**/
-}
-a:visited {
-  color: #53514f; /**/
-}
-a:hover {
-  color: #d65d03; /**/
-}
-
 footer {
   background: #212529;
   color: white;
@@ -36,9 +26,27 @@ footer {
 }
 
 .green-score {
-  color: rgb(22, 120, 63) !important;
+  color: rgb(158, 206, 106) !important;
 }
 
 .red-score {
-  color: rgb(175, 21, 21) !important;
+  color: rgb(247, 118, 142) !important;
+}
+
+a {
+  color: var(--v-theme-primary);
+}
+
+a:hover {
+  color: #d65d03;
+}
+
+a:visited {
+  color: #53514f;
+}
+
+.v-data-table-header th,
+.v-data-table__td,
+.v-data-footer {
+  font-size: 1.2rem;
 }

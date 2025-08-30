@@ -121,6 +121,7 @@ const sortBy = ref([{ key: "score", order: "desc" }]); // Vuetify 3 format
           :sort-by="sortColumn"
           :sort-desc="!ascending"
           v-model:sortBy="sortBy"
+          :items-per-page="25"
         >
           <template #item.title="{ item }">
             <a
