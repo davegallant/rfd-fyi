@@ -12,17 +12,12 @@ export default {
     return {
       ascending: this.ascending,
       filter: window.location.href.split("filter=")[1] || "",
-      isLoading: false,
       sortColumn: this.sortColumn,
       topics: [],
     };
   },
   mounted() {
     window.addEventListener("keydown", this.handleKeyDown);
-    this.sortColumn = localStorage.getItem("sortColumn") || "score";
-    this.ascending =
-      localStorage.getItem("ascending") === "false" ? false : true;
-    this.isLoading = true;
     this.fetchDeals();
   },
   beforeUnmount() {
@@ -47,12 +42,10 @@ export default {
       );
     },
     fetchDeals() {
-      this.isLoading = true;
       axios
         .get("api/v1/topics")
         .then((response) => {
           this.topics = response.data;
-          this.isLoading = false;
         })
         .catch((err) => {
           console.log(err.response);
@@ -123,7 +116,6 @@ const sortBy = ref([{ key: "score", order: "desc" }]); // Vuetify 3 format
           :headers="headers"
           :items="filteredTopics"
           :sort-by="sortColumn"
-          :sort-desc="!ascending"
           v-model:sortBy="sortBy"
           :items-per-page="25"
         >
