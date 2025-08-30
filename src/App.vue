@@ -18,17 +18,26 @@ export default {
     };
   },
   mounted() {
-    // Install all the hotkeys on the page
-    for (const el of document.querySelectorAll("[data-hotkey]")) {
-      install(el);
-    }
+    window.addEventListener("keydown", this.handleKeyDown);
     this.sortColumn = localStorage.getItem("sortColumn") || "score";
     this.ascending =
       localStorage.getItem("ascending") === "false" ? false : true;
     this.isLoading = true;
     this.fetchDeals();
   },
+  beforeUnmount() {
+    window.removeEventListener("keydown", this.handleKeyDown);
+  },
   methods: {
+    handleKeyDown(event) {
+      const isInput = ["INPUT", "TEXTAREA"].includes(
+        document.activeElement.tagName
+      );
+      if (event.key === "/" && !isInput) {
+        event.preventDefault(); // prevent typing `/` into whatever is focused
+        this.$refs.filter.focus();
+      }
+    },
     createFilterRoute(params) {
       this.$refs.filter.blur();
       history.pushState(
@@ -79,9 +88,6 @@ export default {
       };
     },
   },
-  components: {
-    Loading,
-  },
 };
 </script>
 
@@ -112,8 +118,6 @@ const sortBy = ref([{ key: "score", order: "desc" }]); // Vuetify 3 format
           ref="filter"
           @keyup.enter="createFilterRoute(filter.toString())"
           @keyup.esc="$refs.filter.blur()"
-          data-hotkey="/"
-          hide-details
         />
         <v-data-table
           :headers="headers"
