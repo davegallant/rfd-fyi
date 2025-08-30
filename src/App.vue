@@ -107,10 +107,10 @@ const sortBy = ref([{ key: "score", order: "desc" }]); // Vuetify 3 format
         <v-text-field
           v-model="filter"
           label="Filter"
-          density="comfortable"
           ref="filter"
           @keyup.enter="createFilterRoute(filter.toString())"
           @keyup.esc="$refs.filter.blur()"
+          hide-details="true"
         />
         <v-data-table
           :headers="headers"
