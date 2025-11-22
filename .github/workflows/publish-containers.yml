@@ -10,7 +10,7 @@ jobs:
     name: Publish rfd-fyi-backend
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Prepare
         id: prep
@@ -50,7 +50,7 @@ jobs:
     name: Publish rfd-fyi-frontend
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Prepare
         id: prep
