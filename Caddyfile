@@ -1,4 +1,8 @@
-rfd.davegallant.ca {
+{
+    auto_https off
+}
+
+:80 {
     file_server
-    reverse_proxy /api/* backend:8080
+    reverse_proxy /api/* localhost:8080
 }
