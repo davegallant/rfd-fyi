@@ -1,4 +1,4 @@
-rfd.davegallant.ca {
+:80 {
     file_server
     reverse_proxy /api/* backend:8080
 }
