@@ -212,7 +212,7 @@ const sortBy = ref([{ key: "score", order: "desc" }]);
           :items="filteredTopics"
           :sort-by="sortColumn"
           v-model:sortBy="sortBy"
-          :items-per-page="25"
+          :items-per-page="50"
         >
           <template #item.title="{ item }">
             <a
