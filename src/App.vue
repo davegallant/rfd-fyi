@@ -2,9 +2,8 @@
 import axios from "axios";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
-import Loading from "vue-loading-overlay";
-import { install } from "@github/hotkey";
-import { ref, reactive } from "vue";
+import { ref } from "vue";
+import { useTheme } from 'vuetify';
 
 import "vue-loading-overlay/dist/css/index.css";
 
@@ -23,18 +22,87 @@ export default {
       loadingTooltip: {},
       tooltipPosition: { x: 0, y: 0 },
       isMobile: false,
+      currentTheme: 'dark',
+      mediaQueryListener: null,
+      vuetifyTheme: null,
+      darkModeQuery: null,
+      themeChangeHandler: null,
     };
   },
   mounted() {
     window.addEventListener("keydown", this.handleKeyDown);
     this.detectMobile();
     this.fetchDeals();
+    // Initialize theme on next tick to ensure Vuetify is ready
+    this.$nextTick(() => {
+      this.initializeTheme();
+      this.setupThemeListener();
+    });
   },
   beforeUnmount() {
     window.removeEventListener("keydown", this.handleKeyDown);
     window.removeEventListener("resize", this.detectMobile);
+    if (this.darkModeQuery && this.themeChangeHandler) {
+      this.darkModeQuery.removeEventListener('change', this.themeChangeHandler);
+    }
   },
   methods: {
+    initializeTheme() {
+      // Get Vuetify theme instance
+      this.vuetifyTheme = useTheme();
+
+      // If no saved preference, apply system preference now
+      const savedTheme = localStorage.getItem('vuetify-theme');
+      if (!savedTheme) {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = prefersDark ? 'dark' : 'light';
+        this.applyTheme(theme);
+      } else {
+        // Get current theme name from Vuetify
+        this.currentTheme = this.vuetifyTheme.global.name.value;
+      }
+    },
+    setupThemeListener() {
+      // Listen for system theme preference changes
+      const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+      this.mediaQueryListener = darkModeQuery;
+
+      // Use arrow function to preserve 'this' context
+      const themeChangeHandler = (e) => {
+        // Only auto-update theme if user hasn't set a preference manually
+        const savedTheme = localStorage.getItem('vuetify-theme');
+        if (!savedTheme) {
+          const newTheme = e.matches ? 'dark' : 'light';
+          console.log('System theme changed to:', newTheme);
+          this.applyTheme(newTheme);
+        }
+      };
+
+      darkModeQuery.addEventListener('change', themeChangeHandler);
+      // Store the handler so we can remove it later if needed
+      this.themeChangeHandler = themeChangeHandler;
+      this.darkModeQuery = darkModeQuery;
+    },
+    applyTheme(theme) {
+      // Get theme instance if not already stored
+      if (!this.vuetifyTheme) {
+        this.vuetifyTheme = useTheme();
+      }
+
+      // Apply theme using Vuetify's theme API
+      this.vuetifyTheme.global.name.value = theme;
+      this.currentTheme = theme;
+      localStorage.setItem('vuetify-theme', theme);
+      console.log('Theme applied:', theme);
+
+      // Also update data-bs-theme for any custom CSS that uses it
+      document.documentElement.setAttribute('data-bs-theme', theme === 'dark' ? 'dark' : 'light');
+    },
+    toggleTheme() {
+      const newTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
+      this.applyTheme(newTheme);
+    },
     detectMobile() {
       // Detect if device is mobile/tablet based on touch capability and screen size
       const hasTouch = () => {
@@ -46,11 +114,11 @@ export default {
           false
         );
       };
-      
+
       const isMobileScreen = () => {
         return window.innerWidth <= 1024;
       };
-      
+
       this.isMobile = hasTouch() || isMobileScreen();
       window.addEventListener("resize", this.detectMobile);
     },
@@ -171,20 +239,46 @@ export default {
     visibleHeaders() {
       const baseHeaders = [
         { title: "Deal", value: "title", align: "center" },
-        { title: "Score", value: "score", align: "center", sortable: true },
+        { title: "Score", value: "score", align: "center" },
       ];
-      
+
       // Only show Last Post column on desktop
       if (!this.isMobile) {
         baseHeaders.push({
           title: "Last Post",
           value: "last_post_time",
           align: "center",
-          sortable: true,
         });
       }
-      
+
       return baseHeaders;
+    },
+    tooltipStyle() {
+      if (this.hoveredTopicId === null || !this.tooltipData[this.hoveredTopicId]) {
+        return {};
+      }
+      
+      let top = this.tooltipPosition.y + 10;
+      let left = this.tooltipPosition.x + 10;
+      
+      // Check if tooltip would go off bottom of screen
+      if (top > window.innerHeight - 200) {
+        // Position above the cursor instead
+        top = this.tooltipPosition.y - 200;
+      }
+      
+      // Check if tooltip would go off right side of screen
+      if (left > window.innerWidth - 420) {
+        // Position to the left of cursor instead
+        left = this.tooltipPosition.x - 420;
+      }
+      
+      return {
+        position: 'fixed',
+        left: Math.max(10, left) + 'px',
+        top: Math.max(10, top) + 'px',
+        zIndex: 9999,
+      };
     },
   },
 };
@@ -210,8 +304,7 @@ const sortBy = ref([{ key: "score", order: "desc" }]);
         <v-data-table
           :headers="visibleHeaders"
           :items="filteredTopics"
-          :sort-by="sortColumn"
-          v-model:sortBy="sortBy"
+          :sort-by="sortBy"
           :items-per-page="50"
         >
           <template #item.title="{ item }">
@@ -252,12 +345,7 @@ const sortBy = ref([{ key: "score", order: "desc" }]);
         <div
           v-if="hoveredTopicId !== null && tooltipData[hoveredTopicId]"
           class="deal-tooltip"
-          :style="{
-            position: 'fixed',
-            left: tooltipPosition.x + 10 + 'px',
-            top: tooltipPosition.y + 10 + 'px',
-            zIndex: 9999,
-          }"
+          :style="tooltipStyle"
         >
           <div class="tooltip-content">
             <div class="tooltip-header">{{ tooltipData[hoveredTopicId].topic.title }}</div>
@@ -313,20 +401,21 @@ const sortBy = ref([{ key: "score", order: "desc" }]);
 }
 
 .tooltip-content {
-  background: #24283b;
-  border: 2px solid #a9b1d6;
+  background: var(--tooltip-bg);
+  border: 2px solid var(--tooltip-border);
   border-radius: 8px;
   padding: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   font-size: 13px;
-  color: #e0e0e0;
+  color: var(--text-primary);
   text-align: left;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 .tooltip-header {
   font-weight: bold;
   font-size: 14px;
-  color: #d0d0d0;
+  color: var(--text-primary);
   margin-bottom: 8px;
   white-space: normal;
   word-wrap: break-word;
@@ -334,7 +423,7 @@ const sortBy = ref([{ key: "score", order: "desc" }]);
 
 .tooltip-dealer {
   font-size: 12px;
-  color: #c0c0c0;
+  color: var(--text-secondary);
   margin-bottom: 8px;
 }
 
@@ -343,6 +432,7 @@ const sortBy = ref([{ key: "score", order: "desc" }]);
   gap: 12px;
   margin-bottom: 8px;
   font-size: 12px;
+  color: var(--text-secondary);
 }
 
 .stat-item {
@@ -358,34 +448,57 @@ const sortBy = ref([{ key: "score", order: "desc" }]);
 .tooltip-description {
   margin-bottom: 8px;
   padding: 8px;
-  background: rgba(160, 160, 160, 0.1);
-  border-left: 2px solid #a9b1d6;
+  background: var(--bg-secondary);
+  border-left: 2px solid var(--tooltip-border);
   border-radius: 2px;
   font-size: 12px;
   white-space: normal;
   word-wrap: break-word;
   max-height: 60px;
   overflow-y: auto;
+  color: var(--text-primary);
 }
 
 .tooltip-first-post {
   margin-bottom: 8px;
   padding: 8px;
-  background: rgba(160, 160, 160, 0.1);
-  border-left: 2px solid #a9b1d6;
+  background: var(--bg-secondary);
+  border-left: 2px solid var(--tooltip-border);
   border-radius: 2px;
   font-size: 12px;
   white-space: normal;
   word-wrap: break-word;
   max-height: 60px;
   overflow-y: auto;
+  color: var(--text-primary);
 }
 
 .tooltip-times {
   font-size: 11px;
-  color: #b0b0b0;
-  border-top: 1px solid #555555;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border-color);
   padding-top: 8px;
   margin-top: 8px;
+}
+
+/* Filter input styling */
+:deep(.v-text-field) {
+  --v-field-border-color: #cccccc;
+}
+
+html[data-bs-theme="light"] :deep(.v-text-field) {
+  --v-field-border-color: #e8e8e8;
+}
+
+html[data-bs-theme="light"] :deep(.v-field__input) {
+  background-color: #fafafa !important;
+}
+
+html[data-bs-theme="light"] :deep(.v-field--focused .v-field__input) {
+  background-color: #ffffff !important;
+}
+
+html[data-bs-theme="dark"] :deep(.v-text-field) {
+  --v-field-border-color: #555555;
 }
 </style>

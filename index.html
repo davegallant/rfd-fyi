@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -38,6 +38,20 @@
       src="https://umami.davegallant.ca/script.js"
       data-website-id="59ffe8be-509a-471e-8cd6-a63c5b35b7aa"
     ></script>
+    
+    <!-- Theme detection script - runs before Vue loads to prevent flash of unstyled content -->
+    <script>
+      (function() {
+        // Check for saved theme preference or system preference
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+        
+        // Apply theme to html element
+        document.documentElement.setAttribute('data-bs-theme', theme);
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
   </head>
   <body>
     <noscript>
