@@ -85,7 +85,7 @@ export default {
       this.$vuetify.theme.global.name = theme;
       this.currentTheme = theme;
       localStorage.setItem('vuetify-theme', theme);
-      
+
       // Also update data-bs-theme for any custom CSS that uses it
       document.documentElement.setAttribute('data-bs-theme', theme === 'dark' ? 'dark' : 'light');
     },
@@ -247,22 +247,22 @@ export default {
       if (this.hoveredTopicId === null || !this.tooltipData[this.hoveredTopicId]) {
         return {};
       }
-      
+
       let top = this.tooltipPosition.y + 10;
       let left = this.tooltipPosition.x + 10;
-      
+
       // Check if tooltip would go off bottom of screen
       if (top > window.innerHeight - 200) {
         // Position above the cursor instead
         top = this.tooltipPosition.y - 200;
       }
-      
+
       // Check if tooltip would go off right side of screen
       if (left > window.innerWidth - 420) {
         // Position to the left of cursor instead
         left = this.tooltipPosition.x - 420;
       }
-      
+
       return {
         position: 'fixed',
         left: Math.max(10, left) + 'px',
@@ -338,10 +338,6 @@ const sortBy = ref([{ key: "score", order: "desc" }]);
           :style="tooltipStyle"
         >
           <div class="tooltip-content">
-            <div class="tooltip-header">{{ tooltipData[hoveredTopicId].topic.title }}</div>
-              <div class="tooltip-dealer">
-                {{ tooltipData[hoveredTopicId].topic.Offer.dealer_name }}
-              </div>
               <div class="tooltip-stats">
                 <span class="stat-item">
                   <span class="material-symbols-outlined">visibility</span>
@@ -355,6 +351,9 @@ const sortBy = ref([{ key: "score", order: "desc" }]);
             <div v-if="tooltipData[hoveredTopicId].description" class="tooltip-description">
               <strong>Description:</strong>
               {{ tooltipData[hoveredTopicId].description }}
+            </div>
+            <div class="tooltip-dealer">
+              {{ tooltipData[hoveredTopicId].topic.Offer.dealer_name }}
             </div>
             <div v-if="tooltipData[hoveredTopicId].first_post" class="tooltip-first-post">
               <strong>First Post:</strong>
