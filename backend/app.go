@@ -178,6 +178,7 @@ func (a *App) refreshTopics() {
 		latestTopics := a.getDeals(9, 1, 6)
 
 		if len(latestTopics) > 0 {
+			latestTopics = a.deduplicateTopics(latestTopics)
 			latestTopics = a.updateScores(latestTopics)
 
 			log.Info().Msg("Refreshing redirects")
@@ -229,6 +230,22 @@ func (a *App) stripRedirects(t []Topic) []Topic {
 
 	}
 	return t
+}
+
+func (a *App) deduplicateTopics(topics []Topic) []Topic {
+	seen := make(map[uint]bool)
+	var deduplicated []Topic
+
+	for _, topic := range topics {
+		if !seen[topic.TopicID] {
+			seen[topic.TopicID] = true
+			deduplicated = append(deduplicated, topic)
+		} else {
+			log.Debug().Msgf("Removing duplicate topic: %d", topic.TopicID)
+		}
+	}
+
+	return deduplicated
 }
 
 func (a *App) isSponsor(t Topic) bool {
