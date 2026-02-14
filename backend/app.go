@@ -63,6 +63,7 @@ func (a *App) Run(httpPort string) {
 
 func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/topics", a.listTopics).Methods("GET")
+	a.Router.HandleFunc("/topics/{id}", a.getTopicDetails).Methods("GET")
 }
 
 // func respondWithError(w http.ResponseWriter, code int, message string) {
@@ -85,6 +86,90 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 // @Success 200 {array} Topic
 func (a *App) listTopics(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, a.CurrentTopics)
+}
+
+// getTopicDetails godoc
+// @Summary      Get detailed information about a specific topic
+// @Description  Fetches full details including recent comments for a topic by ID
+// @ID           get-topic-details
+// @Param        id path int true "Topic ID"
+// @Router       /topics/{id} [get]
+// @Success 200 {object} TopicDetails
+func (a *App) getTopicDetails(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	topicID := vars["id"]
+
+	// Find topic in current topics
+	var topic *Topic
+	for i := range a.CurrentTopics {
+		if fmt.Sprintf("%d", a.CurrentTopics[i].TopicID) == topicID {
+			topic = &a.CurrentTopics[i]
+			break
+		}
+	}
+
+	if topic == nil {
+		respondWithJSON(w, http.StatusNotFound, map[string]string{"error": "Topic not found"})
+		return
+	}
+
+	// Fetch detailed info from RFD API
+	requestURL := fmt.Sprintf("https://forums.redflagdeals.com/api/topics/%s", topicID)
+	res, err := http.Get(requestURL)
+	if err != nil {
+		log.Warn().Msgf("error fetching topic details: %s\n", err)
+		respondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to fetch details"})
+		return
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		log.Warn().Msgf("could not read response body: %s\n", err)
+		respondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to read response"})
+		return
+	}
+
+	var rfdResponse map[string]interface{}
+	err = json.Unmarshal([]byte(body), &rfdResponse)
+	if err != nil {
+		log.Warn().Msgf("could not unmarshal response body: %s", err)
+		respondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to parse response"})
+		return
+	}
+
+	// Extract relevant fields for tooltip
+	details := TopicDetails{
+		Topic:       *topic,
+		Description: extractDescription(rfdResponse),
+		FirstPost:   extractFirstPost(rfdResponse),
+	}
+
+	respondWithJSON(w, http.StatusOK, details)
+}
+
+func extractDescription(data map[string]interface{}) string {
+	if topic, ok := data["topic"].(map[string]interface{}); ok {
+		if description, ok := topic["description"].(string); ok {
+			return description
+		}
+	}
+	return ""
+}
+
+func extractFirstPost(data map[string]interface{}) string {
+	if posts, ok := data["posts"].([]interface{}); ok && len(posts) > 0 {
+		if firstPost, ok := posts[0].(map[string]interface{}); ok {
+			if body, ok := firstPost["body"].(string); ok {
+				// Truncate to first 200 characters
+				if len(body) > 200 {
+					return body[:200] + "..."
+				}
+				return body
+			}
+		}
+	}
+	return ""
 }
 
 func (a *App) refreshTopics() {

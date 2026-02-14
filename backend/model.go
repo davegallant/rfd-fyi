@@ -27,3 +27,9 @@ type Offer struct {
 	DealerName string `json:"dealer_name"`
 	Url string `json:"url"`
 } // @name Offer
+
+type TopicDetails struct {
+	Topic       Topic  `json:"topic"`
+	Description string `json:"description"`
+	FirstPost   string `json:"first_post"`
+} // @name TopicDetails
