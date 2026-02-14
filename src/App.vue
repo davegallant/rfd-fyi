@@ -250,23 +250,21 @@ export default {
 
       let top = this.tooltipPosition.y + 10;
       let left = this.tooltipPosition.x + 10;
-
-      // Check if tooltip would go off bottom of screen
-      if (top > window.innerHeight - 200) {
-        // Position above the cursor instead
-        top = this.tooltipPosition.y - 200;
-      }
+      const tooltipWidth = 420;
 
       // Check if tooltip would go off right side of screen
-      if (left > window.innerWidth - 420) {
+      if (left + tooltipWidth > window.innerWidth) {
         // Position to the left of cursor instead
-        left = this.tooltipPosition.x - 420;
+        left = Math.max(10, this.tooltipPosition.x - tooltipWidth - 10);
       }
+
+      // Keep tooltip within vertical bounds, allowing scrolling of content
+      top = Math.max(10, Math.min(top, window.innerHeight - 100));
 
       return {
         position: 'fixed',
         left: Math.max(10, left) + 'px',
-        top: Math.max(10, top) + 'px',
+        top: top + 'px',
         zIndex: 9999,
       };
     },
