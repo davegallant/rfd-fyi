@@ -22,16 +22,38 @@ export default {
       tooltipData: {},
       loadingTooltip: {},
       tooltipPosition: { x: 0, y: 0 },
+      isMobile: false,
     };
   },
   mounted() {
     window.addEventListener("keydown", this.handleKeyDown);
+    this.detectMobile();
     this.fetchDeals();
   },
   beforeUnmount() {
     window.removeEventListener("keydown", this.handleKeyDown);
+    window.removeEventListener("resize", this.detectMobile);
   },
   methods: {
+    detectMobile() {
+      // Detect if device is mobile/tablet based on touch capability and screen size
+      const hasTouch = () => {
+        return (
+          (typeof window !== "undefined" &&
+            ("ontouchstart" in window ||
+              navigator.maxTouchPoints > 0 ||
+              navigator.msMaxTouchPoints > 0)) ||
+          false
+        );
+      };
+      
+      const isMobileScreen = () => {
+        return window.innerWidth <= 1024;
+      };
+      
+      this.isMobile = hasTouch() || isMobileScreen();
+      window.addEventListener("resize", this.detectMobile);
+    },
     handleKeyDown(event) {
       const isInput = ["INPUT", "TEXTAREA"].includes(
         document.activeElement.tagName
@@ -42,6 +64,10 @@ export default {
       }
     },
     handleTitleHover(topic, event) {
+      // Don't load tooltips on mobile devices
+      if (this.isMobile) {
+        return;
+      }
       this.hoveredTopicId = topic.topic_id;
       this.tooltipPosition = {
         x: event.clientX,
@@ -50,9 +76,15 @@ export default {
       this.loadTopicDetails(topic.topic_id);
     },
     handleTitleLeave() {
+      if (this.isMobile) {
+        return;
+      }
       this.hoveredTopicId = null;
     },
     handleMouseMove(event) {
+      if (this.isMobile) {
+        return;
+      }
       if (this.hoveredTopicId !== null) {
         this.tooltipPosition = {
           x: event.clientX,
@@ -183,7 +215,7 @@ const sortBy = ref([{ key: "score", order: "desc" }]); // Vuetify 3 format
               @mousemove="handleMouseMove"
               v-html="
                 highlightMatches(
-                  item.title + ' [' + item.Offer.dealer_name + '] '
+                  item.title
                 )
               "
             ></a>
