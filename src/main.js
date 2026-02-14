@@ -6,7 +6,12 @@ import "./theme.css";
 
 import { registerPlugins } from "@/plugins";
 
-const routes = [];
+const routes = [
+  {
+    path: '/:pathMatch(.*)*',
+    component: App,
+  },
+];
 
 const router = createRouter({
   history: createWebHashHistory(),

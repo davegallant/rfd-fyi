@@ -3,7 +3,6 @@ import axios from "axios";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { ref } from "vue";
-import { useTheme } from 'vuetify';
 
 import "vue-loading-overlay/dist/css/index.css";
 
@@ -48,9 +47,6 @@ export default {
   },
   methods: {
     initializeTheme() {
-      // Get Vuetify theme instance
-      this.vuetifyTheme = useTheme();
-
       // If no saved preference, apply system preference now
       const savedTheme = localStorage.getItem('vuetify-theme');
       if (!savedTheme) {
@@ -59,7 +55,7 @@ export default {
         this.applyTheme(theme);
       } else {
         // Get current theme name from Vuetify
-        this.currentTheme = this.vuetifyTheme.global.name.value;
+        this.currentTheme = this.$vuetify.theme.global.name;
       }
     },
     setupThemeListener() {
@@ -85,17 +81,11 @@ export default {
       this.darkModeQuery = darkModeQuery;
     },
     applyTheme(theme) {
-      // Get theme instance if not already stored
-      if (!this.vuetifyTheme) {
-        this.vuetifyTheme = useTheme();
-      }
-
       // Apply theme using Vuetify's theme API
-      this.vuetifyTheme.global.name.value = theme;
+      this.$vuetify.theme.global.name = theme;
       this.currentTheme = theme;
       localStorage.setItem('vuetify-theme', theme);
-      console.log('Theme applied:', theme);
-
+      
       // Also update data-bs-theme for any custom CSS that uses it
       document.documentElement.setAttribute('data-bs-theme', theme === 'dark' ? 'dark' : 'light');
     },
@@ -211,7 +201,7 @@ export default {
     formatDate() {
       return (v) => {
         const date = dayjs(String(v));
-        return date.format("hh:mm A (MM/DD)");
+        return date.format("YYYY-MM-DD hh:mm A");
       };
     },
     filteredTopics() {
@@ -491,11 +481,11 @@ html[data-bs-theme="light"] :deep(.v-text-field) {
 }
 
 html[data-bs-theme="light"] :deep(.v-field__input) {
-  background-color: #fafafa !important;
+  background-color: #d0d0d0 !important;
 }
 
 html[data-bs-theme="light"] :deep(.v-field--focused .v-field__input) {
-  background-color: #ffffff !important;
+  background-color: #e8e8e8 !important;
 }
 
 html[data-bs-theme="dark"] :deep(.v-text-field) {

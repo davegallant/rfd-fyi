@@ -1,12 +1,3 @@
-/* Material Symbols font optimization - prevent flash of unstyled text */
-@font-face {
-  font-family: 'Material Symbols Outlined';
-  src: url('https://fonts.gstatic.com/s/materialsymbolsoutlined/v211/gok-H7zzDkdnRel8-DQ6KAXJ69wP1tGnf4ZGhQcyWwg.woff2') format('woff2');
-  font-weight: 100 700;
-  font-style: normal;
-  font-display: block;
-}
-
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined';
   font-weight: normal;
@@ -33,8 +24,7 @@
   --tooltip-border: #dee2e6;
   --tooltip-text: #212529;
   --link-color: #0d6efd;
-  --link-hover: #0b5ed7;
-  --link-visited: #6f42c1;
+  --link-visited: #990000;
   --footer-bg: #f8f9fa;
   --footer-text: #212529;
 }
@@ -51,8 +41,7 @@
     --tooltip-border: #444444;
     --tooltip-text: #e0e0e0;
     --link-color: #5b9cf5;
-    --link-hover: #60a5fa;
-    --link-visited: #888888;
+    --link-visited: #990000;
     --footer-bg: #1a1a1a;
     --footer-text: #e0e0e0;
   }
@@ -69,8 +58,7 @@ html[data-bs-theme="dark"] {
   --tooltip-border: #444444;
   --tooltip-text: #e0e0e0;
   --link-color: #e8e8e8;
-  --link-hover: #60a5fa;
-  --link-visited: #888888;
+  --link-visited: #990000;
   --footer-bg: #1a1a1a;
   --footer-text: #e0e0e0;
 }
@@ -85,8 +73,7 @@ html[data-bs-theme="light"] {
   --tooltip-border: #dee2e6;
   --tooltip-text: #212529;
   --link-color: #333333;
-  --link-hover: #0b5ed7;
-  --link-visited: #6f42c1;
+  --link-visited: #990000;
   --footer-bg: #f8f9fa;
   --footer-text: #212529;
 }
@@ -143,9 +130,7 @@ a {
   transition: color 0.2s ease;
 }
 
-a:hover {
-  color: var(--link-hover);
-}
+
 
 a:visited {
   color: var(--link-visited);
