@@ -227,10 +227,6 @@ const sortBy = ref([{ key: "score", order: "desc" }]);
                 )
               "
             ></a>
-            <a :href="item.Offer.url" target="_blank" v-if="item.Offer.url">
-              <span class="material-symbols-outlined"> link </span>
-            </a>
-            <span v-else class="material-symbols-outlined"> link_off </span>
           </template>
 
           <template #item.score="{ item }">
