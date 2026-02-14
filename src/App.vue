@@ -1,6 +1,6 @@
 <script>
 import axios from "axios";
-import moment from "moment";
+import dayjs from "dayjs";
 import Loading from "vue-loading-overlay";
 import { install } from "@github/hotkey";
 
@@ -55,7 +55,7 @@ export default {
   computed: {
     formatDate() {
       return (v) => {
-        return moment(String(v)).format("hh:mm A z (MM/DD)");
+        return dayjs(String(v)).format("hh:mm A z (MM/DD)");
       };
     },
     filteredTopics() {

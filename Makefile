@@ -15,7 +15,7 @@ help:
 
 ## backend: Build and run the backend from source
 backend:
-	@cd backend && go run .
+	@cd backend && CGO_ENABLED=0 go run .
 .PHONY: backend
 
 ## frontend: Build and run the frontend from source

@@ -1,6 +1,6 @@
 module github.com/davegallant/rfd-fyi
 
-go 1.18
+go 1.26
 
 require (
 	github.com/dlclark/regexp2 v1.11.5

@@ -2,7 +2,6 @@
 import Components from "unplugin-vue-components/vite";
 import Vue from "@vitejs/plugin-vue";
 import Vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
-import Fonts from "unplugin-fonts/vite";
 
 // Utilities
 import { defineConfig } from "vite";
@@ -14,23 +13,12 @@ export default defineConfig({
     Vue({
       template: { transformAssetUrls },
     }),
-    // https://github.com/vuetifyjs/vuetify-loader/tree/master/packages/vite-plugin#readme
     Vuetify(),
     Components(),
-    Fonts({
-      fontsource: {
-        families: [
-          {
-            name: "Roboto",
-            weights: [100, 300, 400, 500, 700, 900],
-            styles: ["normal", "italic"],
-          },
-        ],
-      },
-    }),
   ],
   optimizeDeps: {
     exclude: ["vuetify"],
+    include: ["axios", "vue-router", "vue-loading-overlay"],
   },
   define: { "process.env": {} },
   resolve: {
@@ -54,5 +42,38 @@ export default defineConfig({
         api: "modern-compiler",
       },
     },
+  },
+  build: {
+    target: "esnext",
+    minify: "terser",
+    terserOptions: {
+      compress: {
+        drop_console: true,
+      },
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vuetify": ["vuetify"],
+          "vendor": ["axios", "dayjs", "vue-router", "vue-loading-overlay"],
+        },
+        chunkFileNames: "js/[name].[hash].js",
+        entryFileNames: "js/[name].[hash].js",
+        assetFileNames: (assetInfo) => {
+          const info = assetInfo.name.split(".");
+          const ext = info[info.length - 1];
+          if (/png|jpe?g|gif|tiff|bmp|ico/i.test(ext)) {
+            return `images/[name].[hash][extname]`;
+          } else if (/woff|woff2|eot|ttf|otf/i.test(ext)) {
+            return `fonts/[name].[hash][extname]`;
+          } else if (ext === "css") {
+            return `css/[name].[hash][extname]`;
+          }
+          return `[name].[hash][extname]`;
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
+    reportCompressedSize: true,
   },
 });
