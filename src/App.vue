@@ -168,22 +168,30 @@ export default {
         return v.replace(re, (matchedText) => `<mark>${matchedText}</mark>`);
       };
     },
+    visibleHeaders() {
+      const baseHeaders = [
+        { title: "Deal", value: "title", align: "center" },
+        { title: "Score", value: "score", align: "center", sortable: true },
+      ];
+      
+      // Only show Last Post column on desktop
+      if (!this.isMobile) {
+        baseHeaders.push({
+          title: "Last Post",
+          value: "last_post_time",
+          align: "center",
+          sortable: true,
+        });
+      }
+      
+      return baseHeaders;
+    },
   },
 };
 </script>
 
 <script setup>
-const headers = [
-  { title: "Deal", value: "title", align: "center" },
-  { title: "Score", value: "score", align: "center", sortable: true },
-  {
-    title: "Last Post",
-    value: "last_post_time",
-    align: "center",
-    sortable: true,
-  },
-];
-const sortBy = ref([{ key: "score", order: "desc" }]); // Vuetify 3 format
+const sortBy = ref([{ key: "score", order: "desc" }]);
 </script>
 
 <template>
@@ -200,7 +208,7 @@ const sortBy = ref([{ key: "score", order: "desc" }]); // Vuetify 3 format
           hide-details="true"
         />
         <v-data-table
-          :headers="headers"
+          :headers="visibleHeaders"
           :items="filteredTopics"
           :sort-by="sortColumn"
           v-model:sortBy="sortBy"
