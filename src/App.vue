@@ -16,10 +16,6 @@ export default {
       filter: window.location.href.split("filter=")[1] || "",
       sortColumn: this.sortColumn,
       topics: [],
-      hoveredTopicId: null,
-      tooltipData: {},
-      loadingTooltip: {},
-      tooltipPosition: { x: 0, y: 0 },
       isMobile: false,
       currentTheme: 'dark',
       mediaQueryListener: null,
@@ -81,13 +77,22 @@ export default {
       this.darkModeQuery = darkModeQuery;
     },
     applyTheme(theme) {
-      // Apply theme using Vuetify's theme API
-      this.$vuetify.theme.global.name = theme;
+      // Apply theme using Vuetify's theme API (using .value for reactive ref)
+      this.$vuetify.theme.global.name.value = theme;
       this.currentTheme = theme;
       localStorage.setItem('vuetify-theme', theme);
 
-      // Also update data-bs-theme for any custom CSS that uses it
+      // Update data-bs-theme attribute for CSS variables to work
       document.documentElement.setAttribute('data-bs-theme', theme === 'dark' ? 'dark' : 'light');
+
+      // Update HTML class for theme-based CSS selectors
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark-theme');
+        document.documentElement.classList.remove('light-theme');
+      } else {
+        document.documentElement.classList.add('light-theme');
+        document.documentElement.classList.remove('dark-theme');
+      }
     },
     toggleTheme() {
       const newTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
@@ -121,63 +126,7 @@ export default {
         this.$refs.filter.focus();
       }
     },
-    handleTitleHover(topic, event) {
-      // Don't load tooltips on mobile devices
-      if (this.isMobile) {
-        return;
-      }
-      this.hoveredTopicId = topic.topic_id;
-      this.tooltipPosition = {
-        x: event.clientX,
-        y: event.clientY,
-      };
-      this.loadTopicDetails(topic.topic_id);
-    },
-    handleTitleLeave() {
-      if (this.isMobile) {
-        return;
-      }
-      this.hoveredTopicId = null;
-    },
-    handleMouseMove(event) {
-      if (this.isMobile) {
-        return;
-      }
-      if (this.hoveredTopicId !== null) {
-        this.tooltipPosition = {
-          x: event.clientX,
-          y: event.clientY,
-        };
-      }
-    },
-    loadTopicDetails(topicId) {
-      if (!topicId) {
-        console.warn("Topic ID is undefined");
-        return;
-      }
 
-      if (this.tooltipData[topicId]) {
-        return; // Already loaded
-      }
-
-      if (this.loadingTooltip[topicId]) {
-        return; // Already loading
-      }
-
-      this.loadingTooltip[topicId] = true;
-
-      axios
-        .get(`api/v1/topics/${topicId}`)
-        .then((response) => {
-          this.tooltipData[topicId] = response.data;
-        })
-        .catch((err) => {
-          console.log("Error loading topic details:", err);
-        })
-        .finally(() => {
-          this.loadingTooltip[topicId] = false;
-        });
-    },
     createFilterRoute(params) {
       this.$refs.filter.blur();
       history.pushState(
@@ -205,16 +154,18 @@ export default {
       };
     },
     filteredTopics() {
-      return this.topics.filter((row) => {
-        const titles = (
-          row.title.toString() +
-          " [" +
-          row.Offer.dealer_name +
-          "]"
-        ).toLowerCase();
-        const filterTerm = this.filter.toLowerCase();
-        return titles.includes(filterTerm);
-      });
+      return this.topics
+        .filter((row) => {
+          const titles = (
+            row.title.toString() +
+            " [" +
+            row.Offer.dealer_name +
+            "]"
+          ).toLowerCase();
+          const filterTerm = this.filter.toLowerCase();
+          return titles.includes(filterTerm);
+        })
+        .sort((a, b) => b.score - a.score); // Always sort by score descending
     },
     highlightMatches() {
       return (v) => {
@@ -226,46 +177,14 @@ export default {
         return v.replace(re, (matchedText) => `<mark>${matchedText}</mark>`);
       };
     },
-    visibleHeaders() {
-      const baseHeaders = [
-        { title: "Deal", value: "title", align: "center" },
-        { title: "Score", value: "score", align: "center" },
-      ];
+    highlightDealerName() {
+      return (dealerName) => {
+        if (this.filter == "") return dealerName;
+        const matchExists = dealerName.toLowerCase().includes(this.filter.toLowerCase());
+        if (!matchExists) return dealerName;
 
-      // Only show Last Post column on desktop
-      if (!this.isMobile) {
-        baseHeaders.push({
-          title: "Last Post",
-          value: "last_post_time",
-          align: "center",
-        });
-      }
-
-      return baseHeaders;
-    },
-    tooltipStyle() {
-      if (this.hoveredTopicId === null || !this.tooltipData[this.hoveredTopicId]) {
-        return {};
-      }
-
-      let top = this.tooltipPosition.y + 10;
-      let left = this.tooltipPosition.x + 10;
-      const tooltipWidth = 420;
-
-      // Check if tooltip would go off right side of screen
-      if (left + tooltipWidth > window.innerWidth) {
-        // Position to the left of cursor instead
-        left = Math.max(10, this.tooltipPosition.x - tooltipWidth - 10);
-      }
-
-      // Keep tooltip within vertical bounds, allowing scrolling of content
-      top = Math.max(10, Math.min(top, window.innerHeight - 100));
-
-      return {
-        position: 'fixed',
-        left: Math.max(10, left) + 'px',
-        top: top + 'px',
-        zIndex: 9999,
+        const re = new RegExp(this.filter, "ig");
+        return dealerName.replace(re, (matchedText) => `<mark>${matchedText}</mark>`);
       };
     },
   },
@@ -280,195 +199,281 @@ const sortBy = ref([{ key: "score", order: "desc" }]);
   <v-app>
     <v-main>
       <link rel="shortcut icon" type="image/png" href="/favicon.png" />
-      <body>
-        <v-text-field
-          v-model="filter"
-          label="Filter"
-          ref="filter"
-          @keyup.enter="createFilterRoute(filter.toString())"
-          @keyup.esc="$refs.filter.blur()"
-          hide-details="true"
-        />
-        <v-data-table
-          :headers="visibleHeaders"
-          :items="filteredTopics"
-          :sort-by="sortBy"
-          :items-per-page="50"
-        >
-          <template #item.title="{ item }">
-            <a
-              :href="`https://forums.redflagdeals.com${item.web_path}`"
-              target="_blank"
-              @mouseenter="handleTitleHover(item, $event)"
-              @mouseleave="handleTitleLeave"
-              @mousemove="handleMouseMove"
-              v-html="
-                highlightMatches(
-                  item.title
-                )
-              "
-            ></a>
-          </template>
+      <div class="container">
+        <div class="header">
+          <v-text-field
+            v-model="filter"
+            label="Filter deals"
+            ref="filter"
+            @keyup.enter="createFilterRoute(filter.toString())"
+            @keyup.esc="$refs.filter.blur()"
+            hide-details="true"
+            class="search-input"
+          />
+        </div>
 
-          <template #item.score="{ item }">
-            <span v-if="item.score > 0" class="green-score"
-              >+{{ item.score }}</span
-            >
-            <span v-else-if="item.score < 0" class="red-score">{{
-              item.score
-            }}</span>
-            <span v-else>{{ item.score }}</span>
-          </template>
-
-          <template #item.last_post_time="{ item }">
-            {{ formatDate(item.last_post_time) }}
-          </template>
-
-          <template #loading>
-            <v-progress-linear indeterminate color="grey" />
-          </template>
-        </v-data-table>
-
-        <!-- Tooltip for deal details -->
-        <div
-          v-if="hoveredTopicId !== null && tooltipData[hoveredTopicId]"
-          class="deal-tooltip"
-          :style="tooltipStyle"
-        >
-          <div class="tooltip-content">
-              <div class="tooltip-stats">
-                <span class="stat-item">
-                  <span class="material-symbols-outlined">visibility</span>
-                  {{ tooltipData[hoveredTopicId].topic.total_views }} views
-                </span>
-                <span class="stat-item">
-                  <span class="material-symbols-outlined">chat</span>
-                  {{ tooltipData[hoveredTopicId].topic.total_replies }} replies
-                </span>
+        <div class="cards-grid">
+          <div
+            v-for="topic in filteredTopics"
+            :key="topic.topic_id"
+            class="deal-card"
+          >
+            <div class="card-header">
+              <a
+                :href="`https://forums.redflagdeals.com${topic.web_path}`"
+                target="_blank"
+                class="deal-title"
+                @click.stop
+                v-html="highlightMatches(topic.title)"
+              ></a>
+              <div class="score-bubble" :class="{ positive: topic.score > 0, negative: topic.score < 0, neutral: topic.score === 0 }">
+                <span v-if="topic.score > 0">+{{ topic.score }}</span>
+                <span v-else>{{ topic.score }}</span>
               </div>
-            <div v-if="tooltipData[hoveredTopicId].description" class="tooltip-description">
-              <strong>Description:</strong>
-              {{ tooltipData[hoveredTopicId].description }}
             </div>
-            <div class="tooltip-dealer">
-              {{ tooltipData[hoveredTopicId].topic.Offer.dealer_name }}
+
+            <div class="card-meta">
+              <span class="dealer-name" v-html="highlightDealerName(topic.Offer.dealer_name)"></span>
             </div>
-            <div v-if="tooltipData[hoveredTopicId].first_post" class="tooltip-first-post">
-              <strong>First Post:</strong>
-              {{ tooltipData[hoveredTopicId].first_post }}
-            </div>
-            <div class="tooltip-times">
-              <div>Posted: {{ formatDate(tooltipData[hoveredTopicId].topic.post_time) }}</div>
-              <div>Last Post: {{ formatDate(tooltipData[hoveredTopicId].topic.last_post_time) }}</div>
+
+            <!-- Card details -->
+            <div class="card-details">
+              <div class="details-stats">
+                <div class="stat">
+                  <span class="material-symbols-outlined">visibility</span>
+                  <span class="stat-value">{{ topic.total_views }} views</span>
+                </div>
+                <div class="stat">
+                  <span class="material-symbols-outlined">chat</span>
+                  <span class="stat-value">{{ topic.total_replies }} replies</span>
+                </div>
+              </div>
+
+              <div class="card-timestamp">
+                Last post: {{ formatDate(topic.last_post_time) }}
+              </div>
+
             </div>
           </div>
         </div>
-      </body>
+      </div>
     </v-main>
   </v-app>
 </template>
 
 <style scoped>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
 }
 
-.fixed-bottom {
-  background: #ffc;
-  color: black;
+.header {
+  margin-bottom: 30px;
 }
 
-.deal-tooltip {
-  pointer-events: none;
-  max-width: 400px;
+.search-input {
+  width: 100%;
+  max-width: 500px;
 }
 
-.tooltip-content {
-  background: var(--tooltip-bg);
-  border: 2px solid var(--tooltip-border);
-  border-radius: 8px;
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.deal-card {
+  background-color: var(--bg-secondary);
+  border: 1.5px solid #aaaaaa;
+  border-radius: 12px;
   padding: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  font-size: 13px;
-  color: var(--text-primary);
-  text-align: left;
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  min-height: auto;
 }
 
-.tooltip-header {
-  font-weight: bold;
-  font-size: 14px;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-  white-space: normal;
-  word-wrap: break-word;
+.deal-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  border-color: #888888;
 }
 
-.tooltip-dealer {
-  font-size: 12px;
-  color: var(--text-secondary);
-  margin-bottom: 8px;
-}
-
-.tooltip-stats {
+.card-header {
   display: flex;
   gap: 12px;
-  margin-bottom: 8px;
-  font-size: 12px;
-  color: var(--text-secondary);
+  align-items: flex-start;
+  margin-bottom: 12px;
 }
 
-.stat-item {
+.deal-title {
+  color: var(--link-color);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 1.4;
+  flex: 1;
+  transition: color 0.2s ease;
+}
+
+.deal-title:visited {
+  color: var(--link-visited);
+}
+
+.deal-title:hover {
+  text-decoration: underline;
+}
+
+.card-meta {
   display: flex;
-  align-items: center;
-  gap: 4px;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  margin-bottom: 12px;
 }
 
-.stat-item .material-symbols-outlined {
-  font-size: 16px;
-}
-
-.tooltip-description {
-  margin-bottom: 8px;
-  padding: 8px;
-  background: var(--bg-secondary);
-  border-left: 2px solid var(--tooltip-border);
-  border-radius: 2px;
-  font-size: 12px;
-  white-space: normal;
-  word-wrap: break-word;
-  max-height: 60px;
-  overflow-y: auto;
-  color: var(--text-primary);
-}
-
-.tooltip-first-post {
-  margin-bottom: 8px;
-  padding: 8px;
-  background: var(--bg-secondary);
-  border-left: 2px solid var(--tooltip-border);
-  border-radius: 2px;
-  font-size: 12px;
-  white-space: normal;
-  word-wrap: break-word;
-  max-height: 60px;
-  overflow-y: auto;
-  color: var(--text-primary);
-}
-
-.tooltip-times {
-  font-size: 11px;
+.dealer-name {
   color: var(--text-secondary);
-  border-top: 1px solid var(--border-color);
-  padding-top: 8px;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.card-timestamp {
+  color: var(--text-secondary);
+  font-size: 12px;
   margin-top: 8px;
 }
 
-/* Filter input styling */
+.score-bubble {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
+  height: 40px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  padding: 0 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  border: none;
+}
+
+.score-bubble.positive {
+  background-color: rgb(34, 139, 34);
+  color: white;
+  box-shadow: 0 1px 3px rgba(34, 139, 34, 0.2);
+}
+
+html.light-theme .score-bubble.positive {
+  background-color: rgb(34, 139, 34);
+  color: white;
+  box-shadow: 0 1px 3px rgba(34, 139, 34, 0.2);
+}
+
+html.dark-theme .score-bubble.positive {
+  background-color: rgb(158, 206, 106);
+  color: #1a1a1a;
+  box-shadow: 0 1px 3px rgba(158, 206, 106, 0.2);
+}
+
+.score-bubble.negative {
+  background-color: rgb(247, 118, 142);
+  color: white;
+  box-shadow: 0 1px 3px rgba(247, 118, 142, 0.2);
+}
+
+.score-bubble.neutral {
+  background-color: var(--text-secondary);
+  color: var(--bg-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.card-details {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.details-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.stat .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.stat-value {
+  font-weight: 500;
+}
+
+.details-section {
+  margin-bottom: 12px;
+}
+
+.details-section strong {
+  display: block;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.details-section p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .container {
+    padding: 12px;
+  }
+
+  .search-input {
+    max-width: 100%;
+  }
+}
+
+/* Mark highlighting */
+:deep(mark) {
+  background-color: rgba(255, 193, 7, 0.3);
+  color: inherit;
+  font-weight: 600;
+  border-radius: 2px;
+}
+
+html.dark-theme :deep(mark) {
+  background-color: rgba(255, 193, 7, 0.4);
+  color: inherit;
+  font-weight: 600;
+  border-radius: 2px;
+}
+
+/* Vuetify overrides */
 :deep(.v-text-field) {
   --v-field-border-color: #cccccc;
 }
@@ -487,5 +492,31 @@ html[data-bs-theme="light"] :deep(.v-field--focused .v-field__input) {
 
 html[data-bs-theme="dark"] :deep(.v-text-field) {
   --v-field-border-color: #555555;
+}
+
+html.light-theme :deep(.v-text-field) {
+  --v-field-border-color: #cccccc;
+}
+
+html.light-theme :deep(.v-field__input) {
+  background-color: #d0d0d0 !important;
+}
+
+html.light-theme :deep(.v-field--focused .v-field__input) {
+  background-color: #e8e8e8 !important;
+}
+
+html.dark-theme :deep(.v-text-field) {
+  --v-field-border-color: #555555;
+}
+
+/* Ensure v-app and v-main use theme colors */
+:deep(.v-app) {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+:deep(.v-main) {
+  background-color: var(--bg-primary) !important;
 }
 </style>
