@@ -36,14 +36,32 @@
     <!-- Theme detection script - runs before Vue loads to prevent flash of unstyled content -->
     <script>
       (function() {
-        // Check for saved theme preference or system preference
+        // Check for saved theme preference only
         const savedTheme = localStorage.getItem('theme');
+        if (!savedTheme) {
+          return; // Let Vue handle default theme
+        }
+        
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+        let theme = savedTheme;
+        
+        // Handle 'auto' theme preference
+        if (theme === 'auto') {
+          theme = prefersDark ? 'dark' : 'light';
+        }
         
         // Apply theme to html element
         document.documentElement.setAttribute('data-bs-theme', theme);
         document.documentElement.setAttribute('data-theme', theme);
+        
+        // Apply theme classes
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark-theme');
+          document.documentElement.classList.remove('light-theme');
+        } else {
+          document.documentElement.classList.add('light-theme');
+          document.documentElement.classList.remove('dark-theme');
+        }
       })();
     </script>
   </head>

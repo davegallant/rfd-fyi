@@ -18,7 +18,7 @@ export default {
       sortMethod: 'score',
       topics: [],
       isMobile: false,
-      currentTheme: 'auto',
+      currentTheme: typeof localStorage !== 'undefined' ? (localStorage.getItem('theme') || 'auto') : 'auto',
       mediaQueryListener: null,
       vuetifyTheme: null,
       darkModeQuery: null,
@@ -31,11 +31,9 @@ export default {
     this.fetchDeals();
     // Initialize sort method from local storage
     this.initializeSortMethod();
-    // Initialize theme on next tick
-    this.$nextTick(() => {
-      this.initializeTheme();
-      this.setupThemeListener();
-    });
+    // Initialize theme immediately to prevent flash
+    this.initializeTheme();
+    this.setupThemeListener();
   },
   beforeUnmount() {
     window.removeEventListener("keydown", this.handleKeyDown);
@@ -50,11 +48,11 @@ export default {
       const savedTheme = localStorage.getItem('theme');
       if (!savedTheme) {
         this.currentTheme = 'auto';
-        this.applyTheme('auto');
+        this.applyTheme('auto', true); // skipSave=true to avoid redundant write
       } else {
         this.currentTheme = savedTheme;
-        // Apply saved theme
-        this.applyTheme(savedTheme);
+        // Apply saved theme (skipSave=true since it's already saved)
+        this.applyTheme(savedTheme, true);
       }
     },
     setupThemeListener() {
