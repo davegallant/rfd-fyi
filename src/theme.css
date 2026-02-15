@@ -169,6 +169,7 @@ html.dark-theme .search-input:focus {
   transition: all 0.2s ease;
   font-size: 18px;
   padding: 0;
+  flex-shrink: 0;
 }
 
 .theme-toggle:hover {

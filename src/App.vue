@@ -17,7 +17,7 @@ export default {
       sortColumn: this.sortColumn,
       topics: [],
       isMobile: false,
-      currentTheme: 'dark',
+      currentTheme: 'auto',
       mediaQueryListener: null,
       vuetifyTheme: null,
       darkModeQuery: null,
@@ -43,12 +43,11 @@ export default {
   },
   methods: {
     initializeTheme() {
-      // If no saved preference, apply system preference now
+      // If no saved preference, default to auto
       const savedTheme = localStorage.getItem('theme');
       if (!savedTheme) {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const theme = prefersDark ? 'dark' : 'light';
-        this.applyTheme(theme);
+        this.currentTheme = 'auto';
+        this.applyTheme('auto');
       } else {
         this.currentTheme = savedTheme;
         // Apply saved theme
@@ -63,12 +62,12 @@ export default {
 
       // Use arrow function to preserve 'this' context
       const themeChangeHandler = (e) => {
-        // Only auto-update theme if user hasn't set a preference manually
+        // Only auto-update theme if set to 'auto'
         const savedTheme = localStorage.getItem('theme');
-        if (!savedTheme) {
+        if (savedTheme === 'auto' || !savedTheme) {
           const newTheme = e.matches ? 'dark' : 'light';
           console.log('System theme changed to:', newTheme);
-          this.applyTheme(newTheme);
+          this.applyThemeActual(newTheme);
         }
       };
 
@@ -77,15 +76,27 @@ export default {
       this.themeChangeHandler = themeChangeHandler;
       this.darkModeQuery = darkModeQuery;
     },
-    applyTheme(theme) {
+    applyTheme(theme, skipSave = false) {
       this.currentTheme = theme;
-      localStorage.setItem('theme', theme);
+      if (!skipSave) {
+        localStorage.setItem('theme', theme);
+      }
 
+      // Determine actual theme to apply
+      let actualTheme = theme;
+      if (theme === 'auto') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        actualTheme = prefersDark ? 'dark' : 'light';
+      }
+
+      this.applyThemeActual(actualTheme);
+    },
+    applyThemeActual(actualTheme) {
       // Update data-bs-theme attribute for CSS variables to work
-      document.documentElement.setAttribute('data-bs-theme', theme === 'dark' ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-bs-theme', actualTheme === 'dark' ? 'dark' : 'light');
 
       // Update HTML class for theme-based CSS selectors
-      if (theme === 'dark') {
+      if (actualTheme === 'dark') {
         document.documentElement.classList.add('dark-theme');
         document.documentElement.classList.remove('light-theme');
       } else {
@@ -94,7 +105,15 @@ export default {
       }
     },
     toggleTheme() {
-      const newTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
+      // Cycle through: auto -> light -> dark -> auto
+      let newTheme;
+      if (this.currentTheme === 'auto') {
+        newTheme = 'light';
+      } else if (this.currentTheme === 'light') {
+        newTheme = 'dark';
+      } else {
+        newTheme = 'auto';
+      }
       this.applyTheme(newTheme);
     },
     detectMobile() {
@@ -186,6 +205,24 @@ export default {
         return dealerName.replace(re, (matchedText) => `<mark>${matchedText}</mark>`);
       };
     },
+    getThemeIcon() {
+      if (this.currentTheme === 'auto') {
+        return 'brightness_auto';
+      } else if (this.currentTheme === 'dark') {
+        return 'light_mode';
+      } else {
+        return 'dark_mode';
+      }
+    },
+    getThemeTitle() {
+      if (this.currentTheme === 'auto') {
+        return 'Theme: Auto (click for Light)';
+      } else if (this.currentTheme === 'light') {
+        return 'Theme: Light (click for Dark)';
+      } else {
+        return 'Theme: Dark (click for Auto)';
+      }
+    },
   },
 };
 </script>
@@ -205,8 +242,8 @@ export default {
             @keyup.esc="$refs.filter.blur()"
             class="search-input"
           />
-          <button @click="toggleTheme" class="theme-toggle" :title="'Switch to ' + (currentTheme === 'dark' ? 'light' : 'dark') + ' theme'">
-            <span class="material-symbols-outlined">{{ currentTheme === 'dark' ? 'light_mode' : 'dark_mode' }}</span>
+          <button @click="toggleTheme" class="theme-toggle" :title="getThemeTitle">
+            <span class="material-symbols-outlined">{{ getThemeIcon }}</span>
           </button>
         </div>
       </div>
