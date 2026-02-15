@@ -4,8 +4,6 @@ import { createRouter, createWebHashHistory } from "vue-router";
 
 import "./theme.css";
 
-import { registerPlugins } from "@/plugins";
-
 const routes = [
   {
     path: '/:pathMatch(.*)*',
@@ -19,8 +17,6 @@ const router = createRouter({
 });
 
 const app = createApp(App);
-
-registerPlugins(app);
 
 app.use(router);
 app.mount("#app");

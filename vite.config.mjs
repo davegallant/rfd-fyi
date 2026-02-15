@@ -1,7 +1,6 @@
 // Plugins
 import Components from "unplugin-vue-components/vite";
 import Vue from "@vitejs/plugin-vue";
-import Vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
 
 // Utilities
 import { defineConfig } from "vite";
@@ -10,16 +9,9 @@ import { fileURLToPath, URL } from "node:url";
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    Vue({
-      template: { transformAssetUrls },
-    }),
-    Vuetify(),
+    Vue(),
     Components(),
   ],
-  optimizeDeps: {
-    exclude: ["vuetify"],
-    include: ["axios", "vue-router", "vue-loading-overlay"],
-  },
   define: { "process.env": {} },
   resolve: {
     alias: {
@@ -54,7 +46,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          "vuetify": ["vuetify"],
           "vendor": ["axios", "dayjs", "vue-router", "vue-loading-overlay"],
         },
         chunkFileNames: "js/[name].[hash].js",

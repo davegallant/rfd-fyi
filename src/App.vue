@@ -28,7 +28,7 @@ export default {
     window.addEventListener("keydown", this.handleKeyDown);
     this.detectMobile();
     this.fetchDeals();
-    // Initialize theme on next tick to ensure Vuetify is ready
+    // Initialize theme on next tick
     this.$nextTick(() => {
       this.initializeTheme();
       this.setupThemeListener();
@@ -44,14 +44,15 @@ export default {
   methods: {
     initializeTheme() {
       // If no saved preference, apply system preference now
-      const savedTheme = localStorage.getItem('vuetify-theme');
+      const savedTheme = localStorage.getItem('theme');
       if (!savedTheme) {
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         const theme = prefersDark ? 'dark' : 'light';
         this.applyTheme(theme);
       } else {
-        // Get current theme name from Vuetify
-        this.currentTheme = this.$vuetify.theme.global.name;
+        this.currentTheme = savedTheme;
+        // Apply saved theme
+        this.applyTheme(savedTheme);
       }
     },
     setupThemeListener() {
@@ -63,7 +64,7 @@ export default {
       // Use arrow function to preserve 'this' context
       const themeChangeHandler = (e) => {
         // Only auto-update theme if user hasn't set a preference manually
-        const savedTheme = localStorage.getItem('vuetify-theme');
+        const savedTheme = localStorage.getItem('theme');
         if (!savedTheme) {
           const newTheme = e.matches ? 'dark' : 'light';
           console.log('System theme changed to:', newTheme);
@@ -77,10 +78,8 @@ export default {
       this.darkModeQuery = darkModeQuery;
     },
     applyTheme(theme) {
-      // Apply theme using Vuetify's theme API (using .value for reactive ref)
-      this.$vuetify.theme.global.name.value = theme;
       this.currentTheme = theme;
-      localStorage.setItem('vuetify-theme', theme);
+      localStorage.setItem('theme', theme);
 
       // Update data-bs-theme attribute for CSS variables to work
       document.documentElement.setAttribute('data-bs-theme', theme === 'dark' ? 'dark' : 'light');
@@ -192,21 +191,25 @@ export default {
 </script>
 
 <template>
-  <v-app>
-    <v-main>
-      <link rel="shortcut icon" type="image/png" href="/favicon.png" />
-      <div class="container">
-        <div class="header">
-          <v-text-field
+  <div id="app">
+    <link rel="shortcut icon" type="image/png" href="/favicon.png" />
+    <div class="container">
+      <div class="header">
+        <div class="header-controls">
+          <input
             v-model="filter"
-            label="Filter deals"
+            type="text"
+            placeholder="Filter deals"
             ref="filter"
             @keyup.enter="createFilterRoute(filter.toString())"
             @keyup.esc="$refs.filter.blur()"
-            hide-details="true"
             class="search-input"
           />
+          <button @click="toggleTheme" class="theme-toggle" :title="'Switch to ' + (currentTheme === 'dark' ? 'light' : 'dark') + ' theme'">
+            <span class="material-symbols-outlined">{{ currentTheme === 'dark' ? 'light_mode' : 'dark_mode' }}</span>
+          </button>
         </div>
+      </div>
 
         <div class="cards-grid">
           <div
@@ -263,8 +266,5 @@ export default {
           </div>
         </div>
       </div>
-    </v-main>
-  </v-app>
+    </div>
 </template>
-
-

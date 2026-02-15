@@ -42,7 +42,7 @@ html[data-bs-theme="dark"] {
   --text-primary: #e0e0e0;
   --text-secondary: #a0a0a0;
   --border-color: #3a3a3a;
-  --link-color: ##e0e0e0;
+  --link-color: #e0e0e0;
 }
 
 html[data-bs-theme="light"],
@@ -98,76 +98,7 @@ a:visited {
   color: var(--link-color);
 }
 
-@media (min-width: 769px) {
-  .v-data-table-header th,
-  .v-data-table__td {
-    border-color: #888888 !important;
-  }
-}
-
-/* Vuetify table dark theme overrides */
-html.dark-theme .v-data-table {
-  background-color: #1a1a1a !important;
-  color: #e0e0e0 !important;
-}
-
-html.dark-theme .v-data-table__tr {
-  background-color: #1a1a1a !important;
-  color: #e0e0e0 !important;
-}
-
-html.dark-theme .v-data-table__td {
-  background-color: #1a1a1a !important;
-  color: #e0e0e0 !important;
-  border-color: #888888 !important;
-}
-
-html.dark-theme .v-data-table-header {
-  background-color: #2a2a2a !important;
-}
-
-html.dark-theme .v-data-table-header th {
-  background-color: #2a2a2a !important;
-  color: #e0e0e0 !important;
-  border-color: #888888 !important;
-}
-
-html.dark-theme .v-data-table__divider {
-  border-color: #888888 !important;
-}
-
-html.dark-theme .v-table__wrapper {
-  background-color: #1a1a1a !important;
-}
-
-/* Light theme table overrides */
-html.light-theme .v-data-table {
-  background-color: #ffffff !important;
-  color: #212529 !important;
-}
-
-html.light-theme .v-data-table__tr {
-  background-color: #ffffff !important;
-  color: #212529 !important;
-}
-
-html.light-theme .v-data-table__td {
-  background-color: #ffffff !important;
-  color: #212529 !important;
-  border-color: #dee2e6 !important;
-}
-
-html.light-theme .v-data-table-header {
-  background-color: #f5f5f5 !important;
-}
-
-html.light-theme .v-data-table-header th {
-  background-color: #f5f5f5 !important;
-  color: #212529 !important;
-  border-color: #dee2e6 !important;
-}
-
-/* App.vue scoped styles */
+/* App styles */
 
 .container {
   max-width: 1200px;
@@ -182,9 +113,82 @@ html.light-theme .v-data-table-header th {
   margin-bottom: 30px;
 }
 
+.header-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
 .search-input {
-  width: 100%;
+  flex: 1;
   max-width: 500px;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  background-color: #f5f5f5;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #999999;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
+}
+
+html.dark-theme .search-input {
+  border-color: #555555;
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+}
+
+html.dark-theme .search-input:focus {
+  background-color: #2a2a2a;
+  border-color: #777777;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.search-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  background-color: #f5f5f5;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 18px;
+  padding: 0;
+}
+
+.theme-toggle:hover {
+  background-color: #e8e8e8;
+  border-color: #999999;
+}
+
+.theme-toggle:active {
+  transform: scale(0.95);
+}
+
+html.dark-theme .theme-toggle {
+  border-color: #555555;
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+}
+
+html.dark-theme .theme-toggle:hover {
+  background-color: #2a2a2a;
+  border-color: #777777;
 }
 
 .cards-grid {
@@ -237,7 +241,7 @@ html.light-theme .v-data-table-header th {
 }
 
 .deal-title:visited {
-  color: var(--link-visited);
+  color: var(--link-color);
 }
 
 .deal-title:hover {
@@ -403,51 +407,4 @@ html.dark-theme mark {
   color: inherit;
   font-weight: 600;
   border-radius: 2px;
-}
-
-/* Vuetify overrides */
-.v-text-field {
-  --v-field-border-color: #cccccc;
-}
-
-html[data-bs-theme="light"] .v-text-field {
-  --v-field-border-color: #e8e8e8;
-}
-
-html[data-bs-theme="light"] .v-field__input {
-  background-color: #d0d0d0 !important;
-}
-
-html[data-bs-theme="light"] .v-field--focused .v-field__input {
-  background-color: #e8e8e8 !important;
-}
-
-html[data-bs-theme="dark"] .v-text-field {
-  --v-field-border-color: #555555;
-}
-
-html.light-theme .v-text-field {
-  --v-field-border-color: #cccccc;
-}
-
-html.light-theme .v-field__input {
-  background-color: #d0d0d0 !important;
-}
-
-html.light-theme .v-field--focused .v-field__input {
-  background-color: #e8e8e8 !important;
-}
-
-html.dark-theme .v-text-field {
-  --v-field-border-color: #555555;
-}
-
-/* Ensure v-app and v-main use theme colors */
-.v-app {
-  background-color: var(--bg-primary) !important;
-  color: var(--text-primary) !important;
-}
-
-.v-main {
-  background-color: var(--bg-primary) !important;
 }
