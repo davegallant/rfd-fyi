@@ -16,7 +16,7 @@
 :root {
   /* Light theme (default) */
   --bg-primary: #dddddd;
-  --bg-secondary: #eeeeee;
+  --bg-secondary: #e8e8e8;
   --text-primary: #212529;
   --text-secondary: #6c757d;
   --border-color: #d0d0d0;
@@ -54,7 +54,7 @@ html[data-bs-theme="dark"] {
 html[data-bs-theme="light"],
 html.light-theme {
   --bg-primary: #dddddd;
-  --bg-secondary: #eeeeee;
+  --bg-secondary: #e8e8e8;
   --text-primary: #212529;
   --text-secondary: #6c757d;
   --border-color: #d0d0d0;

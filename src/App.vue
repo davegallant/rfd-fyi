@@ -219,13 +219,24 @@ const sortBy = ref([{ key: "score", order: "desc" }]);
             class="deal-card"
           >
             <div class="card-header">
-              <a
-                :href="`https://forums.redflagdeals.com${topic.web_path}`"
-                target="_blank"
-                class="deal-title"
-                @click.stop
-                v-html="highlightMatches(topic.title)"
-              ></a>
+              <div class="title-with-link">
+                <a
+                  :href="`https://forums.redflagdeals.com${topic.web_path}`"
+                  target="_blank"
+                  class="deal-title"
+                  @click.stop
+                  v-html="highlightMatches(topic.title)"
+                ></a>
+                <a
+                  v-if="topic.Offer.url"
+                  :href="topic.Offer.url"
+                  target="_blank"
+                  class="card-link"
+                  title="Open deal"
+                >
+                  <span class="material-symbols-outlined">open_in_new</span>
+                </a>
+              </div>
               <div class="score-bubble" :class="{ positive: topic.score > 0, negative: topic.score < 0, neutral: topic.score === 0 }">
                 <span v-if="topic.score > 0">+{{ topic.score }}</span>
                 <span v-else>{{ topic.score }}</span>
@@ -295,14 +306,17 @@ const sortBy = ref([{ key: "score", order: "desc" }]);
   display: flex;
   flex-direction: column;
   transition: all 0.2s ease;
-  cursor: pointer;
   min-height: auto;
 }
 
 .deal-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-  border-color: #888888;
+  background-color: rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-color: #999999;
+}
+
+html.dark-theme .deal-card:hover {
+  background-color: rgba(255, 255, 255, 0.03);
 }
 
 .card-header {
@@ -310,6 +324,14 @@ const sortBy = ref([{ key: "score", order: "desc" }]);
   gap: 12px;
   align-items: flex-start;
   margin-bottom: 12px;
+  justify-content: space-between;
+}
+
+.title-with-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  flex: 1;
 }
 
 .deal-title {
@@ -348,6 +370,24 @@ const sortBy = ref([{ key: "score", order: "desc" }]);
   color: var(--text-secondary);
   font-size: 12px;
   margin-top: 8px;
+}
+
+.card-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--link-color);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.card-link:hover {
+  opacity: 0.7;
+}
+
+.card-link .material-symbols-outlined {
+  font-size: 18px;
 }
 
 .score-bubble {
