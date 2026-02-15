@@ -15,6 +15,7 @@ export default {
       ascending: this.ascending,
       filter: window.location.href.split("filter=")[1] || "",
       sortColumn: this.sortColumn,
+      sortMethod: 'score',
       topics: [],
       isMobile: false,
       currentTheme: 'auto',
@@ -28,6 +29,8 @@ export default {
     window.addEventListener("keydown", this.handleKeyDown);
     this.detectMobile();
     this.fetchDeals();
+    // Initialize sort method from local storage
+    this.initializeSortMethod();
     // Initialize theme on next tick
     this.$nextTick(() => {
       this.initializeTheme();
@@ -172,7 +175,7 @@ export default {
       };
     },
     filteredTopics() {
-      return this.topics
+      let filtered = this.topics
         .filter((row) => {
           const titles = (
             row.title.toString() +
@@ -182,8 +185,16 @@ export default {
           ).toLowerCase();
           const filterTerm = this.filter.toLowerCase();
           return titles.includes(filterTerm);
-        })
-        .sort((a, b) => b.score - a.score); // Always sort by score descending
+        });
+
+      // Sort based on selected method
+      if (this.sortMethod === 'score') {
+        return filtered.sort((a, b) => b.score - a.score);
+      } else if (this.sortMethod === 'views') {
+        return filtered.sort((a, b) => b.total_views - a.total_views);
+      } else {
+        return filtered.sort((a, b) => new Date(b.last_post_time) - new Date(a.last_post_time));
+      }
     },
     highlightMatches() {
       return (v) => {
@@ -223,6 +234,41 @@ export default {
         return 'Theme: Dark (click for Auto)';
       }
     },
+    initializeSortMethod() {
+      const saved = localStorage.getItem('sortMethod');
+      if (saved) {
+        this.sortMethod = saved;
+      }
+    },
+    toggleSort() {
+      // Cycle through: score -> views -> recency -> score
+      if (this.sortMethod === 'score') {
+        this.sortMethod = 'views';
+      } else if (this.sortMethod === 'views') {
+        this.sortMethod = 'recency';
+      } else {
+        this.sortMethod = 'score';
+      }
+      localStorage.setItem('sortMethod', this.sortMethod);
+    },
+    getSortIcon() {
+      if (this.sortMethod === 'score') {
+        return 'trending_up';
+      } else if (this.sortMethod === 'views') {
+        return 'visibility';
+      } else {
+        return 'schedule';
+      }
+    },
+    getSortTitle() {
+      if (this.sortMethod === 'score') {
+        return 'Sort by Score (click for Views)';
+      } else if (this.sortMethod === 'views') {
+        return 'Sort by Views (click for Recency)';
+      } else {
+        return 'Sort by Recency (click for Score)';
+      }
+    },
   },
 };
 </script>
@@ -242,6 +288,9 @@ export default {
             @keyup.esc="$refs.filter.blur()"
             class="search-input"
           />
+          <button @click="toggleSort" class="sort-toggle" :title="getSortTitle">
+            <span class="material-symbols-outlined">{{ getSortIcon }}</span>
+          </button>
           <button @click="toggleTheme" class="theme-toggle" :title="getThemeTitle">
             <span class="material-symbols-outlined">{{ getThemeIcon }}</span>
           </button>

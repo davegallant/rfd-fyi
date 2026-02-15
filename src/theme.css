@@ -155,6 +155,43 @@ html.dark-theme .search-input:focus {
   color: var(--text-secondary);
 }
 
+.sort-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  background-color: #f5f5f5;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 18px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.sort-toggle:hover {
+  background-color: #e8e8e8;
+  border-color: #999999;
+}
+
+.sort-toggle:active {
+  transform: scale(0.95);
+}
+
+html.dark-theme .sort-toggle {
+  border-color: #555555;
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+}
+
+html.dark-theme .sort-toggle:hover {
+  background-color: #2a2a2a;
+  border-color: #777777;
+}
+
 .theme-toggle {
   display: inline-flex;
   align-items: center;
