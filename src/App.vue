@@ -57,6 +57,7 @@ export default {
       filterInput: "",
       activeFilters: this.parseFiltersFromUrl(),
       sortMethod: "score",
+      viewMode: "cards",
       topics: [],
       isMobile: false,
       currentTheme: "auto",
@@ -72,6 +73,7 @@ export default {
     this.detectMobile();
     this.fetchDeals();
     this.initializeSortMethod();
+    this.initializeViewMode();
     this.initializeTheme();
     this.setupThemeListener();
   },
@@ -129,6 +131,19 @@ export default {
         recency: "Sort by Recency (click for Score)",
       };
       return titles[this.sortMethod];
+    },
+
+    viewIcon() {
+      const icons = { cards: "grid_view", list: "view_list" };
+      return icons[this.viewMode];
+    },
+
+    viewTitle() {
+      const titles = {
+        cards: "View: Cards (click for List)",
+        list: "View: List (click for Cards)",
+      };
+      return titles[this.viewMode];
     },
   },
 
@@ -303,6 +318,19 @@ export default {
       localStorage.setItem("sortMethod", this.sortMethod);
     },
 
+    initializeViewMode() {
+      const saved = localStorage.getItem("viewMode");
+      if (saved) {
+        this.viewMode = saved;
+      }
+    },
+
+    toggleViewMode() {
+      const cycle = { cards: "list", list: "cards" };
+      this.viewMode = cycle[this.viewMode];
+      localStorage.setItem("viewMode", this.viewMode);
+    },
+
     getDealerColor(dealerName) {
       if (!dealerName) return null;
       const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark' ||
@@ -354,6 +382,9 @@ export default {
           <button class="icon-button" :title="sortTitle" @click="toggleSort">
             <span class="material-symbols-outlined">{{ sortIcon }}</span>
           </button>
+          <button class="icon-button" :title="viewTitle" @click="toggleViewMode">
+            <span class="material-symbols-outlined">{{ viewIcon }}</span>
+          </button>
           <button class="icon-button" :title="themeTitle" @click="toggleTheme">
             <span class="material-symbols-outlined">{{ themeIcon }}</span>
           </button>
@@ -369,8 +400,8 @@ export default {
         <div v-if="isLoading" class="loading-overlay">
           <span class="material-symbols-outlined spinning loading-spinner">refresh</span>
         </div>
-        <div class="cards-grid">
-        <div v-for="topic in filteredTopics" :key="topic.topic_id" class="deal-card">
+        <div :class="viewMode === 'cards' ? 'cards-grid' : 'list-view'">
+        <div v-for="topic in filteredTopics" :key="topic.topic_id" :class="viewMode === 'cards' ? 'deal-card' : 'deal-row'">
           <div class="card-header">
             <div class="title-with-link">
               <a
@@ -410,7 +441,7 @@ export default {
             ></span>
           </div>
 
-          <div class="card-details">
+          <div class="card-details" v-if="viewMode === 'cards'">
             <div class="details-stats">
               <div class="stat">
                 <span class="material-symbols-outlined">visibility</span>
@@ -423,6 +454,11 @@ export default {
             </div>
 
             <div class="card-timestamp">Last post: {{ formatDate(topic.last_post_time) }}</div>
+          </div>
+
+          <div class="row-stats" v-if="viewMode === 'list'">
+            <span class="stat-compact">{{ topic.total_views }} views</span>
+            <span class="stat-compact">{{ topic.total_replies }} replies</span>
           </div>
         </div>
         </div>

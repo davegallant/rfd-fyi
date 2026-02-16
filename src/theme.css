@@ -325,6 +325,88 @@ a:visited {
   margin-top: 20px;
 }
 
+/* ============================================
+   List View
+   ============================================ */
+
+.list-view {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.deal-row {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color-light);
+  border-radius: 6px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+}
+
+.deal-row .card-header {
+  display: contents;
+}
+
+.deal-row:hover {
+  background-color: var(--bg-input);
+  border-color: var(--border-color-hover);
+}
+
+.deal-row .card-meta {
+  margin-bottom: 0;
+  flex-shrink: 0;
+  order: 2;
+}
+
+.deal-row .title-with-link {
+  flex: 1;
+  order: 1;
+}
+
+.deal-row .deal-title {
+  font-size: 14px;
+}
+
+.deal-row .row-stats {
+  order: 3;
+}
+
+.deal-row .score-bubble {
+  min-width: 36px;
+  height: 24px;
+  font-size: 10px;
+  order: 4;
+}
+
+.row-stats {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.stat-compact {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .deal-row {
+    flex-wrap: wrap;
+  }
+
+  .row-stats {
+    width: 100%;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+  }
+}
+
 .deal-card {
   background-color: var(--bg-secondary);
   border: 1.5px solid #aaaaaa;
