@@ -29,9 +29,9 @@
   --border-color-light: #cccccc;
   --border-color-hover: #999999;
   --link-color: #212529;
-  --score-positive-bg: rgb(34, 139, 34);
+  --score-positive-bg: rgb(90, 140, 90);
   --score-positive-text: white;
-  --score-negative-bg: rgb(247, 118, 142);
+  --score-negative-bg: rgb(140, 50, 50);
   --score-negative-text: white;
   --mark-bg: rgba(255, 193, 7, 0.3);
   --shadow-light: rgba(0, 0, 0, 0.05);
@@ -51,8 +51,10 @@
     --border-color-light: #555555;
     --border-color-hover: #777777;
     --link-color: #e0e0e0;
-    --score-positive-bg: rgb(158, 206, 106);
-    --score-positive-text: #1a1a1a;
+    --score-positive-bg: rgb(100, 140, 80);
+    --score-positive-text: white;
+    --score-negative-bg: rgb(120, 45, 45);
+    --score-negative-text: white;
     --mark-bg: rgba(255, 193, 7, 0.4);
     --shadow-light: rgba(255, 255, 255, 0.1);
   }
@@ -71,8 +73,10 @@ html.dark-theme {
   --border-color-light: #555555;
   --border-color-hover: #777777;
   --link-color: #e0e0e0;
-  --score-positive-bg: rgb(158, 206, 106);
-  --score-positive-text: #1a1a1a;
+  --score-positive-bg: rgb(100, 140, 80);
+  --score-positive-text: white;
+  --score-negative-bg: rgb(120, 45, 45);
+  --score-negative-text: white;
   --mark-bg: rgba(255, 193, 7, 0.4);
   --shadow-light: rgba(255, 255, 255, 0.1);
 }
@@ -218,7 +222,7 @@ a:visited {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 6px 2px 8px;
+  padding: 4px 8px 4px 10px;
   background-color: var(--border-color-light);
   border-radius: 4px;
   font-size: 12px;
@@ -231,8 +235,8 @@ a:visited {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   padding: 0;
   border: none;
   background-color: var(--text-secondary);
@@ -247,7 +251,7 @@ a:visited {
 }
 
 .filter-tag-clear .material-symbols-outlined {
-  font-size: 12px;
+  font-size: 10px;
 }
 
 /* ============================================
@@ -400,14 +404,14 @@ a:visited {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 50px;
-  height: 40px;
-  border-radius: 6px;
+  min-width: 40px;
+  height: 28px;
+  border-radius: 4px;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 11px;
   flex-shrink: 0;
   transition: all 0.2s ease;
-  padding: 0 8px;
+  padding: 0 2px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   border: none;
 }
