@@ -154,6 +154,88 @@ a:visited {
   align-items: center;
 }
 
+@media (max-width: 768px) {
+  .header-controls {
+    gap: 8px;
+  }
+}
+
+/* ============================================
+   Responsive Visibility
+   ============================================ */
+
+.desktop-only {
+  display: inline-flex;
+}
+
+.mobile-only {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: block;
+  }
+}
+
+/* ============================================
+   Mobile Menu
+   ============================================ */
+
+.mobile-menu-wrapper {
+  position: relative;
+}
+
+.mobile-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color-light);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px var(--shadow-medium);
+  min-width: 180px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background-color: var(--bg-input);
+}
+
+.dropdown-item:active {
+  background-color: var(--border-color-light);
+}
+
+.dropdown-item:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dropdown-item .material-symbols-outlined {
+  font-size: 20px;
+  color: var(--text-secondary);
+}
+
 /* ============================================
    Search Input
    ============================================ */

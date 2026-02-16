@@ -64,12 +64,14 @@ export default {
       darkModeQuery: null,
       themeChangeHandler: null,
       isLoading: false,
+      menuOpen: false,
     };
   },
 
   mounted() {
     window.addEventListener("keydown", this.handleKeyDown);
     window.addEventListener("resize", this.handleResize);
+    window.addEventListener("click", this.handleClickOutside);
     this.detectMobile();
     this.fetchDeals();
     this.initializeSortMethod();
@@ -81,6 +83,7 @@ export default {
   beforeUnmount() {
     window.removeEventListener("keydown", this.handleKeyDown);
     window.removeEventListener("resize", this.handleResize);
+    window.removeEventListener("click", this.handleClickOutside);
     if (this.darkModeQuery && this.themeChangeHandler) {
       this.darkModeQuery.removeEventListener("change", this.themeChangeHandler);
     }
@@ -331,6 +334,25 @@ export default {
       localStorage.setItem("viewMode", this.viewMode);
     },
 
+    toggleMenu() {
+      this.menuOpen = !this.menuOpen;
+    },
+
+    closeMenu() {
+      this.menuOpen = false;
+    },
+
+    handleMenuAction(action) {
+      action();
+      this.closeMenu();
+    },
+
+    handleClickOutside(event) {
+      if (this.menuOpen && !event.target.closest('.mobile-menu-wrapper')) {
+        this.closeMenu();
+      }
+    },
+
     getDealerColor(dealerName) {
       if (!dealerName) return null;
       const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark' ||
@@ -376,18 +398,44 @@ export default {
               @keyup.esc="$refs.filterInput.blur()"
             />
           </div>
-          <button class="icon-button" title="Refresh deals" @click="fetchDeals" :disabled="isLoading">
+          <!-- Desktop buttons -->
+          <button class="icon-button desktop-only" title="Refresh deals" @click="fetchDeals" :disabled="isLoading">
             <span class="material-symbols-outlined" :class="{ 'spinning': isLoading }">refresh</span>
           </button>
-          <button class="icon-button" :title="sortTitle" @click="toggleSort">
+          <button class="icon-button desktop-only" :title="sortTitle" @click="toggleSort">
             <span class="material-symbols-outlined">{{ sortIcon }}</span>
           </button>
-          <button class="icon-button" :title="viewTitle" @click="toggleViewMode">
+          <button class="icon-button desktop-only" :title="viewTitle" @click="toggleViewMode">
             <span class="material-symbols-outlined">{{ viewIcon }}</span>
           </button>
-          <button class="icon-button" :title="themeTitle" @click="toggleTheme">
+          <button class="icon-button desktop-only" :title="themeTitle" @click="toggleTheme">
             <span class="material-symbols-outlined">{{ themeIcon }}</span>
           </button>
+
+          <!-- Mobile hamburger menu -->
+          <div class="mobile-menu-wrapper mobile-only">
+            <button class="icon-button" title="Menu" @click="toggleMenu">
+              <span class="material-symbols-outlined">{{ menuOpen ? 'close' : 'menu' }}</span>
+            </button>
+            <div class="mobile-dropdown" v-if="menuOpen" @click.stop>
+              <button class="dropdown-item" @click="handleMenuAction(fetchDeals)" :disabled="isLoading">
+                <span class="material-symbols-outlined" :class="{ 'spinning': isLoading }">refresh</span>
+                <span>Refresh</span>
+              </button>
+              <button class="dropdown-item" @click="handleMenuAction(toggleSort)">
+                <span class="material-symbols-outlined">{{ sortIcon }}</span>
+                <span>{{ sortTitle.split('(')[0].trim() }}</span>
+              </button>
+              <button class="dropdown-item" @click="handleMenuAction(toggleViewMode)">
+                <span class="material-symbols-outlined">{{ viewIcon }}</span>
+                <span>{{ viewTitle.split('(')[0].trim() }}</span>
+              </button>
+              <button class="dropdown-item" @click="handleMenuAction(toggleTheme)">
+                <span class="material-symbols-outlined">{{ themeIcon }}</span>
+                <span>{{ themeTitle.split('(')[0].trim() }}</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
