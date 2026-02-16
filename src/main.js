@@ -2,8 +2,6 @@ import { createApp } from "vue";
 import App from "./App.vue";
 import { createRouter, createWebHashHistory } from "vue-router";
 
-import "./theme.css";
-
 const routes = [
   {
     path: '/:pathMatch(.*)*',

@@ -1,3 +1,4 @@
+/* Material Symbols Icon Font */
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined';
   font-weight: normal;
@@ -12,51 +13,95 @@
   direction: ltr;
 }
 
-/* Theme-aware CSS variables */
+/* ============================================
+   Theme Variables
+   ============================================ */
+
 :root {
   /* Light theme (default) */
   --bg-primary: #dddddd;
   --bg-secondary: #e8e8e8;
+  --bg-input: #f5f5f5;
+  --bg-input-focus: #ffffff;
   --text-primary: #212529;
   --text-secondary: #6c757d;
   --border-color: #d0d0d0;
+  --border-color-light: #cccccc;
+  --border-color-hover: #999999;
   --link-color: #212529;
+  --score-positive-bg: rgb(34, 139, 34);
+  --score-positive-text: white;
+  --score-negative-bg: rgb(247, 118, 142);
+  --score-negative-text: white;
+  --mark-bg: rgba(255, 193, 7, 0.3);
+  --shadow-light: rgba(0, 0, 0, 0.05);
+  --shadow-medium: rgba(0, 0, 0, 0.1);
 }
 
-/* Dark theme */
+/* Dark theme via media query */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-bs-theme="light"]):not(.light-theme) {
     --bg-primary: #1a1a1a;
     --bg-secondary: #2a2a2a;
+    --bg-input: #1a1a1a;
+    --bg-input-focus: #2a2a2a;
     --text-primary: #e0e0e0;
     --text-secondary: #a0a0a0;
     --border-color: #3a3a3a;
-    --link-color: #212529;
+    --border-color-light: #555555;
+    --border-color-hover: #777777;
+    --link-color: #e0e0e0;
+    --score-positive-bg: rgb(158, 206, 106);
+    --score-positive-text: #1a1a1a;
+    --mark-bg: rgba(255, 193, 7, 0.4);
+    --shadow-light: rgba(255, 255, 255, 0.1);
   }
 }
 
-/* Support for explicit data-bs-theme attribute (Bootstrap override) */
-html[data-bs-theme="dark"] {
+/* Explicit dark theme */
+html[data-bs-theme="dark"],
+html.dark-theme {
   --bg-primary: #1a1a1a;
   --bg-secondary: #2a2a2a;
+  --bg-input: #1a1a1a;
+  --bg-input-focus: #2a2a2a;
   --text-primary: #e0e0e0;
   --text-secondary: #a0a0a0;
   --border-color: #3a3a3a;
+  --border-color-light: #555555;
+  --border-color-hover: #777777;
   --link-color: #e0e0e0;
+  --score-positive-bg: rgb(158, 206, 106);
+  --score-positive-text: #1a1a1a;
+  --mark-bg: rgba(255, 193, 7, 0.4);
+  --shadow-light: rgba(255, 255, 255, 0.1);
 }
 
+/* Explicit light theme */
 html[data-bs-theme="light"],
 html.light-theme {
   --bg-primary: #dddddd;
   --bg-secondary: #e8e8e8;
+  --bg-input: #f5f5f5;
+  --bg-input-focus: #ffffff;
   --text-primary: #212529;
   --text-secondary: #6c757d;
   --border-color: #d0d0d0;
+  --border-color-light: #cccccc;
+  --border-color-hover: #999999;
   --link-color: #212529;
+  --score-positive-bg: rgb(34, 139, 34);
+  --score-positive-text: white;
+  --mark-bg: rgba(255, 193, 7, 0.3);
+  --shadow-light: rgba(0, 0, 0, 0.05);
 }
 
+/* ============================================
+   Base Styles
+   ============================================ */
+
 html {
-  font-family: sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
   min-width: 100%;
   -webkit-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
@@ -73,22 +118,6 @@ body {
   padding: 0;
 }
 
-.green-score {
-  color: rgb(34, 139, 34) !important;
-}
-
-html[data-bs-theme="light"] .green-score {
-  color: rgb(34, 139, 34) !important;
-}
-
-html[data-bs-theme="dark"] .green-score {
-  color: rgb(158, 206, 106) !important;
-}
-
-.red-score {
-  color: rgb(247, 118, 142) !important;
-}
-
 a {
   color: var(--link-color);
   transition: color 0.2s ease;
@@ -98,7 +127,9 @@ a:visited {
   color: var(--link-color);
 }
 
-/* App styles */
+/* ============================================
+   Layout
+   ============================================ */
 
 .container {
   max-width: 1200px;
@@ -119,14 +150,18 @@ a:visited {
   align-items: center;
 }
 
+/* ============================================
+   Search Input
+   ============================================ */
+
 .search-input {
   flex: 1;
   max-width: 500px;
   padding: 10px 12px;
   font-size: 14px;
-  border: 1px solid #cccccc;
+  border: 1px solid var(--border-color-light);
   border-radius: 4px;
-  background-color: #f5f5f5;
+  background-color: var(--bg-input);
   color: var(--text-primary);
   transition: all 0.2s ease;
   font-family: inherit;
@@ -134,36 +169,28 @@ a:visited {
 
 .search-input:focus {
   outline: none;
-  border-color: #999999;
-  background-color: #ffffff;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
-}
-
-html.dark-theme .search-input {
-  border-color: #555555;
-  background-color: #1a1a1a;
-  color: #e0e0e0;
-}
-
-html.dark-theme .search-input:focus {
-  background-color: #2a2a2a;
-  border-color: #777777;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+  border-color: var(--border-color-hover);
+  background-color: var(--bg-input-focus);
+  box-shadow: 0 0 0 2px var(--shadow-light);
 }
 
 .search-input::placeholder {
   color: var(--text-secondary);
 }
 
-.sort-toggle {
+/* ============================================
+   Icon Buttons (Theme & Sort Toggle)
+   ============================================ */
+
+.icon-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 40px;
   height: 40px;
-  border: 1px solid #cccccc;
+  border: 1px solid var(--border-color-light);
   border-radius: 4px;
-  background-color: #f5f5f5;
+  background-color: var(--bg-input);
   color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -172,35 +199,26 @@ html.dark-theme .search-input:focus {
   flex-shrink: 0;
 }
 
-.sort-toggle:hover {
-  background-color: #e8e8e8;
-  border-color: #999999;
+.icon-button:hover {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color-hover);
 }
 
-.sort-toggle:active {
+.icon-button:active {
   transform: scale(0.95);
 }
 
-html.dark-theme .sort-toggle {
-  border-color: #555555;
-  background-color: #1a1a1a;
-  color: #e0e0e0;
-}
-
-html.dark-theme .sort-toggle:hover {
-  background-color: #2a2a2a;
-  border-color: #777777;
-}
-
+/* Legacy class names for compatibility */
+.sort-toggle,
 .theme-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 40px;
   height: 40px;
-  border: 1px solid #cccccc;
+  border: 1px solid var(--border-color-light);
   border-radius: 4px;
-  background-color: #f5f5f5;
+  background-color: var(--bg-input);
   color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -209,25 +227,20 @@ html.dark-theme .sort-toggle:hover {
   flex-shrink: 0;
 }
 
+.sort-toggle:hover,
 .theme-toggle:hover {
-  background-color: #e8e8e8;
-  border-color: #999999;
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color-hover);
 }
 
+.sort-toggle:active,
 .theme-toggle:active {
   transform: scale(0.95);
 }
 
-html.dark-theme .theme-toggle {
-  border-color: #555555;
-  background-color: #1a1a1a;
-  color: #e0e0e0;
-}
-
-html.dark-theme .theme-toggle:hover {
-  background-color: #2a2a2a;
-  border-color: #777777;
-}
+/* ============================================
+   Cards Grid
+   ============================================ */
 
 .cards-grid {
   display: grid;
@@ -248,10 +261,13 @@ html.dark-theme .theme-toggle:hover {
 }
 
 .deal-card:hover {
-  background-color: #15151515;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border-color: #999999;
+  box-shadow: 0 4px 8px var(--shadow-medium);
+  border-color: var(--border-color-hover);
 }
+
+/* ============================================
+   Card Header
+   ============================================ */
 
 .card-header {
   display: flex;
@@ -286,26 +302,6 @@ html.dark-theme .theme-toggle:hover {
   text-decoration: underline;
 }
 
-.card-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 13px;
-  margin-bottom: 12px;
-}
-
-.dealer-name {
-  color: var(--text-secondary);
-  font-weight: 500;
-  font-size: 13px;
-}
-
-.card-timestamp {
-  color: var(--text-secondary);
-  font-size: 12px;
-  margin-top: 8px;
-}
-
 .card-link {
   display: inline-flex;
   align-items: center;
@@ -324,6 +320,10 @@ html.dark-theme .theme-toggle:hover {
   font-size: 18px;
 }
 
+/* ============================================
+   Score Bubble
+   ============================================ */
+
 .score-bubble {
   display: inline-flex;
   align-items: center;
@@ -341,26 +341,14 @@ html.dark-theme .theme-toggle:hover {
 }
 
 .score-bubble.positive {
-  background-color: rgb(34, 139, 34);
-  color: white;
+  background-color: var(--score-positive-bg);
+  color: var(--score-positive-text);
   box-shadow: 0 1px 3px rgba(34, 139, 34, 0.2);
-}
-
-html.light-theme .score-bubble.positive {
-  background-color: rgb(34, 139, 34);
-  color: white;
-  box-shadow: 0 1px 3px rgba(34, 139, 34, 0.2);
-}
-
-html.dark-theme .score-bubble.positive {
-  background-color: rgb(158, 206, 106);
-  color: #1a1a1a;
-  box-shadow: 0 1px 3px rgba(158, 206, 106, 0.2);
 }
 
 .score-bubble.negative {
-  background-color: rgb(247, 118, 142);
-  color: white;
+  background-color: var(--score-negative-bg);
+  color: var(--score-negative-text);
   box-shadow: 0 1px 3px rgba(247, 118, 142, 0.2);
 }
 
@@ -368,6 +356,24 @@ html.dark-theme .score-bubble.positive {
   background-color: var(--text-secondary);
   color: var(--bg-primary);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================
+   Card Meta & Details
+   ============================================ */
+
+.card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.dealer-name {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 13px;
 }
 
 .card-details {
@@ -398,26 +404,27 @@ html.dark-theme .score-bubble.positive {
   font-weight: 500;
 }
 
-.details-section {
-  margin-bottom: 12px;
-}
-
-.details-section strong {
-  display: block;
-  color: var(--text-primary);
-  margin-bottom: 4px;
-  font-size: 13px;
-}
-
-.details-section p {
-  margin: 0;
+.card-timestamp {
   color: var(--text-secondary);
   font-size: 12px;
-  line-height: 1.4;
-  word-wrap: break-word;
+  margin-top: 8px;
 }
 
-/* Mobile responsive */
+/* ============================================
+   Mark Highlighting
+   ============================================ */
+
+mark {
+  background-color: var(--mark-bg);
+  color: inherit;
+  font-weight: 600;
+  border-radius: 2px;
+}
+
+/* ============================================
+   Mobile Responsive
+   ============================================ */
+
 @media (max-width: 768px) {
   .cards-grid {
     grid-template-columns: 1fr;
@@ -430,19 +437,4 @@ html.dark-theme .score-bubble.positive {
   .search-input {
     max-width: 100%;
   }
-}
-
-/* Mark highlighting */
-mark {
-  background-color: rgba(255, 193, 7, 0.3);
-  color: inherit;
-  font-weight: 600;
-  border-radius: 2px;
-}
-
-html.dark-theme mark {
-  background-color: rgba(255, 193, 7, 0.4);
-  color: inherit;
-  font-weight: 600;
-  border-radius: 2px;
 }
