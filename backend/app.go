@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"math/rand"
+	"io"
+	"math/rand/v2"
 	"net/http"
 	"net/url"
 	"strings"
@@ -123,7 +123,7 @@ func (a *App) getTopicDetails(w http.ResponseWriter, r *http.Request) {
 	}
 	defer res.Body.Close()
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		log.Warn().Msgf("could not read response body: %s\n", err)
 		respondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to read response"})
@@ -188,8 +188,7 @@ func (a *App) refreshTopics() {
 		}
 
 		a.LastRefresh = time.Now()
-		rand.Seed(time.Now().UnixNano())
-		time.Sleep(time.Duration(rand.Intn(90-60+1)+60) * time.Second)
+		time.Sleep(time.Duration(rand.IntN(90-60+1)+60) * time.Second)
 	}
 }
 
@@ -262,7 +261,7 @@ func (a *App) getDeals(id int, firstPage int, lastPage int) []Topic {
 		if err != nil {
 			log.Warn().Msgf("error fetching deals: %s\n", err)
 		}
-		body, err := ioutil.ReadAll(res.Body)
+		body, err := io.ReadAll(res.Body)
 		if err != nil {
 			log.Warn().Msgf("could not read response body: %s\n", err)
 		}
@@ -292,7 +291,7 @@ func (a *App) getRedirects() []Redirect {
 	if err != nil {
 		log.Warn().Msgf("error fetching redirects: %s\n", err)
 	}
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		log.Warn().Msgf("could not read response body: %s\n", err)
 	}
