@@ -13,7 +13,7 @@ export default {
   data() {
     return {
       ascending: this.ascending,
-      filter: window.location.href.split("filter=")[1] || "",
+      filter: decodeURIComponent(window.location.href.split("filter=")[1] || ""),
       sortColumn: this.sortColumn,
       sortMethod: 'score',
       topics: [],
