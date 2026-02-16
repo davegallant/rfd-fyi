@@ -17,6 +17,7 @@ export default {
       currentTheme: "auto",
       darkModeQuery: null,
       themeChangeHandler: null,
+      isLoading: false,
     };
   },
 
@@ -176,13 +177,21 @@ export default {
     },
 
     fetchDeals() {
-      axios
-        .get("api/v1/topics")
-        .then((response) => {
+      this.isLoading = true;
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 500));
+      
+      Promise.all([
+        axios.get("api/v1/topics"),
+        minLoadingTime
+      ])
+        .then(([response]) => {
           this.topics = response.data;
         })
         .catch((err) => {
           console.error("Failed to fetch deals:", err.response || err);
+        })
+        .finally(() => {
+          this.isLoading = false;
         });
     },
 
@@ -216,6 +225,9 @@ export default {
             @keyup.enter="createFilterRoute(filter.toString())"
             @keyup.esc="$refs.filter.blur()"
           />
+          <button class="icon-button" title="Refresh deals" @click="fetchDeals" :disabled="isLoading">
+            <span class="material-symbols-outlined" :class="{ 'spinning': isLoading }">refresh</span>
+          </button>
           <button class="icon-button" :title="sortTitle" @click="toggleSort">
             <span class="material-symbols-outlined">{{ sortIcon }}</span>
           </button>
@@ -225,7 +237,16 @@ export default {
         </div>
       </div>
 
-      <div class="cards-grid">
+      <div v-if="isLoading && topics.length === 0" class="loading-container">
+        <span class="material-symbols-outlined spinning loading-spinner">refresh</span>
+        <p>Loading deals...</p>
+      </div>
+
+      <div class="cards-wrapper" v-else>
+        <div v-if="isLoading" class="loading-overlay">
+          <span class="material-symbols-outlined spinning loading-spinner">refresh</span>
+        </div>
+        <div class="cards-grid">
         <div v-for="topic in filteredTopics" :key="topic.topic_id" class="deal-card">
           <div class="card-header">
             <div class="title-with-link">
@@ -277,7 +298,33 @@ export default {
             <div class="card-timestamp">Last post: {{ formatDate(topic.last_post_time) }}</div>
           </div>
         </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.cards-wrapper {
+  position: relative;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(128, 128, 128, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 12px;
+}
+
+.loading-overlay .loading-spinner {
+  font-size: 48px;
+  color: var(--text-primary);
+}
+</style>
