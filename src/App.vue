@@ -57,7 +57,7 @@ export default {
     },
 
     themeIcon() {
-      const icons = { auto: "brightness_auto", dark: "light_mode", light: "dark_mode" };
+      const icons = { auto: "brightness_auto", dark: "dark_mode", light: "light_mode" };
       return icons[this.currentTheme];
     },
 
