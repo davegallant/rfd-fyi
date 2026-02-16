@@ -82,10 +82,47 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 // @Summary      Lists all topics stored in the database
 // @Description  All topics will be listed. There is currently no pagination implemented.
 // @ID           list-topics
+// @Param        filters query string false "JSON array of filter strings"
 // @Router       /topics [get]
 // @Success 200 {array} Topic
 func (a *App) listTopics(w http.ResponseWriter, r *http.Request) {
-	respondWithJSON(w, http.StatusOK, a.CurrentTopics)
+	filtersParam := r.URL.Query().Get("filters")
+	
+	if filtersParam == "" {
+		respondWithJSON(w, http.StatusOK, a.CurrentTopics)
+		return
+	}
+
+	var filters []string
+	err := json.Unmarshal([]byte(filtersParam), &filters)
+	if err != nil {
+		log.Warn().Msgf("could not parse filters parameter: %s", err)
+		respondWithJSON(w, http.StatusOK, a.CurrentTopics)
+		return
+	}
+
+	if len(filters) == 0 {
+		respondWithJSON(w, http.StatusOK, a.CurrentTopics)
+		return
+	}
+
+	// Filter topics
+	var filteredTopics []Topic
+	for _, topic := range a.CurrentTopics {
+		searchText := strings.ToLower(topic.Title + " [" + topic.Offer.DealerName + "]")
+		matchesAll := true
+		for _, filter := range filters {
+			if !strings.Contains(searchText, strings.ToLower(filter)) {
+				matchesAll = false
+				break
+			}
+		}
+		if matchesAll {
+			filteredTopics = append(filteredTopics, topic)
+		}
+	}
+
+	respondWithJSON(w, http.StatusOK, filteredTopics)
 }
 
 // getTopicDetails godoc

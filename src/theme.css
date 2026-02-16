@@ -179,6 +179,78 @@ a:visited {
 }
 
 /* ============================================
+   Filter Container & Tags
+   ============================================ */
+
+.filter-container {
+  flex: 1;
+  max-width: 500px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color-light);
+  border-radius: 4px;
+  background-color: var(--bg-input);
+  transition: all 0.2s ease;
+}
+
+.filter-container:focus-within {
+  border-color: var(--border-color-hover);
+  background-color: var(--bg-input-focus);
+  box-shadow: 0 0 0 2px var(--shadow-light);
+}
+
+.filter-container .search-input {
+  flex: 1;
+  border: none;
+  padding: 4px 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.filter-container .search-input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.filter-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px 2px 8px;
+  background-color: var(--border-color-light);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.filter-tag-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background-color: var(--text-secondary);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--bg-input);
+}
+
+.filter-tag-clear:hover {
+  background-color: var(--text-primary);
+}
+
+.filter-tag-clear .material-symbols-outlined {
+  font-size: 12px;
+}
+
+/* ============================================
    Icon Buttons (Theme & Sort Toggle)
    ============================================ */
 

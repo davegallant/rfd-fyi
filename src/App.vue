@@ -54,7 +54,8 @@ function hashString(str) {
 export default {
   data() {
     return {
-      filter: decodeURIComponent(window.location.href.split("filter=")[1] || ""),
+      filterInput: "",
+      activeFilters: this.parseFiltersFromUrl(),
       sortMethod: "score",
       topics: [],
       isMobile: false,
@@ -85,11 +86,12 @@ export default {
 
   computed: {
     filteredTopics() {
-      const filterTerm = this.filter.toLowerCase();
+      const filterTerms = this.activeFilters.map(f => f.toLowerCase());
 
       const filtered = this.topics.filter((row) => {
+        if (filterTerms.length === 0) return true;
         const searchText = `${row.title} [${row.Offer.dealer_name}]`.toLowerCase();
-        return searchText.includes(filterTerm);
+        return filterTerms.every(term => searchText.includes(term));
       });
 
       const sortFns = {
@@ -136,15 +138,19 @@ export default {
     },
 
     highlightText(text) {
-      if (!this.filter) return text;
+      if (!this.activeFilters || this.activeFilters.length === 0) return text;
 
-      const lowerText = text.toLowerCase();
-      const lowerFilter = this.filter.toLowerCase();
+      let result = text;
+      for (const filter of this.activeFilters) {
+        const lowerText = result.toLowerCase();
+        const lowerFilter = filter.toLowerCase();
 
-      if (!lowerText.includes(lowerFilter)) return text;
-
-      const regex = new RegExp(this.filter, "ig");
-      return text.replace(regex, (match) => `<mark>${match}</mark>`);
+        if (lowerText.includes(lowerFilter)) {
+          const regex = new RegExp(filter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), "ig");
+          result = result.replace(regex, (match) => `<mark>${match}</mark>`);
+        }
+      }
+      return result;
     },
 
     initializeTheme() {
@@ -211,13 +217,58 @@ export default {
 
       if (event.key === "/" && !isInput) {
         event.preventDefault();
-        this.$refs.filter.focus();
+        this.$refs.filterInput.focus();
       }
     },
 
-    createFilterRoute(params) {
-      this.$refs.filter.blur();
-      history.pushState({}, null, `${window.location.origin}#/filter=${encodeURIComponent(params)}`);
+    parseFiltersFromUrl() {
+      const hash = window.location.hash || "";
+      const match = hash.match(/filters=([^&]*)/);
+      if (match && match[1]) {
+        try {
+          const decoded = decodeURIComponent(match[1]);
+          return JSON.parse(decoded);
+        } catch (e) {
+          return [];
+        }
+      }
+      // Legacy single filter support
+      const legacyMatch = hash.match(/filter=([^&]*)/);
+      if (legacyMatch && legacyMatch[1]) {
+        const decoded = decodeURIComponent(legacyMatch[1]);
+        return decoded ? [decoded] : [];
+      }
+      return [];
+    },
+
+    updateUrlWithFilters() {
+      if (this.activeFilters.length > 0) {
+        const encoded = encodeURIComponent(JSON.stringify(this.activeFilters));
+        history.pushState({}, null, `${window.location.origin}#/filters=${encoded}`);
+      } else {
+        history.pushState({}, null, window.location.origin);
+      }
+    },
+
+    applyFilter() {
+      const trimmed = this.filterInput.trim();
+      if (trimmed && !this.activeFilters.includes(trimmed)) {
+        this.activeFilters.push(trimmed);
+        this.filterInput = "";
+        this.$refs.filterInput.blur();
+        this.updateUrlWithFilters();
+      }
+    },
+
+    clearFilter(index) {
+      this.activeFilters.splice(index, 1);
+      this.updateUrlWithFilters();
+    },
+
+    clearAllFilters() {
+      this.activeFilters = [];
+      this.filterInput = "";
+      this.updateUrlWithFilters();
     },
 
     fetchDeals() {
@@ -280,15 +331,23 @@ export default {
     <div class="container">
       <div class="header">
         <div class="header-controls">
-          <input
-            ref="filter"
-            v-model="filter"
-            type="text"
-            placeholder="Filter deals"
-            class="search-input"
-            @keyup.enter="createFilterRoute(filter.toString())"
-            @keyup.esc="$refs.filter.blur()"
-          />
+          <div class="filter-container" :class="{ 'has-active-filters': activeFilters.length > 0 }">
+            <span v-for="(filter, index) in activeFilters" :key="index" class="filter-tag">
+              {{ filter }}
+              <button class="filter-tag-clear" @click="clearFilter(index)" title="Clear filter">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </span>
+            <input
+              ref="filterInput"
+              v-model="filterInput"
+              type="text"
+              placeholder="Filter deals"
+              class="search-input"
+              @keyup.enter="applyFilter"
+              @keyup.esc="$refs.filterInput.blur()"
+            />
+          </div>
           <button class="icon-button" title="Refresh deals" @click="fetchDeals" :disabled="isLoading">
             <span class="material-symbols-outlined" :class="{ 'spinning': isLoading }">refresh</span>
           </button>
