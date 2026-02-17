@@ -463,7 +463,7 @@ export default {
                 :href="topic.Offer.url"
                 target="_blank"
                 class="card-link"
-                title="Open deal"
+                title="Open direct link to deal"
               >
                 <span class="material-symbols-outlined">open_in_new</span>
               </a>
@@ -501,12 +501,12 @@ export default {
               </div>
             </div>
 
+            <div class="card-timestamp">First post: {{ formatDate(topic.post_time) }}</div>
             <div class="card-timestamp">Last post: {{ formatDate(topic.last_post_time) }}</div>
           </div>
 
           <div class="row-stats" v-if="viewMode === 'list'">
-            <span class="stat-compact">{{ topic.total_views }} views</span>
-            <span class="stat-compact">{{ topic.total_replies }} replies</span>
+            <span class="stat-compact">{{ formatDate(topic.post_time) }} - {{ formatDate(topic.last_post_time) }}</span>
           </div>
         </div>
         </div>
