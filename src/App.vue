@@ -237,6 +237,11 @@ export default {
         event.preventDefault();
         this.$refs.filterInput.focus();
       }
+
+      if (event.key === "r" && !isInput) {
+        event.preventDefault();
+        this.fetchDeals();
+      }
     },
 
     parseFiltersFromUrl() {
