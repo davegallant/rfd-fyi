@@ -1,4 +1,5 @@
 <script>
+import InfoOverlay from "./components/InfoOverlay.vue";
 import axios from "axios";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -65,6 +66,7 @@ export default {
       themeChangeHandler: null,
       isLoading: false,
       menuOpen: false,
+      infoOverlayVisible: false,
     };
   },
 
@@ -242,6 +244,31 @@ export default {
         event.preventDefault();
         this.fetchDeals();
       }
+
+      if (event.key === "i" && !isInput) {
+        event.preventDefault();
+        this.toggleInfoOverlay();
+      }
+
+      if (event.key === "Escape" && this.infoOverlayVisible) {
+        event.preventDefault();
+        this.toggleInfoOverlay();
+      }
+
+      if (event.key === "s" && !isInput) {
+        event.preventDefault();
+        this.toggleSort();
+      }
+
+      if (event.key === "v" && !isInput) {
+        event.preventDefault();
+        this.toggleViewMode();
+      }
+
+      if (event.key === "t" && !isInput) {
+        event.preventDefault();
+        this.toggleTheme();
+      }
     },
 
     parseFiltersFromUrl() {
@@ -377,6 +404,14 @@ export default {
         color: color.text,
       };
     },
+    toggleInfoOverlay() {
+      this.infoOverlayVisible = !this.infoOverlayVisible;
+    },
+    methods: {
+      toggleInfoOverlay() {
+        this.infoOverlayVisible = !this.infoOverlayVisible;
+      },
+    },
   },
 };
 </script>
@@ -416,8 +451,9 @@ export default {
           <button class="icon-button desktop-only" :title="themeTitle" @click="toggleTheme">
             <span class="material-symbols-outlined">{{ themeIcon }}</span>
           </button>
-
-          <!-- Mobile hamburger menu -->
+          <button class="icon-button desktop-only" title="Info" @click="toggleInfoOverlay">
+            <span class="material-symbols-outlined">info</span>
+          </button>
           <div class="mobile-menu-wrapper mobile-only">
             <button class="icon-button" title="Menu" @click="toggleMenu">
               <span class="material-symbols-outlined">{{ menuOpen ? 'close' : 'menu' }}</span>
@@ -435,20 +471,27 @@ export default {
                 <span class="material-symbols-outlined">{{ viewIcon }}</span>
                 <span>{{ viewTitle.split('(')[0].trim() }}</span>
               </button>
+              <button class="dropdown-item" @click="toggleInfoOverlay">
+                  <span class="material-symbols-outlined">info</span>
+                  <span>Info</span>
+              </button>
               <button class="dropdown-item" @click="handleMenuAction(toggleTheme)">
                 <span class="material-symbols-outlined">{{ themeIcon }}</span>
                 <span>{{ themeTitle.split('(')[0].trim() }}</span>
+              </button>
+              <button class="dropdown-item" @click="toggleInfoOverlay">
+                <span class="material-symbols-outlined">info</span>
+                <span>Info</span>
               </button>
             </div>
           </div>
         </div>
       </div>
-
+      <InfoOverlay :visible="infoOverlayVisible" @close="toggleInfoOverlay" />
       <div v-if="isLoading && topics.length === 0" class="loading-container">
         <span class="material-symbols-outlined spinning loading-spinner">refresh</span>
         <p>Loading deals...</p>
       </div>
-
       <div class="cards-wrapper" v-else>
         <div v-if="isLoading" class="loading-overlay">
           <span class="material-symbols-outlined spinning loading-spinner">refresh</span>
@@ -485,7 +528,6 @@ export default {
               <span v-else>{{ topic.score }}</span>
             </div>
           </div>
-
           <div class="card-meta" v-if="topic.Offer.dealer_name">
             <span
               class="dealer-name dealer-label"
@@ -493,7 +535,6 @@ export default {
               v-html="highlightText(topic.Offer.dealer_name)"
             ></span>
           </div>
-
           <div class="card-details" v-if="viewMode === 'cards'">
             <div class="details-stats">
               <div class="stat">
@@ -505,11 +546,9 @@ export default {
                 <span class="stat-value">{{ topic.total_replies }} replies</span>
               </div>
             </div>
-
             <div class="card-timestamp">First post: {{ formatDate(topic.post_time) }}</div>
             <div class="card-timestamp">Last post: {{ formatDate(topic.last_post_time) }}</div>
           </div>
-
           <div class="row-stats" v-if="viewMode === 'list'">
             <span class="stat-compact">{{ formatDate(topic.post_time) }} - {{ formatDate(topic.last_post_time) }}</span>
           </div>
@@ -518,7 +557,8 @@ export default {
       </div>
     </div>
   </div>
-</template>
+  <InfoOverlay :visible="infoOverlayVisible" @close="toggleInfoOverlay" />
+  </template>
 
 <style scoped>
 .cards-wrapper {
