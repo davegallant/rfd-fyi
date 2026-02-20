@@ -1,4 +1,4 @@
-FROM node:20.2.0-alpine3.16 as builder
+FROM dhi.io/node:25-debian13-dev as builder
 
 WORKDIR /app
 
@@ -10,11 +10,10 @@ COPY . .
 
 RUN npm run build
 
-FROM caddy:2.10.2-alpine as runtime
+FROM dhi.io/caddy:2 as runtime
 
 WORKDIR /my-site
 
 COPY --from=builder /app/dist ./
 
 COPY Caddyfile /etc/caddy/Caddyfile
-
