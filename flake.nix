@@ -14,21 +14,12 @@
       {
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
-            # Node.js LTS with npm
-            nodejs_20
-
-            # Go for backend
+            nodejs_25
             go
-
-            # Build tools
             pkg-config
-
-            # Development utilities
             git
             curl
             jq
-
-            # Optional: for better development experience
             gnumake
           ];
 

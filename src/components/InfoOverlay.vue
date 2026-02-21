@@ -7,26 +7,28 @@
         </a>
       <h3>Keyboard Shortcuts</h3>
       <table class="shortcuts-table">
-        <tr>
-          <td><strong>r</strong></td>
-          <td>Refresh deals</td>
-        </tr>
-        <tr>
-          <td><strong>s</strong></td>
-          <td>Toggle sort</td>
-        </tr>
-        <tr>
-          <td><strong>v</strong></td>
-          <td>Toggle view mode</td>
-        </tr>
-        <tr>
-          <td><strong>t</strong></td>
-          <td>Toggle theme</td>
-        </tr>
-        <tr>
-          <td><strong>/</strong></td>
-          <td>Filter deals</td>
-        </tr>
+        <tbody>
+          <tr>
+            <td><strong>r</strong></td>
+            <td>Refresh deals</td>
+          </tr>
+          <tr>
+            <td><strong>s</strong></td>
+            <td>Toggle sort</td>
+          </tr>
+          <tr>
+            <td><strong>v</strong></td>
+            <td>Toggle view mode</td>
+          </tr>
+          <tr>
+            <td><strong>t</strong></td>
+            <td>Toggle theme</td>
+          </tr>
+          <tr>
+            <td><strong>/</strong></td>
+            <td>Filter deals</td>
+          </tr>
+        </tbody>
       </table>
       <button class="close-button" @click="closeOverlay">Close</button>
     </div>
