@@ -9,7 +9,7 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
-    "@fontsource/roboto": "5.2.9",
+    "@fontsource/roboto": "5.2.10",
     "@github/hotkey": "^3.0.0",
     "@mdi/font": "7.4.47",
     "@popperjs/core": "^2.11.8",
