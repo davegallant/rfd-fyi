@@ -1,8 +1,0 @@
-{
-    auto_https off
-}
-
-:80 {
-    file_server
-    reverse_proxy /api/* rfd-fyi-backend:8080
-}

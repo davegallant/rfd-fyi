@@ -1,9 +1,11 @@
 package main
 
 import (
+	"embed"
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"math/rand/v2"
 	"net/http"
 	"net/url"
@@ -17,20 +19,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// @title           RFD FYI API
-// @version         1.0
-// @description     An API for issue tracking
-// @termsOfService  http://swagger.io/terms/
-
-// @contact.name   API Support
-// @contact.url    https://linktr.ee/davegallant
-// @contact.email  davegallant@gmail.com
-
-// @license.name  Apache 2.0
-// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
-
-// @host      localhost:8080
-// @BasePath  /api/v1
+//go:embed dist/*
+var frontendFS embed.FS
 
 type App struct {
 	Router        *mux.Router
@@ -48,22 +38,45 @@ type Redirect struct {
 func (a *App) Initialize() {
 	a.BasePath = "/api/v1"
 
-	a.Router = mux.NewRouter().PathPrefix(a.BasePath).Subrouter()
-	http.Handle("/", a.Router)
-
+	a.Router = mux.NewRouter()
 	a.initializeRoutes()
 }
 
 func (a *App) Run(httpPort string) {
 	log.Info().Msgf("Serving requests on port " + httpPort)
-	if err := http.ListenAndServe(fmt.Sprintf(":"+httpPort), nil); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", httpPort), a.Router); err != nil {
 		panic(err)
 	}
 }
 
 func (a *App) initializeRoutes() {
-	a.Router.HandleFunc("/topics", a.listTopics).Methods("GET")
-	a.Router.HandleFunc("/topics/{id}", a.getTopicDetails).Methods("GET")
+	a.Router.HandleFunc(a.BasePath+"/topics", a.listTopics).Methods("GET")
+	a.Router.HandleFunc(a.BasePath+"/topics/{id}", a.getTopicDetails).Methods("GET")
+
+	distFS, err := fs.Sub(frontendFS, "dist")
+	if err != nil {
+		panic(err)
+	}
+	fileServer := http.FileServer(http.FS(distFS))
+	a.Router.PathPrefix("/").Handler(spaHandler{staticHandler: fileServer, staticFS: distFS})
+}
+
+// spaHandler serves static files when they exist, otherwise falls back to
+// index.html so that client-side routing works.
+type spaHandler struct {
+	staticHandler http.Handler
+	staticFS      fs.FS
+}
+
+func (h spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimPrefix(r.URL.Path, "/")
+	if path == "" {
+		path = "index.html"
+	}
+	if _, err := fs.Stat(h.staticFS, path); err != nil {
+		r.URL.Path = "/"
+	}
+	h.staticHandler.ServeHTTP(w, r)
 }
 
 // func respondWithError(w http.ResponseWriter, code int, message string) {
