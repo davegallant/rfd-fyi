@@ -4,30 +4,30 @@ This repository provides a simple, less-distracting overlay for hot deals posted
 
 The frontend is made with Vue 3 and the backend is written in Go. The backend exists for caching purposes; to prevent excessive requests to RedFlagDeals itself.
 
-## Local Development
+## Docker
 
-To get up and running locally: in one pane/tab, run:
-
-```sh
-make backend
-```
-
-In another pane/tab, run:
+To run the latest:
 
 ```sh
-make frontend
+docker run -d --name rfd-fyi -p 8080:8080 ghcr.io/davegallant/rfd-fyi
 ```
 
-## Docker Compose
-
-To build containers from source:
+To build container from source:
 
 ```sh
 make dev
 ```
 
-To run the latest published images:
+## Local Development
+
+To get up and running locally: in one shell, run:
 
 ```sh
-make prod
+make backend
+```
+
+In another shell, run:
+
+```sh
+make frontend
 ```
