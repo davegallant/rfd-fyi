@@ -5,6 +5,7 @@
         <a href="https://github.com/davegallant/rfd-fyi" target="_blank" rel="noopener noreferrer">
           https://github.com/davegallant/rfd-fyi
         </a>
+      <p class="version">{{ version }}</p>
       <h3>Keyboard Shortcuts</h3>
       <table class="shortcuts-table">
         <tbody>
@@ -14,7 +15,7 @@
           </tr>
           <tr>
             <td><strong>s</strong></td>
-            <td>Toggle sort</td>
+            <td>Cycle sort method</td>
           </tr>
           <tr>
             <td><strong>v</strong></td>
@@ -43,6 +44,11 @@ export default {
       type: Boolean,
       required: true,
     },
+  },
+  data() {
+    return {
+      version: typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "dev",
+    };
   },
   methods: {
     closeOverlay() {
@@ -79,6 +85,12 @@ export default {
 
 .info-panel h2 {
   margin-top: 0;
+}
+
+.version {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 
 .info-panel .shortcuts-table {

@@ -57,6 +57,7 @@ export default {
       filterInput: "",
       activeFilters: this.parseFiltersFromUrl(),
       sortMethod: "score",
+      sortDropdownOpen: false,
       viewMode: "list",
       topics: [],
       isMobile: false,
@@ -101,9 +102,12 @@ export default {
       });
 
       const sortFns = {
+        title: (a, b) => a.title.localeCompare(b.title),
+        post_time: (a, b) => new Date(b.last_post_time) - new Date(a.last_post_time),
+        thread_start: (a, b) => new Date(b.post_time) - new Date(a.post_time),
         score: (a, b) => b.score - a.score,
+        replies: (a, b) => b.total_replies - a.total_replies,
         views: (a, b) => b.total_views - a.total_views,
-        recency: (a, b) => new Date(b.last_post_time) - new Date(a.last_post_time),
       };
 
       return filtered.sort(sortFns[this.sortMethod] || sortFns.score);
@@ -123,18 +127,19 @@ export default {
       return titles[this.currentTheme];
     },
 
-    sortIcon() {
-      const icons = { score: "trending_up", views: "visibility", recency: "schedule" };
-      return icons[this.sortMethod];
+    sortOptions() {
+      return [
+        { key: "title", label: "Title", icon: "sort_by_alpha" },
+        { key: "post_time", label: "Last Reply", icon: "schedule" },
+        { key: "thread_start", label: "Thread Start", icon: "event" },
+        { key: "score", label: "Score", icon: "trending_up" },
+        { key: "replies", label: "Replies", icon: "chat" },
+        { key: "views", label: "Views", icon: "visibility" },
+      ];
     },
 
-    sortTitle() {
-      const titles = {
-        score: "Sort by Score (click for Views)",
-        views: "Sort by Views (click for Recency)",
-        recency: "Sort by Recency (click for Score)",
-      };
-      return titles[this.sortMethod];
+    currentSortOption() {
+      return this.sortOptions.find(o => o.key === this.sortMethod) || this.sortOptions[3];
     },
 
     viewIcon() {
@@ -256,7 +261,9 @@ export default {
 
       if (event.key === "s" && !isInput) {
         event.preventDefault();
-        this.toggleSort();
+        const keys = this.sortOptions.map(o => o.key);
+        const idx = keys.indexOf(this.sortMethod);
+        this.setSortMethod(keys[(idx + 1) % keys.length]);
       }
 
       if (event.key === "v" && !isInput) {
@@ -340,16 +347,19 @@ export default {
     },
 
     initializeSortMethod() {
+      const valid = this.sortOptions.map(o => o.key);
       const saved = localStorage.getItem("sortMethod");
-      if (saved) {
-        this.sortMethod = saved;
-      }
+      this.sortMethod = valid.includes(saved) ? saved : "score";
     },
 
-    toggleSort() {
-      const cycle = { score: "views", views: "recency", recency: "score" };
-      this.sortMethod = cycle[this.sortMethod];
-      localStorage.setItem("sortMethod", this.sortMethod);
+    setSortMethod(method) {
+      this.sortMethod = method;
+      this.sortDropdownOpen = false;
+      localStorage.setItem("sortMethod", method);
+    },
+
+    toggleSortDropdown() {
+      this.sortDropdownOpen = !this.sortDropdownOpen;
     },
 
     initializeViewMode() {
@@ -381,6 +391,9 @@ export default {
     handleClickOutside(event) {
       if (this.menuOpen && !event.target.closest('.mobile-menu-wrapper')) {
         this.closeMenu();
+      }
+      if (this.sortDropdownOpen && !event.target.closest('.sort-dropdown-wrapper')) {
+        this.sortDropdownOpen = false;
       }
     },
 
@@ -441,9 +454,23 @@ export default {
           <button class="icon-button desktop-only" title="Refresh deals" @click="fetchDeals" :disabled="isLoading">
             <span class="material-symbols-outlined" :class="{ 'spinning': isLoading }">refresh</span>
           </button>
-          <button class="icon-button desktop-only" :title="sortTitle" @click="toggleSort">
-            <span class="material-symbols-outlined">{{ sortIcon }}</span>
-          </button>
+          <div class="sort-dropdown-wrapper desktop-only">
+            <button class="icon-button" :title="'Sort: ' + currentSortOption.label" @click="toggleSortDropdown">
+              <span class="material-symbols-outlined">sort</span>
+            </button>
+            <div class="sort-dropdown" v-if="sortDropdownOpen" @click.stop>
+              <button
+                v-for="opt in sortOptions"
+                :key="opt.key"
+                class="dropdown-item"
+                :class="{ active: sortMethod === opt.key }"
+                @click="setSortMethod(opt.key)"
+              >
+                <span class="material-symbols-outlined">{{ opt.icon }}</span>
+                <span>{{ opt.label }}</span>
+              </button>
+            </div>
+          </div>
           <button class="icon-button desktop-only" :title="viewTitle" @click="toggleViewMode">
             <span class="material-symbols-outlined">{{ viewIcon }}</span>
           </button>
@@ -462,9 +489,15 @@ export default {
                 <span class="material-symbols-outlined" :class="{ 'spinning': isLoading }">refresh</span>
                 <span>Refresh</span>
               </button>
-              <button class="dropdown-item" @click="handleMenuAction(toggleSort)">
-                <span class="material-symbols-outlined">{{ sortIcon }}</span>
-                <span>{{ sortTitle.split('(')[0].trim() }}</span>
+              <button
+                v-for="opt in sortOptions"
+                :key="opt.key"
+                class="dropdown-item"
+                :class="{ active: sortMethod === opt.key }"
+                @click="handleMenuAction(() => setSortMethod(opt.key))"
+              >
+                <span class="material-symbols-outlined">{{ opt.icon }}</span>
+                <span>{{ opt.label }}</span>
               </button>
               <button class="dropdown-item" @click="handleMenuAction(toggleViewMode)">
                 <span class="material-symbols-outlined">{{ viewIcon }}</span>
@@ -560,6 +593,28 @@ export default {
   </template>
 
 <style scoped>
+.sort-dropdown-wrapper {
+  position: relative;
+}
+
+.sort-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color-light);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px var(--shadow-medium);
+  min-width: 170px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.dropdown-item.active {
+  background-color: var(--bg-input);
+  font-weight: 600;
+}
+
 .cards-wrapper {
   position: relative;
 }

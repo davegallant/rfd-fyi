@@ -5,6 +5,9 @@ import Vue from "@vitejs/plugin-vue";
 // Utilities
 import { defineConfig } from "vite";
 import { fileURLToPath, URL } from "node:url";
+import { readFileSync } from "node:fs";
+
+const version = readFileSync("VERSION", "utf-8").trim();
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -12,7 +15,7 @@ export default defineConfig({
     Vue(),
     Components(),
   ],
-  define: { "process.env": {} },
+  define: { "process.env": {}, __APP_VERSION__: JSON.stringify(version) },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("src", import.meta.url)),
