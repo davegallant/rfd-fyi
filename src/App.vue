@@ -57,7 +57,7 @@ export default {
       filterInput: "",
       activeFilters: this.parseFiltersFromUrl(),
       sortMethod: "score",
-      viewMode: "cards",
+      viewMode: "list",
       topics: [],
       isMobile: false,
       currentTheme: "auto",
