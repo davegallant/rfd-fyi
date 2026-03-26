@@ -1,4 +1,4 @@
-# rfd-fyi
+# AGENTS.md
 
 Vue 3 frontend + Go backend that aggregates RedFlagDeals topics.
 
