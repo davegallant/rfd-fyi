@@ -26,14 +26,12 @@ frontend:
 ## dev: Build and run in Docker
 dev:
 	docker build -t rfd-fyi:dev .
-	docker run -d --name rfd-fyi -p 8080:8080 rfd-fyi:dev
+	docker run --rm --name rfd-fyi -p 8080:8080 rfd-fyi:dev
 .PHONY: dev
 
 ## prod: Run the latest image in Docker
 prod:
-	@git pull
-	@docker pull ghcr.io/davegallant/rfd-fyi
-	@docker run -d --name rfd-fyi -p 8080:8080 ghcr.io/davegallant/rfd-fyi
+	@docker run -d --name rfd-fyi -p 8080:8080 ghcr.io/davegallant/rfd-fyi --pull always
 .PHONY: prod
 
 ## teardown: Teardown Docker

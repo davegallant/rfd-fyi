@@ -9,6 +9,8 @@ import (
 	"math/rand/v2"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -16,18 +18,15 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/rs/zerolog/log"
 
-	"github.com/gorilla/mux"
+	utils "github.com/davegallant/rfd-fyi/pkg/utils"
 )
 
 //go:embed dist/*
 var frontendFS embed.FS
 
 type App struct {
-	Router        *mux.Router
-	BasePath      string
-	CurrentTopics []Topic
-	LastRefresh   time.Time
-	Redirects     []Redirect
+	Mux        *http.ServeMux
+	TopicsPath string
 }
 
 type Redirect struct {
@@ -36,29 +35,54 @@ type Redirect struct {
 }
 
 func (a *App) Initialize() {
-	a.BasePath = "/api/v1"
+	a.TopicsPath = utils.GetEnv("TOPICS_PATH", "./topics.json")
 
-	a.Router = mux.NewRouter()
+	// Ensure the directory for the topics file exists.
+	if err := os.MkdirAll(filepath.Dir(a.TopicsPath), 0o755); err != nil {
+		log.Fatal().Err(err).Msg("failed to create topics directory")
+	}
+
+	a.Mux = http.NewServeMux()
 	a.initializeRoutes()
 }
 
 func (a *App) Run(httpPort string) {
-	log.Info().Msgf("Serving requests on port " + httpPort)
-	if err := http.ListenAndServe(fmt.Sprintf(":%s", httpPort), a.Router); err != nil {
+	log.Info().Msgf("Running http on port %s", httpPort)
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", httpPort), a.Mux); err != nil {
 		panic(err)
 	}
 }
 
 func (a *App) initializeRoutes() {
-	a.Router.HandleFunc(a.BasePath+"/topics", a.listTopics).Methods("GET")
-	a.Router.HandleFunc(a.BasePath+"/topics/{id}", a.getTopicDetails).Methods("GET")
+	// Serve topics.json from disk.
+	a.Mux.HandleFunc("/topics.json", a.serveTopics)
 
+	// Serve embedded frontend SPA for everything else.
 	distFS, err := fs.Sub(frontendFS, "dist")
 	if err != nil {
 		panic(err)
 	}
 	fileServer := http.FileServer(http.FS(distFS))
-	a.Router.PathPrefix("/").Handler(spaHandler{staticHandler: fileServer, staticFS: distFS})
+	a.Mux.Handle("/", spaHandler{staticHandler: fileServer, staticFS: distFS})
+}
+
+// serveTopics reads the topics JSON file from disk and serves it.
+func (a *App) serveTopics(w http.ResponseWriter, r *http.Request) {
+	data, err := os.ReadFile(a.TopicsPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("[]"))
+			return
+		}
+		http.Error(w, "failed to read topics", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }
 
 // spaHandler serves static files when they exist, otherwise falls back to
@@ -79,149 +103,6 @@ func (h spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.staticHandler.ServeHTTP(w, r)
 }
 
-// func respondWithError(w http.ResponseWriter, code int, message string) {
-// 	respondWithJSON(w, code, map[string]string{"error": message})
-// }
-
-func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
-	response, _ := json.Marshal(payload)
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	w.Write(response)
-}
-
-// listtopics godoc
-// @Summary      Lists all topics stored in the database
-// @Description  All topics will be listed. There is currently no pagination implemented.
-// @ID           list-topics
-// @Param        filters query string false "JSON array of filter strings"
-// @Router       /topics [get]
-// @Success 200 {array} Topic
-func (a *App) listTopics(w http.ResponseWriter, r *http.Request) {
-	filtersParam := r.URL.Query().Get("filters")
-	
-	if filtersParam == "" {
-		respondWithJSON(w, http.StatusOK, a.CurrentTopics)
-		return
-	}
-
-	var filters []string
-	err := json.Unmarshal([]byte(filtersParam), &filters)
-	if err != nil {
-		log.Warn().Msgf("could not parse filters parameter: %s", err)
-		respondWithJSON(w, http.StatusOK, a.CurrentTopics)
-		return
-	}
-
-	if len(filters) == 0 {
-		respondWithJSON(w, http.StatusOK, a.CurrentTopics)
-		return
-	}
-
-	// Filter topics
-	var filteredTopics []Topic
-	for _, topic := range a.CurrentTopics {
-		searchText := strings.ToLower(topic.Title + " [" + topic.Offer.DealerName + "]")
-		matchesAll := true
-		for _, filter := range filters {
-			if !strings.Contains(searchText, strings.ToLower(filter)) {
-				matchesAll = false
-				break
-			}
-		}
-		if matchesAll {
-			filteredTopics = append(filteredTopics, topic)
-		}
-	}
-
-	respondWithJSON(w, http.StatusOK, filteredTopics)
-}
-
-// getTopicDetails godoc
-// @Summary      Get detailed information about a specific topic
-// @Description  Fetches full details including recent comments for a topic by ID
-// @ID           get-topic-details
-// @Param        id path int true "Topic ID"
-// @Router       /topics/{id} [get]
-// @Success 200 {object} TopicDetails
-func (a *App) getTopicDetails(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	topicID := vars["id"]
-
-	// Find topic in current topics
-	var topic *Topic
-	for i := range a.CurrentTopics {
-		if fmt.Sprintf("%d", a.CurrentTopics[i].TopicID) == topicID {
-			topic = &a.CurrentTopics[i]
-			break
-		}
-	}
-
-	if topic == nil {
-		respondWithJSON(w, http.StatusNotFound, map[string]string{"error": "Topic not found"})
-		return
-	}
-
-	// Fetch detailed info from RFD API
-	requestURL := fmt.Sprintf("https://forums.redflagdeals.com/api/topics/%s", topicID)
-	res, err := http.Get(requestURL)
-	if err != nil {
-		log.Warn().Msgf("error fetching topic details: %s\n", err)
-		respondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to fetch details"})
-		return
-	}
-	defer res.Body.Close()
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		log.Warn().Msgf("could not read response body: %s\n", err)
-		respondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to read response"})
-		return
-	}
-
-	var rfdResponse map[string]interface{}
-	err = json.Unmarshal([]byte(body), &rfdResponse)
-	if err != nil {
-		log.Warn().Msgf("could not unmarshal response body: %s", err)
-		respondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to parse response"})
-		return
-	}
-
-	// Extract relevant fields for tooltip
-	details := TopicDetails{
-		Topic:       *topic,
-		Description: extractDescription(rfdResponse),
-		FirstPost:   extractFirstPost(rfdResponse),
-	}
-
-	respondWithJSON(w, http.StatusOK, details)
-}
-
-func extractDescription(data map[string]interface{}) string {
-	if topic, ok := data["topic"].(map[string]interface{}); ok {
-		if description, ok := topic["description"].(string); ok {
-			return description
-		}
-	}
-	return ""
-}
-
-func extractFirstPost(data map[string]interface{}) string {
-	if posts, ok := data["posts"].([]interface{}); ok && len(posts) > 0 {
-		if firstPost, ok := posts[0].(map[string]interface{}); ok {
-			if body, ok := firstPost["body"].(string); ok {
-				// Truncate to first 200 characters
-				if len(body) > 200 {
-					return body[:200] + "..."
-				}
-				return body
-			}
-		}
-	}
-	return ""
-}
-
 func (a *App) refreshTopics() {
 	for {
 		log.Info().Msg("Refreshing topics")
@@ -232,14 +113,36 @@ func (a *App) refreshTopics() {
 			latestTopics = a.updateScores(latestTopics)
 
 			log.Info().Msg("Refreshing redirects")
-			latestRedirects := a.getRedirects()
-			a.Redirects = latestRedirects
-			a.CurrentTopics = a.stripRedirects(latestTopics)
+			redirects := a.getRedirects()
+			latestTopics = a.stripRedirects(latestTopics, redirects)
+
+			a.writeTopics(latestTopics)
 		}
 
-		a.LastRefresh = time.Now()
 		time.Sleep(time.Duration(rand.IntN(90-60+1)+60) * time.Second)
 	}
+}
+
+// writeTopics atomically writes the topics JSON to disk.
+func (a *App) writeTopics(topics []Topic) {
+	data, err := json.Marshal(topics)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to marshal topics")
+		return
+	}
+
+	// Write to a temp file and rename for atomicity.
+	tmpFile := a.TopicsPath + ".tmp"
+	if err := os.WriteFile(tmpFile, data, 0o644); err != nil {
+		log.Error().Err(err).Msg("failed to write topics temp file")
+		return
+	}
+	if err := os.Rename(tmpFile, a.TopicsPath); err != nil {
+		log.Error().Err(err).Msg("failed to rename topics file")
+		return
+	}
+
+	log.Info().Msgf("Wrote %d topics to %s", len(topics), a.TopicsPath)
 }
 
 func (a *App) updateScores(t []Topic) []Topic {
@@ -249,7 +152,7 @@ func (a *App) updateScores(t []Topic) []Topic {
 	return t
 }
 
-func (a *App) stripRedirects(t []Topic) []Topic {
+func (a *App) stripRedirects(t []Topic, redirects []Redirect) []Topic {
 	for i := range t {
 		if t[i].Offer.Url == "" {
 			continue
@@ -257,7 +160,7 @@ func (a *App) stripRedirects(t []Topic) []Topic {
 
 		var offerUrl = t[i].Offer.Url
 		log.Debug().Msgf("Offer url is : %s", offerUrl)
-		for _, r := range a.Redirects {
+		for _, r := range redirects {
 			re := regexp2.MustCompile(r.Pattern, 0)
 			if m, _ := re.FindStringMatch(offerUrl); m != nil {
 				g := m.GroupByName("baseUrl")

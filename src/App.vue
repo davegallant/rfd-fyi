@@ -332,7 +332,7 @@ export default {
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 500));
 
       Promise.all([
-        axios.get("api/v1/topics"),
+        axios.get("/topics.json"),
         minLoadingTime
       ])
         .then(([response]) => {

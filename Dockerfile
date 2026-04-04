@@ -16,5 +16,8 @@ RUN CGO_ENABLED=0 go build -o rfd-fyi .
 FROM dhi.io/static:20251003-musl-alpine3.23 AS runtime
 COPY --from=backend-builder /src/rfd-fyi /rfd-fyi
 
+ENV TOPICS_PATH=/tmp/topics.json
+ENV LOG_LEVEL=info
+
 EXPOSE 8080
 ENTRYPOINT ["/rfd-fyi"]
