@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-04-10
+
+### Added
+
+- `GET /html` — server-rendered list of hot deals (no JavaScript required); uses the same on-disk data as `/topics.json`, sorted by score like the SPA default
+- Embedded HTML template and `loadTopicsFromFile` helper in the Go backend
+- Vite dev proxy for `/html` to the backend (with `/topics.json`)
+
+### Changed
+
+- `index.html` `<noscript>` now links to `/html` and `/` instead of stating the site is unusable without JavaScript
+
 ## [0.2.0] - 2026-04-03
 
 ### Changed
