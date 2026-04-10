@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>rfd-fyi — deals (no JavaScript)</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --fg: #1a1d22;
+      --muted: #5c6570;
+      --border: #d8dde3;
+      --link: #1a5f9e;
+      --card: #fff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #121418;
+        --fg: #e8eaed;
+        --muted: #9aa3ad;
+        --border: #2a3038;
+        --link: #6eb3f0;
+        --card: #1a1d22;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
+      line-height: 1.45;
+      margin: 0;
+      padding: 1rem 1.25rem 2rem;
+      background: var(--bg);
+      color: var(--fg);
+    }
+    header {
+      max-width: 52rem;
+      margin: 0 auto 1.25rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 0;
+    }
+    .sub a { color: var(--link); }
+    main {
+      max-width: 52rem;
+      margin: 0 auto;
+    }
+    ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    li {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      margin-bottom: 0.65rem;
+    }
+    .title {
+      font-weight: 600;
+      margin: 0 0 0.35rem;
+      font-size: 1rem;
+    }
+    .title a { color: var(--link); text-decoration: none; }
+    .title a:hover { text-decoration: underline; }
+    .meta {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin: 0;
+    }
+    .meta a { color: var(--link); }
+    .empty {
+      color: var(--muted);
+      text-align: center;
+      padding: 2rem 1rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Hot deals</h1>
+    <p class="sub">Sorted by score. Raw JSON: <a href="/topics.json">/topics.json</a>.</p>
+  </header>
+  <main>
+    {{if .Topics}}
+    <ol>
+      {{range .Topics}}
+      <li>
+        <p class="title"><a href="{{.ThreadURL}}">{{.Title}}</a></p>
+        <p class="meta">
+          Score {{.Score}}
+          {{if .HasOffer}}
+          · {{if .DealerName}}{{.DealerName}} — {{end}}<a href="{{.OfferURL}}">Offer link</a>
+          {{end}}
+        </p>
+      </li>
+      {{end}}
+    </ol>
+    {{else}}
+    <p class="empty">No deals loaded yet.</p>
+    {{end}}
+  </main>
+</body>
+</html>

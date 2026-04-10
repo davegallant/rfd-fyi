@@ -57,6 +57,9 @@ func (a *App) initializeRoutes() {
 	// Serve topics.json from disk.
 	a.Mux.HandleFunc("/topics.json", a.serveTopics)
 
+	// No-JavaScript HTML listing (same data as topics.json).
+	a.Mux.HandleFunc("/html", a.serveHTMLList)
+
 	// Serve embedded frontend SPA for everything else.
 	distFS, err := fs.Sub(frontendFS, "dist")
 	if err != nil {
@@ -83,6 +86,25 @@ func (a *App) serveTopics(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
+}
+
+// loadTopicsFromFile reads and unmarshals TOPICS_PATH. A missing file yields an empty slice and no error.
+func (a *App) loadTopicsFromFile() ([]Topic, error) {
+	data, err := os.ReadFile(a.TopicsPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []Topic{}, nil
+		}
+		return nil, err
+	}
+	if len(data) == 0 {
+		return []Topic{}, nil
+	}
+	var topics []Topic
+	if err := json.Unmarshal(data, &topics); err != nil {
+		return nil, err
+	}
+	return topics, nil
 }
 
 // spaHandler serves static files when they exist, otherwise falls back to
