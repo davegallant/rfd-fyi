@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2026-04-10
+
+### Added
+
+- Info panel links to the `/html` HTML-only deals list.
+
+### Changed
+
+- `/html` list page uses the site title in the header and a shorter subtitle (JSON link only).
+- `index.html` `<noscript>` message no longer links to the home page separately; the HTML-only list link remains.
+
 ## [0.3.0] - 2026-04-10
 
 ### Added

@@ -31,6 +31,9 @@
           </tr>
         </tbody>
       </table>
+      <p class="html-alt">
+        Click <a href="/html">here</a> for an HTML-only site
+      </p>
       <button class="close-button" @click="closeOverlay">Close</button>
     </div>
   </div>
@@ -91,6 +94,11 @@ export default {
   margin-top: 8px;
   font-size: 13px;
   color: var(--text-secondary);
+}
+
+.html-alt {
+  margin: 12px 0 0;
+  font-size: 14px;
 }
 
 .info-panel .shortcuts-table {
