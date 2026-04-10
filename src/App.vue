@@ -278,17 +278,26 @@ export default {
     },
 
     parseFiltersFromUrl() {
+      const searchParam = new URLSearchParams(window.location.search).get("filters");
+      if (searchParam) {
+        try {
+          const parsed = JSON.parse(searchParam);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+          return [];
+        }
+      }
       const hash = window.location.hash || "";
       const match = hash.match(/filters=([^&]*)/);
       if (match && match[1]) {
         try {
           const decoded = decodeURIComponent(match[1]);
-          return JSON.parse(decoded);
+          const parsed = JSON.parse(decoded);
+          return Array.isArray(parsed) ? parsed : [];
         } catch (e) {
           return [];
         }
       }
-      // Legacy single filter support
       const legacyMatch = hash.match(/filter=([^&]*)/);
       if (legacyMatch && legacyMatch[1]) {
         const decoded = decodeURIComponent(legacyMatch[1]);
@@ -299,10 +308,12 @@ export default {
 
     updateUrlWithFilters() {
       if (this.activeFilters.length > 0) {
-        const encoded = encodeURIComponent(JSON.stringify(this.activeFilters));
-        history.pushState({}, null, `${window.location.origin}#/filters=${encoded}`);
+        this.$router.replace({
+          path: "/",
+          query: { filters: JSON.stringify(this.activeFilters) },
+        });
       } else {
-        history.pushState({}, null, window.location.origin);
+        this.$router.replace({ path: "/", query: {} });
       }
     },
 

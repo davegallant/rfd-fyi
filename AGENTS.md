@@ -18,7 +18,7 @@ Vue 3 frontend + Go backend that aggregates RedFlagDeals topics.
 
 ## Conventions
 
-- Frontend is a single-page app; all routing is client-side via vue-router with hash-based URLs
+- Frontend is a single-page app; all routing is client-side via vue-router with HTML5 history (server falls back to `index.html` for non-file paths)
 - Backend serves the embedded SPA and a static `topics.json` file from disk; no dynamic API endpoints
 - Go error handling: log with zerolog, don't panic (except startup)
 - No TypeScript — plain JS with `jsconfig.json` path aliases (`@` → `src/`)
