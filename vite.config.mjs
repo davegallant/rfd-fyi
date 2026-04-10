@@ -26,6 +26,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       "/topics.json": "http://localhost:8080",
+      "/html": "http://localhost:8080",
     },
   },
   css: {
