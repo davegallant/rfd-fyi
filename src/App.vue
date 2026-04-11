@@ -3,6 +3,9 @@ import axios from "axios";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 
+import { getFilteredSortedTopics } from "./filterTopics.js";
+import { loadUiPreferences, persistUiPreferences } from "./preferences.js";
+
 import "./theme.css";
 
 dayjs.extend(utc);
@@ -93,24 +96,7 @@ export default {
 
   computed: {
     filteredTopics() {
-      const filterTerms = this.activeFilters.map(f => f.toLowerCase());
-
-      const filtered = this.topics.filter((row) => {
-        if (filterTerms.length === 0) return true;
-        const searchText = `${row.title} [${row.Offer.dealer_name}]`.toLowerCase();
-        return filterTerms.every(term => searchText.includes(term));
-      });
-
-      const sortFns = {
-        title: (a, b) => a.title.localeCompare(b.title),
-        post_time: (a, b) => new Date(b.last_post_time) - new Date(a.last_post_time),
-        thread_start: (a, b) => new Date(b.post_time) - new Date(a.post_time),
-        score: (a, b) => b.score - a.score,
-        replies: (a, b) => b.total_replies - a.total_replies,
-        views: (a, b) => b.total_views - a.total_views,
-      };
-
-      return filtered.sort(sortFns[this.sortMethod] || sortFns.score);
+      return getFilteredSortedTopics(this.topics, this.activeFilters, this.sortMethod);
     },
 
     themeIcon() {
@@ -178,7 +164,7 @@ export default {
     },
 
     initializeTheme() {
-      const savedTheme = localStorage.getItem("theme") || "auto";
+      const savedTheme = loadUiPreferences().theme;
       this.currentTheme = savedTheme;
       this.applyTheme(savedTheme, true);
     },
@@ -187,8 +173,7 @@ export default {
       this.darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
       this.themeChangeHandler = (e) => {
-        const savedTheme = localStorage.getItem("theme");
-        if (savedTheme === "auto" || !savedTheme) {
+        if (loadUiPreferences().theme === "auto") {
           this.applyThemeActual(e.matches ? "dark" : "light");
         }
       };
@@ -200,7 +185,7 @@ export default {
       this.currentTheme = theme;
 
       if (!skipSave) {
-        localStorage.setItem("theme", theme);
+        persistUiPreferences({ ...loadUiPreferences(), theme });
       }
 
       let actualTheme = theme;
@@ -358,15 +343,13 @@ export default {
     },
 
     initializeSortMethod() {
-      const valid = this.sortOptions.map(o => o.key);
-      const saved = localStorage.getItem("sortMethod");
-      this.sortMethod = valid.includes(saved) ? saved : "score";
+      this.sortMethod = loadUiPreferences().sortMethod;
     },
 
     setSortMethod(method) {
       this.sortMethod = method;
       this.sortDropdownOpen = false;
-      localStorage.setItem("sortMethod", method);
+      persistUiPreferences({ ...loadUiPreferences(), sortMethod: method });
     },
 
     toggleSortDropdown() {
@@ -374,16 +357,13 @@ export default {
     },
 
     initializeViewMode() {
-      const saved = localStorage.getItem("viewMode");
-      if (saved) {
-        this.viewMode = saved;
-      }
+      this.viewMode = loadUiPreferences().viewMode;
     },
 
     toggleViewMode() {
       const cycle = { cards: "list", list: "cards" };
       this.viewMode = cycle[this.viewMode];
-      localStorage.setItem("viewMode", this.viewMode);
+      persistUiPreferences({ ...loadUiPreferences(), viewMode: this.viewMode });
     },
 
     toggleMenu() {

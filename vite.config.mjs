@@ -3,7 +3,7 @@ import Components from "unplugin-vue-components/vite";
 import Vue from "@vitejs/plugin-vue";
 
 // Utilities
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import { fileURLToPath, URL } from "node:url";
 import { readFileSync } from "node:fs";
 
@@ -70,5 +70,14 @@ export default defineConfig({
     },
     chunkSizeWarningLimit: 1000,
     reportCompressedSize: true,
+  },
+  test: {
+    environment: "jsdom",
+    include: ["src/**/*.{test,spec}.js"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "text-summary", "html", "json-summary"],
+      reportsDirectory: "./coverage",
+    },
   },
 });
