@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-04-11
+
+### Added
+
+- Frontend unit tests for topic filtering (`filterTopics.js`) and user preferences (`preferences.js`); logic extracted from `App.vue` into dedicated modules.
+- Backend unit tests covering HTTP handlers, caching (`cache.go`), and topic transformation (`topics_transform.go`).
+- CI runs both frontend and backend test suites on each push.
+
+### Changed
+
+- Visual and colour improvements across the frontend: updated theme variables, richer contrast, and refined styling on the `/html` list page.
+- Upgraded Vite to v8 and Vitest to v4.
+
 ## [0.3.1] - 2026-04-10
 
 ### Added
