@@ -3,14 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>rfd-fyi — deals (no JavaScript)</title>
+  <title>rfd-fyi (no JavaScript)</title>
   <style>
     :root {
       --bg: #f6f7f9;
       --fg: #1a1d22;
       --muted: #5c6570;
       --border: #d8dde3;
-      --link: #1a5f9e;
+      /* Match SPA theme.css --link-color (same as primary text, not default browser blue) */
+      --link: #212529;
       --card: #fff;
     }
     @media (prefers-color-scheme: dark) {
@@ -19,7 +20,7 @@
         --fg: #e8eaed;
         --muted: #9aa3ad;
         --border: #2a3038;
-        --link: #6eb3f0;
+        --link: #e0e0e0;
         --card: #1a1d22;
       }
     }
@@ -48,7 +49,13 @@
       font-size: 0.9rem;
       margin: 0;
     }
-    .sub a { color: var(--link); }
+    a {
+      color: var(--link);
+      transition: color 0.2s ease;
+    }
+    a:visited {
+      color: var(--link);
+    }
     main {
       max-width: 52rem;
       margin: 0 auto;
@@ -88,7 +95,7 @@
 <body>
   <header>
     <h1>rfd-fyi</h1>
-    <p class="sub">Raw JSON: <a href="/topics.json">/topics.json</a></p>
+    <p class="sub"><a href="/topics.json">Raw JSON</a></p>
   </header>
   <main>
     {{if .Topics}}

@@ -123,14 +123,18 @@ export default {
 .close-button {
   margin-top: 20px;
   padding: 10px 20px;
-  background-color: #007bff;
-  color: white;
+  background-color: var(--accent);
+  color: var(--score-positive-text);
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
 }
 
 .close-button:hover {
-  background-color: #0056b3;
+  background-color: var(--accent-hover);
 }
 </style>

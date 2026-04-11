@@ -430,11 +430,6 @@ export default {
     toggleInfoOverlay() {
       this.infoOverlayVisible = !this.infoOverlayVisible;
     },
-    methods: {
-      toggleInfoOverlay() {
-        this.infoOverlayVisible = !this.infoOverlayVisible;
-      },
-    },
   },
 };
 </script>
@@ -514,23 +509,18 @@ export default {
                 <span class="material-symbols-outlined">{{ viewIcon }}</span>
                 <span>{{ viewTitle.split('(')[0].trim() }}</span>
               </button>
-              <button class="dropdown-item" @click="toggleInfoOverlay">
-                  <span class="material-symbols-outlined">info</span>
-                  <span>Info</span>
+              <button class="dropdown-item" @click="handleMenuAction(toggleInfoOverlay)">
+                <span class="material-symbols-outlined">info</span>
+                <span>Info</span>
               </button>
               <button class="dropdown-item" @click="handleMenuAction(toggleTheme)">
                 <span class="material-symbols-outlined">{{ themeIcon }}</span>
                 <span>{{ themeTitle.split('(')[0].trim() }}</span>
               </button>
-              <button class="dropdown-item" @click="toggleInfoOverlay">
-                <span class="material-symbols-outlined">info</span>
-                <span>Info</span>
-              </button>
             </div>
           </div>
         </div>
       </div>
-      <InfoOverlay :visible="infoOverlayVisible" @close="toggleInfoOverlay" />
       <div v-if="isLoading && topics.length === 0" class="loading-container">
         <span class="material-symbols-outlined spinning loading-spinner">refresh</span>
         <p>Loading deals...</p>
@@ -599,8 +589,8 @@ export default {
         </div>
       </div>
     </div>
+    <InfoOverlay :visible="infoOverlayVisible" @close="toggleInfoOverlay" />
   </div>
-  <InfoOverlay :visible="infoOverlayVisible" @close="toggleInfoOverlay" />
   </template>
 
 <style scoped>
@@ -619,11 +609,6 @@ export default {
   min-width: 170px;
   z-index: 100;
   overflow: hidden;
-}
-
-.dropdown-item.active {
-  background-color: var(--bg-input);
-  font-weight: 600;
 }
 
 .cards-wrapper {
