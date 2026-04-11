@@ -57,10 +57,34 @@ jobs:
 
       - name: Upload coverage report
         if: success()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: coverage/
+
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Backend unit tests with coverage
+        working-directory: backend
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Backend coverage summary
+        if: success()
+        working-directory: backend
+        run: |
+          go tool cover -func=coverage.out | tee coverage-func.txt
+          TOTAL=$(grep '^total:' coverage-func.txt | awk '{print $3}')
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          ## Backend coverage
+
+          | Metric | Coverage |
+          | --- | --- |
+          | Total | ${TOTAL} |
+          EOF
 
       - name: Prepare
         id: prep
