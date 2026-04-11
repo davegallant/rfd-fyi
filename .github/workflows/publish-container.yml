@@ -16,6 +16,52 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Frontend unit tests with coverage
+        run: |
+          npm ci
+          npm run test:coverage
+
+      - name: Coverage summary
+        if: success()
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+          const summaryPath = "coverage/coverage-summary.json";
+          if (!fs.existsSync(summaryPath)) {
+            console.warn("coverage/coverage-summary.json missing");
+            process.exit(0);
+          }
+          const { total } = JSON.parse(fs.readFileSync(summaryPath, "utf8"));
+          const row = (label, m) => `| ${label} | ${m.pct}% (${m.covered}/${m.total}) |`;
+          const md = [
+            "## Frontend coverage",
+            "",
+            "| Metric | Coverage |",
+            "| --- | --- |",
+            row("Statements", total.statements),
+            row("Branches", total.branches),
+            row("Functions", total.functions),
+            row("Lines", total.lines),
+            "",
+            "Download the **coverage-report** artifact for the HTML report.",
+            "",
+          ].join("\n");
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, md);
+          NODE
+
+      - name: Upload coverage report
+        if: success()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: coverage/
+
       - name: Prepare
         id: prep
         run: |
