@@ -49,13 +49,16 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        manualChunks: {
-          "vendor": ["axios", "dayjs", "vue-router", "vue-loading-overlay"],
+        manualChunks: (id) => {
+          if (["axios", "dayjs", "vue-router", "vue-loading-overlay"].some((pkg) => id.includes(`/node_modules/${pkg}/`))) {
+            return "vendor";
+          }
         },
         chunkFileNames: "js/[name].[hash].js",
         entryFileNames: "js/[name].[hash].js",
         assetFileNames: (assetInfo) => {
-          const info = assetInfo.name.split(".");
+          const name = assetInfo.names?.[0] ?? assetInfo.name ?? "";
+          const info = name.split(".");
           const ext = info[info.length - 1];
           if (/png|jpe?g|gif|tiff|bmp|ico/i.test(ext)) {
             return `images/[name].[hash][extname]`;
