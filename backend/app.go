@@ -27,6 +27,16 @@ var frontendFS embed.FS
 type App struct {
 	Mux        *http.ServeMux
 	TopicsPath string
+
+	// HTTPClient and RFDBaseURL are used by getDeals (defaults: http.DefaultClient, forums host).
+	HTTPClient  *http.Client
+	RFDBaseURL  string
+	RedirectsURL string
+
+	// TopicsResponseCache, when non-nil, serves identical bytes from memory until TTL expires.
+	TopicsResponseCache *BytesTTLCache
+	// ReadTopicsFile overrides os.ReadFile for tests (e.g. counting reads).
+	ReadTopicsFile func(name string) ([]byte, error)
 }
 
 type Redirect struct {
@@ -69,9 +79,46 @@ func (a *App) initializeRoutes() {
 	a.Mux.Handle("/", spaHandler{staticHandler: fileServer, staticFS: distFS})
 }
 
+func (a *App) httpClient() *http.Client {
+	if a.HTTPClient != nil {
+		return a.HTTPClient
+	}
+	return http.DefaultClient
+}
+
+func (a *App) rfdBaseURL() string {
+	if a.RFDBaseURL != "" {
+		return strings.TrimSuffix(a.RFDBaseURL, "/")
+	}
+	return "https://forums.redflagdeals.com"
+}
+
+func (a *App) redirectsURL() string {
+	if a.RedirectsURL != "" {
+		return a.RedirectsURL
+	}
+	return "https://raw.githubusercontent.com/davegallant/rfd-redirect-stripper/main/redirects.json"
+}
+
+func (a *App) readTopicsFile(name string) ([]byte, error) {
+	if a.ReadTopicsFile != nil {
+		return a.ReadTopicsFile(name)
+	}
+	return os.ReadFile(name)
+}
+
 // serveTopics reads the topics JSON file from disk and serves it.
 func (a *App) serveTopics(w http.ResponseWriter, r *http.Request) {
-	data, err := os.ReadFile(a.TopicsPath)
+	if a.TopicsResponseCache != nil {
+		if cached, ok := a.TopicsResponseCache.Get(time.Now()); ok {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write(cached)
+			return
+		}
+	}
+
+	data, err := a.readTopicsFile(a.TopicsPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			w.Header().Set("Content-Type", "application/json")
@@ -85,12 +132,15 @@ func (a *App) serveTopics(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	if a.TopicsResponseCache != nil {
+		a.TopicsResponseCache.Set(data, time.Now())
+	}
+	_, _ = w.Write(data)
 }
 
 // loadTopicsFromFile reads and unmarshals TOPICS_PATH. A missing file yields an empty slice and no error.
 func (a *App) loadTopicsFromFile() ([]Topic, error) {
-	data, err := os.ReadFile(a.TopicsPath)
+	data, err := a.readTopicsFile(a.TopicsPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return []Topic{}, nil
@@ -131,8 +181,8 @@ func (a *App) refreshTopics() {
 		latestTopics := a.getDeals(9, 1, 6)
 
 		if len(latestTopics) > 0 {
-			latestTopics = a.deduplicateTopics(latestTopics)
-			latestTopics = a.updateScores(latestTopics)
+			latestTopics = DeduplicateTopics(latestTopics)
+			latestTopics = ComputeScores(latestTopics)
 
 			log.Info().Msg("Refreshing redirects")
 			redirects := a.getRedirects()
@@ -167,13 +217,6 @@ func (a *App) writeTopics(topics []Topic) {
 	log.Info().Msgf("Wrote %d topics to %s", len(topics), a.TopicsPath)
 }
 
-func (a *App) updateScores(t []Topic) []Topic {
-	for i := range t {
-		t[i].Score = t[i].Votes.Up - t[i].Votes.Down
-	}
-	return t
-}
-
 func (a *App) stripRedirects(t []Topic, redirects []Redirect) []Topic {
 	for i := range t {
 		if t[i].Offer.Url == "" {
@@ -206,77 +249,63 @@ func (a *App) stripRedirects(t []Topic, redirects []Redirect) []Topic {
 	return t
 }
 
-func (a *App) deduplicateTopics(topics []Topic) []Topic {
-	seen := make(map[uint]bool)
-	var deduplicated []Topic
-
-	for _, topic := range topics {
-		if !seen[topic.TopicID] {
-			seen[topic.TopicID] = true
-			deduplicated = append(deduplicated, topic)
-		} else {
-			log.Debug().Msgf("Removing duplicate topic: %d", topic.TopicID)
-		}
-	}
-
-	return deduplicated
-}
-
-func (a *App) isSponsor(t Topic) bool {
-	return strings.HasPrefix(t.Title, "[Sponsored]")
-}
-
 func (a *App) getDeals(id int, firstPage int, lastPage int) []Topic {
 
 	var t []Topic
+	client := a.httpClient()
+	base := a.rfdBaseURL()
 
 	for i := firstPage; i < lastPage; i++ {
-		requestURL := fmt.Sprintf("https://forums.redflagdeals.com/api/topics?forum_id=%d&per_page=40&page=%d", id, i)
-		res, err := http.Get(requestURL)
+		requestURL := fmt.Sprintf("%s/api/topics?forum_id=%d&per_page=40&page=%d", base, id, i)
+		res, err := client.Get(requestURL)
 		if err != nil {
 			log.Warn().Msgf("error fetching deals: %s\n", err)
+			continue
 		}
-		body, err := io.ReadAll(res.Body)
-		if err != nil {
-			log.Warn().Msgf("could not read response body: %s\n", err)
+		body, readErr := io.ReadAll(res.Body)
+		_ = res.Body.Close()
+		if readErr != nil {
+			log.Warn().Msgf("could not read response body: %s\n", readErr)
+			continue
+		}
+		if res.StatusCode != http.StatusOK {
+			log.Warn().Msgf("unexpected status fetching deals: %d", res.StatusCode)
+			continue
 		}
 
 		var response TopicsResponse
-
-		err = json.Unmarshal([]byte(body), &response)
-
-		if err != nil {
+		if err := json.Unmarshal(body, &response); err != nil {
 			log.Warn().Msgf("could not unmarshal response body: %s", err)
+			continue
 		}
 
-		for _, topic := range response.Topics {
-			if a.isSponsor(topic) {
-				continue
-			}
-			t = append(t, topic)
-		}
+		t = append(t, FilterNonSponsorTopics(response.Topics)...)
 	}
 	return t
 }
 
 func (a *App) getRedirects() []Redirect {
-
-	requestURL := fmt.Sprintf("https://raw.githubusercontent.com/davegallant/rfd-redirect-stripper/main/redirects.json")
-	res, err := http.Get(requestURL)
+	requestURL := a.redirectsURL()
+	res, err := a.httpClient().Get(requestURL)
 	if err != nil {
 		log.Warn().Msgf("error fetching redirects: %s\n", err)
+		return nil
 	}
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		log.Warn().Msgf("could not read response body: %s\n", err)
+	body, readErr := io.ReadAll(res.Body)
+	_ = res.Body.Close()
+	if readErr != nil {
+		log.Warn().Msgf("could not read response body: %s\n", readErr)
+		return nil
+	}
+	if res.StatusCode != http.StatusOK {
+		log.Warn().Msgf("unexpected status fetching redirects: %d", res.StatusCode)
+		return nil
 	}
 
 	var r []Redirect
-
-	err = json.Unmarshal([]byte(body), &r)
-
-	if err != nil {
+	if err := json.Unmarshal(body, &r); err != nil {
 		log.Warn().Msgf("could not unmarshal response body: %s", err)
+		return nil
 	}
 
 	return r
