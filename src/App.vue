@@ -3,7 +3,7 @@ import axios from "axios";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 
-import { getFilteredSortedTopics } from "./filterTopics.js";
+import { getFilteredSortedTopics, parseFilterTerm } from "./filterTopics.js";
 import { loadUiPreferences, persistUiPreferences } from "./preferences.js";
 
 import "./theme.css";
@@ -97,6 +97,10 @@ export default {
       return getFilteredSortedTopics(this.topics, this.activeFilters, this.sortMethod);
     },
 
+    isRegexError() {
+      return parseFilterTerm(this.filterInput).isRegexError;
+    },
+
     themeIcon() {
       const icons = { auto: "brightness_auto", dark: "dark_mode", light: "light_mode" };
       return icons[this.currentTheme];
@@ -138,12 +142,20 @@ export default {
 
       let result = text;
       for (const filter of this.activeFilters) {
-        const lowerText = result.toLowerCase();
-        const lowerFilter = filter.toLowerCase();
-
-        if (lowerText.includes(lowerFilter)) {
-          const regex = new RegExp(filter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), "ig");
-          result = result.replace(regex, (match) => `<mark>${match}</mark>`);
+        const { regex, literal, isRegexError } = parseFilterTerm(filter);
+        if (regex && !isRegexError) {
+          // Use a version of the regex with the global flag for replace
+          const globalRegex = new RegExp(regex.source, regex.flags.includes("g") ? regex.flags : regex.flags + "g");
+          result = result.replace(globalRegex, (match) => `<mark>${match}</mark>`);
+        } else {
+          // Plain literal: case-insensitive substring highlight
+          const lowerText = result.toLowerCase();
+          const lowerFilter = literal.toLowerCase();
+          if (lowerFilter && lowerText.includes(lowerFilter)) {
+            const escaped = literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const substringRegex = new RegExp(escaped, "ig");
+            result = result.replace(substringRegex, (match) => `<mark>${match}</mark>`);
+          }
         }
       }
       return result;
@@ -390,22 +402,26 @@ export default {
     <div class="container">
       <div class="header">
         <div class="header-controls">
-          <div class="filter-container" :class="{ 'has-active-filters': activeFilters.length > 0 }">
-            <span v-for="(filter, index) in activeFilters" :key="index" class="filter-tag">
-              {{ filter }}
-              <button class="filter-tag-clear" @click="clearFilter(index)" title="Clear filter">
-                <span class="material-symbols-outlined">close</span>
-              </button>
-            </span>
-            <input
-              ref="filterInput"
-              v-model="filterInput"
-              type="text"
-              placeholder="Filter deals"
-              class="search-input"
+          <div class="filter-wrapper">
+            <div class="filter-container" :class="{ 'has-active-filters': activeFilters.length > 0 }">
+              <span v-for="(filter, index) in activeFilters" :key="index" class="filter-tag">
+                {{ filter }}
+                <button class="filter-tag-clear" @click="clearFilter(index)" title="Clear filter">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              </span>
+              <input
+                ref="filterInput"
+                v-model="filterInput"
+                type="text"
+                placeholder="filter… or /regex/"
+                class="search-input"
+                :class="{ 'search-input--regex-error': isRegexError }"
+                :title="isRegexError ? 'Invalid regex' : ''"
               @keyup.enter="applyFilter"
               @keyup.esc="$refs.filterInput.blur()"
             />
+            </div>
           </div>
           <!-- Desktop buttons -->
           <button class="icon-button desktop-only" title="Refresh deals" @click="fetchDeals" :disabled="isLoading">
@@ -563,4 +579,28 @@ export default {
   font-size: 48px;
   color: var(--text-primary);
 }
+
+/* ============================================
+   Filter Wrapper & Regex UI
+   ============================================ */
+
+.filter-wrapper {
+  flex: 1;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Override filter-container's own flex sizing since wrapper owns the width */
+.filter-wrapper .filter-container {
+  max-width: 100%;
+  flex: unset;
+}
+
+.search-input--regex-error {
+  border-color: #c0392b !important;
+  box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.25) !important;
+}
+
 </style>
