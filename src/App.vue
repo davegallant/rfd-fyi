@@ -61,7 +61,6 @@ export default {
       activeFilters: this.parseFiltersFromUrl(),
       sortMethod: "score",
       sortDropdownOpen: false,
-      viewMode: "list",
       topics: [],
       isMobile: false,
       currentTheme: "auto",
@@ -80,7 +79,6 @@ export default {
     this.detectMobile();
     this.fetchDeals();
     this.initializeSortMethod();
-    this.initializeViewMode();
     this.initializeTheme();
     this.setupThemeListener();
   },
@@ -128,18 +126,6 @@ export default {
       return this.sortOptions.find(o => o.key === this.sortMethod) || this.sortOptions[3];
     },
 
-    viewIcon() {
-      const icons = { cards: "grid_view", list: "view_list" };
-      return icons[this.viewMode];
-    },
-
-    viewTitle() {
-      const titles = {
-        cards: "View: Cards (click for List)",
-        list: "View: List (click for Cards)",
-      };
-      return titles[this.viewMode];
-    },
   },
 
   methods: {
@@ -251,11 +237,6 @@ export default {
         this.setSortMethod(keys[(idx + 1) % keys.length]);
       }
 
-      if (event.key === "v" && !isInput) {
-        event.preventDefault();
-        this.toggleViewMode();
-      }
-
       if (event.key === "t" && !isInput) {
         event.preventDefault();
         this.toggleTheme();
@@ -356,16 +337,6 @@ export default {
       this.sortDropdownOpen = !this.sortDropdownOpen;
     },
 
-    initializeViewMode() {
-      this.viewMode = loadUiPreferences().viewMode;
-    },
-
-    toggleViewMode() {
-      const cycle = { cards: "list", list: "cards" };
-      this.viewMode = cycle[this.viewMode];
-      persistUiPreferences({ ...loadUiPreferences(), viewMode: this.viewMode });
-    },
-
     toggleMenu() {
       this.menuOpen = !this.menuOpen;
     },
@@ -457,9 +428,6 @@ export default {
               </button>
             </div>
           </div>
-          <button class="icon-button desktop-only" :title="viewTitle" @click="toggleViewMode">
-            <span class="material-symbols-outlined">{{ viewIcon }}</span>
-          </button>
           <button class="icon-button desktop-only" :title="themeTitle" @click="toggleTheme">
             <span class="material-symbols-outlined">{{ themeIcon }}</span>
           </button>
@@ -485,10 +453,6 @@ export default {
                 <span class="material-symbols-outlined">{{ opt.icon }}</span>
                 <span>{{ opt.label }}</span>
               </button>
-              <button class="dropdown-item" @click="handleMenuAction(toggleViewMode)">
-                <span class="material-symbols-outlined">{{ viewIcon }}</span>
-                <span>{{ viewTitle.split('(')[0].trim() }}</span>
-              </button>
               <button class="dropdown-item" @click="handleMenuAction(toggleInfoOverlay)">
                 <span class="material-symbols-outlined">info</span>
                 <span>Info</span>
@@ -509,8 +473,8 @@ export default {
         <div v-if="isLoading" class="loading-overlay">
           <span class="material-symbols-outlined spinning loading-spinner">refresh</span>
         </div>
-        <div :class="viewMode === 'cards' ? 'cards-grid' : 'list-view'">
-        <div v-for="topic in filteredTopics" :key="topic.topic_id" :class="viewMode === 'cards' ? 'deal-card' : 'deal-row'">
+        <div class="list-view">
+        <div v-for="topic in filteredTopics" :key="topic.topic_id" class="deal-row">
           <div class="card-header">
             <div class="title-with-link">
               <a
@@ -548,21 +512,7 @@ export default {
               v-html="highlightText(topic.Offer.dealer_name)"
             ></span>
           </div>
-          <div class="card-details" v-if="viewMode === 'cards'">
-            <div class="details-stats">
-              <div class="stat">
-                <span class="material-symbols-outlined">visibility</span>
-                <span class="stat-value">{{ topic.total_views }} views</span>
-              </div>
-              <div class="stat">
-                <span class="material-symbols-outlined">chat</span>
-                <span class="stat-value">{{ topic.total_replies }} replies</span>
-              </div>
-            </div>
-            <div class="card-timestamp">First post: {{ formatDate(topic.post_time) }}</div>
-            <div class="card-timestamp">Last post: {{ formatDate(topic.last_post_time) }}</div>
-          </div>
-          <div class="row-stats" v-if="viewMode === 'list'">
+          <div class="row-stats">
             <span class="stat-compact">{{ formatDate(topic.post_time) }} - {{ formatDate(topic.last_post_time) }}</span>
           </div>
         </div>

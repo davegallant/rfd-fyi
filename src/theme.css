@@ -435,17 +435,6 @@ a:visited {
 }
 
 /* ============================================
-   Cards Grid
-   ============================================ */
-
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 14px;
-  margin-top: 12px;
-}
-
-/* ============================================
    List View
    ============================================ */
 
@@ -529,22 +518,6 @@ a:visited {
     padding-top: 8px;
     border-top: 1px solid var(--border-color);
   }
-}
-
-.deal-card {
-  background-color: var(--bg-secondary);
-  border: 1.5px solid #aaaaaa;
-  border-radius: 12px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  transition: all 0.2s ease;
-  min-height: auto;
-}
-
-.deal-card:hover {
-  box-shadow: 0 4px 8px var(--shadow-medium);
-  border-color: color-mix(in srgb, var(--accent) 28%, var(--border-color-hover));
 }
 
 /* ============================================
@@ -669,42 +642,6 @@ a:visited {
   opacity: 0.9;
 }
 
-.card-details {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border-color);
-}
-
-.details-stats {
-  display: flex;
-  gap: 14px;
-  margin-bottom: 8px;
-}
-
-.stat {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  color: var(--text-meta);
-  font-weight: 400;
-}
-
-.stat .material-symbols-outlined {
-  font-size: 16px;
-  color: var(--text-meta);
-}
-
-.stat-value {
-  font-weight: 400;
-}
-
-.card-timestamp {
-  color: var(--text-meta);
-  font-size: 11px;
-  margin-top: 6px;
-}
-
 /* ============================================
    Mark Highlighting
    ============================================ */
@@ -721,10 +658,6 @@ mark {
    ============================================ */
 
 @media (max-width: 768px) {
-  .cards-grid {
-    grid-template-columns: 1fr;
-  }
-
   .container {
     padding: 10px;
   }

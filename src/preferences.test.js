@@ -38,16 +38,13 @@ describe("loadUiPreferences / persistUiPreferences", () => {
   it("persists preferences to storage when values change", () => {
     persistUiPreferences({
       sortMethod: "title",
-      viewMode: "cards",
       theme: "dark",
     });
 
     expect(memory.getItem("sortMethod")).toBe("title");
-    expect(memory.getItem("viewMode")).toBe("cards");
     expect(memory.getItem("theme")).toBe("dark");
     expect(JSON.parse(memory.getItem(UI_PREFS_STORAGE_KEY))).toEqual({
       sortMethod: "title",
-      viewMode: "cards",
       theme: "dark",
     });
   });
@@ -55,13 +52,11 @@ describe("loadUiPreferences / persistUiPreferences", () => {
   it("restores preferences that were previously saved", () => {
     persistUiPreferences({
       sortMethod: "replies",
-      viewMode: "cards",
       theme: "light",
     });
 
     expect(loadUiPreferences()).toEqual({
       sortMethod: "replies",
-      viewMode: "cards",
       theme: "light",
     });
   });
@@ -72,13 +67,11 @@ describe("loadUiPreferences / persistUiPreferences", () => {
 
   it("falls back to legacy keys when the JSON blob is malformed", () => {
     memory.setItem("sortMethod", "views");
-    memory.setItem("viewMode", "list");
     memory.setItem("theme", "dark");
     memory.setItem(UI_PREFS_STORAGE_KEY, "{not valid json");
 
     expect(loadUiPreferences()).toEqual({
       sortMethod: "views",
-      viewMode: "list",
       theme: "dark",
     });
   });
@@ -90,7 +83,6 @@ describe("loadUiPreferences / persistUiPreferences", () => {
 
   it("ignores invalid values in storage and substitutes defaults", () => {
     memory.setItem("sortMethod", "nope");
-    memory.setItem("viewMode", "wide");
     memory.setItem("theme", "infrared");
 
     expect(loadUiPreferences()).toEqual(DEFAULT_UI_PREFERENCES);
