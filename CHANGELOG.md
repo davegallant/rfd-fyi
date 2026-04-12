@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.1] - 2026-04-11
+
+### Changed
+
+- Info panel is now visibly distinct in dark mode
+
+### Removed
+
+- Card/grid view mode and its toggle button — the app now always uses the list view.
+
 ## [0.4.0] - 2026-04-11
 
 ### Added

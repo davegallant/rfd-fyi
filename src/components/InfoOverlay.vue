@@ -18,10 +18,6 @@
             <td>Cycle sort method</td>
           </tr>
           <tr>
-            <td><strong>v</strong></td>
-            <td>Toggle view mode</td>
-          </tr>
-          <tr>
             <td><strong>t</strong></td>
             <td>Toggle theme</td>
           </tr>
@@ -76,13 +72,14 @@ export default {
 }
 
 .info-panel {
-  background: var(--bg-primary);
+  background: var(--bg-secondary);
   color: var(--text-primary);
   border-radius: 8px;
   padding: 20px;
   max-width: 400px;
   width: 90%;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 24px var(--shadow-medium);
+  border: 1px solid var(--border-color-light);
   text-align: center;
 }
 
