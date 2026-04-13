@@ -316,6 +316,22 @@ export default {
       this.updateUrlWithFilters();
     },
 
+    filterByDealer(dealerName) {
+      const trimmed = dealerName.trim();
+      if (trimmed && !this.activeFilters.includes(trimmed)) {
+        this.activeFilters.push(trimmed);
+        this.updateUrlWithFilters();
+      }
+      this.filterInput = "";
+      this.$nextTick(() => {
+        const input = this.$refs.filterInput;
+        if (input) {
+          input.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          input.focus();
+        }
+      });
+    },
+
     fetchDeals() {
       this.isLoading = true;
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 500));
@@ -525,11 +541,13 @@ export default {
             </div>
           </div>
           <div class="card-meta" v-if="topic.Offer.dealer_name">
-            <span
-              class="dealer-name dealer-label"
+            <button
+              class="dealer-name dealer-label dealer-label--clickable"
               :style="getDealerStyle(topic.Offer.dealer_name)"
+              :title="`Filter by ${topic.Offer.dealer_name}`"
+              @click="filterByDealer(topic.Offer.dealer_name)"
               v-html="highlightText(topic.Offer.dealer_name)"
-            ></span>
+            ></button>
           </div>
           <div class="row-stats">
             <span class="stat-compact">{{ formatDate(topic.post_time) }} - {{ formatDate(topic.last_post_time) }}</span>
@@ -604,6 +622,28 @@ export default {
 .search-input--regex-error {
   border-color: #c0392b !important;
   box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.25) !important;
+}
+
+.dealer-label--clickable {
+  /* reset button chrome */
+  appearance: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  line-height: inherit;
+  cursor: pointer;
+  /* subtle interactive cue */
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+  transition: opacity 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dealer-label--clickable:hover,
+.dealer-label--clickable:focus-visible {
+  opacity: 0.8;
+  box-shadow: 0 0 0 2px currentColor;
+  outline: none;
 }
 
 </style>
