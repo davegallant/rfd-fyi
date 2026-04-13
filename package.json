@@ -6,7 +6,6 @@
     "serve": "vite",
     "preview": "vite preview",
     "build": "vite build",
-    "lint": "eslint . --fix",
     "test": "npx vitest run",
     "test:coverage": "npx vitest run --coverage"
   },
@@ -25,34 +24,16 @@
   },
   "devDependencies": {
     "@babel/core": "^7.22.10",
-    "@babel/eslint-parser": "^7.22.10",
     "@vitejs/plugin-vue": "^6.0.0",
+    "@vitest/coverage-v8": "^4.0.0",
     "@vue/cli-plugin-babel": "~5.0.0",
-    "@vue/cli-plugin-eslint": "~5.0.0",
     "@vue/cli-service": "^5.0.9",
-    "eslint": "^8.47.0",
-    "eslint-plugin-vue": "^9.17.0",
+    "@vue/test-utils": "^2.4.6",
+    "jsdom": "^29.0.0",
     "postcss-cli": "^11.0.0",
     "sass-embedded": "^1.89.2",
     "unplugin-vue-components": "^32.0.0",
-    "@vitest/coverage-v8": "^4.0.0",
-    "@vue/test-utils": "^2.4.6",
-    "jsdom": "^29.0.0",
     "vite": "^8.0.0",
     "vitest": "^4.0.0"
-  },
-  "eslintConfig": {
-    "root": true,
-    "env": {
-      "node": true
-    },
-    "extends": [
-      "plugin:vue/vue3-essential",
-      "eslint:recommended"
-    ],
-    "parserOptions": {
-      "parser": "@babel/eslint-parser"
-    },
-    "rules": {}
   }
 }
