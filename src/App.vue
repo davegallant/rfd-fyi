@@ -459,6 +459,8 @@ export default {
                 <span class="material-symbols-outlined" :class="{ 'spinning': isLoading }">refresh</span>
                 <span>Refresh</span>
               </button>
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-section-label">Sort by</div>
               <button
                 v-for="opt in sortOptions"
                 :key="opt.key"
@@ -469,6 +471,7 @@ export default {
                 <span class="material-symbols-outlined">{{ opt.icon }}</span>
                 <span>{{ opt.label }}</span>
               </button>
+              <div class="dropdown-divider"></div>
               <button class="dropdown-item" @click="handleMenuAction(toggleInfoOverlay)">
                 <span class="material-symbols-outlined">info</span>
                 <span>Info</span>
