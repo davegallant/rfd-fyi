@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.3] - 2026-04-12
+
+### Added
+
+- Make the dealer label a clickable filter
+- Add headers to the menu when in hamburger menu
+
+### Changed
+
+- Pin the header to the top when scrolling
+
 ## [0.4.2] - 2026-04-12
 
 ### Added
