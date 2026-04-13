@@ -414,7 +414,7 @@ export default {
                 ref="filterInput"
                 v-model="filterInput"
                 type="text"
-                placeholder="filter… or /regex/"
+                placeholder="filter - supports /regex/"
                 class="search-input"
                 :class="{ 'search-input--regex-error': isRegexError }"
                 :title="isRegexError ? 'Invalid regex' : ''"
