@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 
 import { getFilteredSortedTopics, parseFilterTerm } from "./filterTopics.js";
-import { loadUiPreferences, persistUiPreferences } from "./preferences.js";
+import { loadUiPreferences, persistUiPreferences, SORT_METHOD_KEYS } from "./preferences.js";
 
 import "./theme.css";
 
@@ -60,6 +60,7 @@ export default {
       filterInput: "",
       activeFilters: this.parseFiltersFromUrl(),
       sortMethod: "score",
+      sortBySetByUser: false,
       sortDropdownOpen: false,
       topics: [],
       isMobile: false,
@@ -284,15 +285,15 @@ export default {
       return [];
     },
 
-    updateUrlWithFilters() {
+    updateUrl() {
+      const query = {};
       if (this.activeFilters.length > 0) {
-        this.$router.replace({
-          path: "/",
-          query: { filters: JSON.stringify(this.activeFilters) },
-        });
-      } else {
-        this.$router.replace({ path: "/", query: {} });
+        query.filters = JSON.stringify(this.activeFilters);
       }
+      if (this.sortBySetByUser) {
+        query.sort = this.sortMethod;
+      }
+      this.$router.replace({ path: "/", query });
     },
 
     applyFilter() {
@@ -301,26 +302,26 @@ export default {
         this.activeFilters.push(trimmed);
         this.filterInput = "";
         this.$refs.filterInput.blur();
-        this.updateUrlWithFilters();
+        this.updateUrl();
       }
     },
 
     clearFilter(index) {
       this.activeFilters.splice(index, 1);
-      this.updateUrlWithFilters();
+      this.updateUrl();
     },
 
     clearAllFilters() {
       this.activeFilters = [];
       this.filterInput = "";
-      this.updateUrlWithFilters();
+      this.updateUrl();
     },
 
     filterByDealer(dealerName) {
       const trimmed = dealerName.trim();
       if (trimmed && !this.activeFilters.includes(trimmed)) {
         this.activeFilters.push(trimmed);
-        this.updateUrlWithFilters();
+        this.updateUrl();
       }
       this.filterInput = "";
       this.$nextTick(() => {
@@ -352,13 +353,21 @@ export default {
     },
 
     initializeSortMethod() {
-      this.sortMethod = loadUiPreferences().sortMethod;
+      const urlSort = new URLSearchParams(window.location.search).get("sort");
+      if (urlSort && SORT_METHOD_KEYS.includes(urlSort)) {
+        this.sortMethod = urlSort;
+        this.sortBySetByUser = true;
+      } else {
+        this.sortMethod = loadUiPreferences().sortMethod;
+      }
     },
 
     setSortMethod(method) {
       this.sortMethod = method;
+      this.sortBySetByUser = true;
       this.sortDropdownOpen = false;
       persistUiPreferences({ ...loadUiPreferences(), sortMethod: method });
+      this.updateUrl();
     },
 
     toggleSortDropdown() {

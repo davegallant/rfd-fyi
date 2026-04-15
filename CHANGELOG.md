@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-04-14
+
+### Added
+
+- Sort method is now encoded in the URL as `?sort=` — changing the sort via the dropdown or `s` key updates the URL, and loading a URL with `?sort=views` (etc.) applies that sort immediately. This makes sorted views shareable and bookmarkable.
+
 ## [0.4.3] - 2026-04-12
 
 ### Added
