@@ -56,9 +56,26 @@ func (a *App) Initialize() {
 	a.initializeRoutes()
 }
 
+func secureHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		w.Header().Set("Content-Security-Policy",
+			"default-src 'self'; "+
+				"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "+
+				"font-src 'self' https://fonts.gstatic.com; "+
+				"script-src 'self' 'unsafe-inline' https://umami.davegallant.ca; "+
+				"connect-src 'self' https://umami.davegallant.ca; "+
+				"img-src 'self' data:",
+		)
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (a *App) Run(httpPort string) {
 	log.Info().Msgf("Running http on port %s", httpPort)
-	if err := http.ListenAndServe(fmt.Sprintf(":%s", httpPort), a.Mux); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", httpPort), secureHeaders(a.Mux)); err != nil {
 		panic(err)
 	}
 }

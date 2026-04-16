@@ -139,9 +139,12 @@ export default {
     },
 
     highlightText(text) {
-      if (!this.activeFilters || this.activeFilters.length === 0) return text;
+      // Always escape HTML entities first to prevent XSS from external API data
+      const escapeHtml = (s) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      let result = escapeHtml(text);
 
-      let result = text;
+      if (!this.activeFilters || this.activeFilters.length === 0) return result;
+
       for (const filter of this.activeFilters) {
         const { regex, literal, isRegexError } = parseFilterTerm(filter);
         if (regex && !isRegexError) {
@@ -149,12 +152,13 @@ export default {
           const globalRegex = new RegExp(regex.source, regex.flags.includes("g") ? regex.flags : regex.flags + "g");
           result = result.replace(globalRegex, (match) => `<mark>${match}</mark>`);
         } else {
-          // Plain literal: case-insensitive substring highlight
+          // Plain literal: escape the filter term too so e.g. "H&M" matches "H&amp;M" in escaped text
+          const escapedLiteral = escapeHtml(literal);
           const lowerText = result.toLowerCase();
-          const lowerFilter = literal.toLowerCase();
+          const lowerFilter = escapedLiteral.toLowerCase();
           if (lowerFilter && lowerText.includes(lowerFilter)) {
-            const escaped = literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const substringRegex = new RegExp(escaped, "ig");
+            const escapedForRegex = escapedLiteral.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const substringRegex = new RegExp(escapedForRegex, "ig");
             result = result.replace(substringRegex, (match) => `<mark>${match}</mark>`);
           }
         }
