@@ -5,7 +5,7 @@ go 1.26
 require (
 	github.com/dlclark/regexp2 v1.12.0
 	github.com/joho/godotenv v1.5.1
-	github.com/rs/zerolog v1.35.0
+	github.com/rs/zerolog v1.35.1
 )
 
 require (
