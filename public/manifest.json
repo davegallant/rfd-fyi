@@ -1,0 +1,21 @@
+{
+  "name": "rfd-fyi",
+  "short_name": "rfd-fyi",
+  "description": "An alternative frontend for hot deals",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#dddddd",
+  "theme_color": "#b45309",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "48x48",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}
