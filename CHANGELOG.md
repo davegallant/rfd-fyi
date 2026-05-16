@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2026-05-15
+
+### Added
+
+- PWA home screen support: saving the site to your iOS or Android home screen now shows the correct app icon and name instead of a screenshot thumbnail. Includes an Apple Touch Icon (180×180) for iOS and a web app manifest for Android.
+
 ## [0.5.0] - 2026-04-14
 
 ### Added
