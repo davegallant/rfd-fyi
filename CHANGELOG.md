@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.0] - 2026-05-22
+
+### Changed
+
+- PWA accent color changed from orange to red for better visual impact.
+
 ## [0.6.0] - 2026-05-15
 
 ### Added

@@ -30,8 +30,8 @@
   --border-color-light: #cccccc;
   --border-color-hover: #999999;
   --link-color: #212529;
-  --accent: #dc2626;
-  --accent-hover: #b91c1c;
+  --accent: #c00;
+  --accent-hover: #a10000;
   --accent-subtle: color-mix(in srgb, var(--accent) 10%, var(--bg-secondary));
   --accent-ring: color-mix(in srgb, var(--accent) 28%, transparent);
   --score-positive-bg: rgb(90, 140, 90);
@@ -57,8 +57,8 @@
     --border-color-light: #555555;
     --border-color-hover: #777777;
     --link-color: #e0e0e0;
-    --accent: #fb9292;
-    --accent-hover: #f87171;
+    --accent: #e64040;
+    --accent-hover: #fb8080;
     --accent-subtle: color-mix(in srgb, var(--accent) 12%, var(--bg-secondary));
     --accent-ring: color-mix(in srgb, var(--accent) 32%, transparent);
     --score-positive-bg: rgb(100, 140, 80);
@@ -85,8 +85,8 @@ html.dark-theme {
   --border-color-light: #555555;
   --border-color-hover: #777777;
   --link-color: #e0e0e0;
-  --accent: #fb9292;
-  --accent-hover: #f87171;
+  --accent: #e64040;
+  --accent-hover: #fb8080;
   --accent-subtle: color-mix(in srgb, var(--accent) 12%, var(--bg-secondary));
   --accent-ring: color-mix(in srgb, var(--accent) 32%, transparent);
   --score-positive-bg: rgb(100, 140, 80);
@@ -112,8 +112,8 @@ html.light-theme {
   --border-color-light: #cccccc;
   --border-color-hover: #999999;
   --link-color: #212529;
-  --accent: #dc2626;
-  --accent-hover: #b91c1c;
+  --accent: #c00;
+  --accent-hover: #a10000;
   --accent-subtle: color-mix(in srgb, var(--accent) 10%, var(--bg-secondary));
   --accent-ring: color-mix(in srgb, var(--accent) 28%, transparent);
   --score-positive-bg: rgb(90, 140, 90);
