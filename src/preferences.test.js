@@ -46,6 +46,7 @@ describe("loadUiPreferences / persistUiPreferences", () => {
     expect(JSON.parse(memory.getItem(UI_PREFS_STORAGE_KEY))).toEqual({
       sortMethod: "title",
       theme: "dark",
+      hideSeen: false,
     });
   });
 
@@ -58,6 +59,7 @@ describe("loadUiPreferences / persistUiPreferences", () => {
     expect(loadUiPreferences()).toEqual({
       sortMethod: "replies",
       theme: "light",
+      hideSeen: false,
     });
   });
 
@@ -73,6 +75,7 @@ describe("loadUiPreferences / persistUiPreferences", () => {
     expect(loadUiPreferences()).toEqual({
       sortMethod: "views",
       theme: "dark",
+      hideSeen: false,
     });
   });
 
@@ -86,5 +89,15 @@ describe("loadUiPreferences / persistUiPreferences", () => {
     memory.setItem("theme", "infrared");
 
     expect(loadUiPreferences()).toEqual(DEFAULT_UI_PREFERENCES);
+  });
+
+  it("persists and restores hideSeen: true", () => {
+    persistUiPreferences({ sortMethod: "score", theme: "auto", hideSeen: true });
+    expect(loadUiPreferences().hideSeen).toBe(true);
+  });
+
+  it("treats non-boolean hideSeen in storage as false", () => {
+    memory.setItem(UI_PREFS_STORAGE_KEY, JSON.stringify({ sortMethod: "score", theme: "auto", hideSeen: "yes" }));
+    expect(loadUiPreferences().hideSeen).toBe(false);
   });
 });

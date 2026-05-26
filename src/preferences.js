@@ -4,6 +4,7 @@ export const UI_PREFS_STORAGE_KEY = "rfd-fyi-ui";
 export const DEFAULT_UI_PREFERENCES = {
   sortMethod: "score",
   theme: "auto",
+  hideSeen: false,
 };
 
 export const SORT_METHOD_KEYS = [
@@ -23,7 +24,10 @@ function normalizeFromPartial(partial) {
   const theme = ["auto", "light", "dark"].includes(p.theme)
     ? p.theme
     : DEFAULT_UI_PREFERENCES.theme;
-  return { sortMethod, theme };
+  const hideSeen = typeof p.hideSeen === "boolean"
+    ? p.hideSeen
+    : DEFAULT_UI_PREFERENCES.hideSeen;
+  return { sortMethod, theme, hideSeen };
 }
 
 function readLegacy(storage) {
@@ -54,7 +58,6 @@ export function loadUiPreferences(storage = localStorage) {
   }
 }
 
-/** Writes legacy keys and the JSON blob so preferences survive and stay consistent. */
 export function persistUiPreferences(prefs, storage = localStorage) {
   const normalized = normalizeFromPartial(prefs);
   storage.setItem("sortMethod", normalized.sortMethod);

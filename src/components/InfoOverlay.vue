@@ -22,6 +22,14 @@
             <td>Toggle theme</td>
           </tr>
           <tr>
+            <td><strong>h</strong></td>
+            <td>Toggle hide seen deals</td>
+          </tr>
+          <tr>
+            <td><strong>m</strong></td>
+            <td>Mark all visible deals seen</td>
+          </tr>
+          <tr>
             <td><strong>/</strong></td>
             <td>Filter deals</td>
           </tr>

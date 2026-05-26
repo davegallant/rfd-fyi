@@ -5,6 +5,7 @@ import utc from "dayjs/plugin/utc";
 
 import { getFilteredSortedTopics, parseFilterTerm } from "./filterTopics.js";
 import { loadUiPreferences, persistUiPreferences, SORT_METHOD_KEYS } from "./preferences.js";
+import { seen, markSeen, markUnseen, isSeen, markAllSeen, clearSeen } from "./composables/useSeenDeals.js";
 
 import "./theme.css";
 
@@ -55,6 +56,10 @@ function hashString(str) {
 }
 
 export default {
+  setup() {
+    return { seen, markSeen, markUnseen, markAllSeen, clearSeen };
+  },
+
   data() {
     return {
       filterInput: "",
@@ -70,6 +75,8 @@ export default {
       isLoading: false,
       menuOpen: false,
       infoOverlayVisible: false,
+      hideSeen: loadUiPreferences().hideSeen,
+      seenDropdownOpen: false,
     };
   },
 
@@ -93,9 +100,19 @@ export default {
     }
   },
 
+  watch: {
+    hideSeen(val) {
+      persistUiPreferences({ ...loadUiPreferences(), hideSeen: val });
+    },
+  },
+
   computed: {
     filteredTopics() {
-      return getFilteredSortedTopics(this.topics, this.activeFilters, this.sortMethod);
+      const base = getFilteredSortedTopics(this.topics, this.activeFilters, this.sortMethod);
+      if (!this.hideSeen) return base;
+      // Access seen.value so Vue tracks reactivity
+      const seenMap = this.seen;
+      return base.filter(t => !seenMap.has(String(t.topic_id)));
     },
 
     isRegexError() {
@@ -258,6 +275,16 @@ export default {
         event.preventDefault();
         this.toggleTheme();
       }
+
+      if (event.key === "h" && !isInput) {
+        event.preventDefault();
+        this.hideSeen = !this.hideSeen;
+      }
+
+      if (event.key === "m" && !isInput) {
+        event.preventDefault();
+        this.handleMarkAllSeen();
+      }
     },
 
     parseFiltersFromUrl() {
@@ -374,6 +401,10 @@ export default {
       this.updateUrl();
     },
 
+    toggleSeenDropdown() {
+      this.seenDropdownOpen = !this.seenDropdownOpen;
+    },
+
     toggleSortDropdown() {
       this.sortDropdownOpen = !this.sortDropdownOpen;
     },
@@ -398,6 +429,9 @@ export default {
       if (this.sortDropdownOpen && !event.target.closest('.sort-dropdown-wrapper')) {
         this.sortDropdownOpen = false;
       }
+      if (this.seenDropdownOpen && !event.target.closest('.seen-dropdown-wrapper')) {
+        this.seenDropdownOpen = false;
+      }
     },
 
     getDealerColor(dealerName) {
@@ -421,6 +455,20 @@ export default {
     },
     toggleInfoOverlay() {
       this.infoOverlayVisible = !this.infoOverlayVisible;
+    },
+
+    onDealClick(topic) {
+      this.markSeen(topic.topic_id);
+    },
+
+    handleMarkAllSeen() {
+      // Mark all currently visible (pre-hideSeen filter) deals as seen
+      const base = getFilteredSortedTopics(this.topics, this.activeFilters, this.sortMethod);
+      this.markAllSeen(base);
+    },
+
+    handleClearSeen() {
+      this.clearSeen();
     },
   },
 };
@@ -456,6 +504,25 @@ export default {
           <button class="icon-button desktop-only" title="Refresh deals" @click="fetchDeals" :disabled="isLoading">
             <span class="material-symbols-outlined" :class="{ 'spinning': isLoading }">refresh</span>
           </button>
+          <div class="seen-dropdown-wrapper desktop-only">
+            <button class="icon-button" :class="{ active: hideSeen }" title="Seen deals" @click="toggleSeenDropdown">
+              <span class="material-symbols-outlined">{{ hideSeen ? 'visibility_off' : 'visibility' }}</span>
+            </button>
+            <div class="seen-dropdown" v-if="seenDropdownOpen" @click.stop>
+              <button class="dropdown-item" :class="{ active: hideSeen }" @click="hideSeen = !hideSeen; seenDropdownOpen = false">
+                <span class="material-symbols-outlined">{{ hideSeen ? 'visibility' : 'visibility_off' }}</span>
+                <span>{{ hideSeen ? 'Show seen' : 'Hide seen' }}</span>
+              </button>
+              <button class="dropdown-item" @click="handleMarkAllSeen(); seenDropdownOpen = false">
+                <span class="material-symbols-outlined">done_all</span>
+                <span>Mark all seen</span>
+              </button>
+              <button class="dropdown-item" @click="handleClearSeen(); seenDropdownOpen = false" :disabled="seen.size === 0">
+                <span class="material-symbols-outlined">ink_eraser</span>
+                <span>Clear seen</span>
+              </button>
+            </div>
+          </div>
           <div class="sort-dropdown-wrapper desktop-only">
             <button class="icon-button" :title="'Sort: ' + currentSortOption.label" @click="toggleSortDropdown">
               <span class="material-symbols-outlined">sort</span>
@@ -501,6 +568,20 @@ export default {
                 <span>{{ opt.label }}</span>
               </button>
               <div class="dropdown-divider"></div>
+              <div class="dropdown-section-label">Seen deals</div>
+              <button class="dropdown-item" :class="{ active: hideSeen }" @click="handleMenuAction(() => { hideSeen = !hideSeen })">
+                <span class="material-symbols-outlined">{{ hideSeen ? 'visibility' : 'visibility_off' }}</span>
+                <span>{{ hideSeen ? 'Show seen' : 'Hide seen' }}</span>
+              </button>
+              <button class="dropdown-item" @click="handleMenuAction(handleMarkAllSeen)">
+                <span class="material-symbols-outlined">done_all</span>
+                <span>Mark all seen</span>
+              </button>
+              <button class="dropdown-item" @click="handleMenuAction(handleClearSeen)" :disabled="seen.size === 0">
+                <span class="material-symbols-outlined">ink_eraser</span>
+                <span>Clear seen</span>
+              </button>
+              <div class="dropdown-divider"></div>
               <button class="dropdown-item" @click="handleMenuAction(toggleInfoOverlay)">
                 <span class="material-symbols-outlined">info</span>
                 <span>Info</span>
@@ -522,7 +603,13 @@ export default {
           <span class="material-symbols-outlined spinning loading-spinner">refresh</span>
         </div>
         <div class="list-view">
-        <div v-for="topic in filteredTopics" :key="topic.topic_id" class="deal-row">
+        <div
+          v-for="topic in filteredTopics"
+          :key="topic.topic_id"
+          class="deal-row"
+          :class="{ 'deal-row--seen': seen.has(String(topic.topic_id)) }"
+          @click.capture="onDealClick(topic)"
+        >
           <div class="card-header">
             <div class="title-with-link">
               <a
@@ -657,6 +744,38 @@ export default {
   opacity: 0.8;
   box-shadow: 0 0 0 2px currentColor;
   outline: none;
+}
+
+.seen-dropdown-wrapper {
+  position: relative;
+}
+
+.seen-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color-light);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px var(--shadow-medium);
+  min-width: 170px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+/* Active state for the eye icon button when hide-seen is on */
+.icon-button.active {
+  color: var(--accent);
+}
+
+.deal-row--seen {
+  opacity: 0.4;
+  transition: opacity 0.2s ease;
+}
+
+.deal-row--seen:hover,
+.deal-row--seen:focus-within {
+  opacity: 1;
 }
 
 </style>
