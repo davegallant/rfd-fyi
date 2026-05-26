@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.0] - 2026-05-26
+
+### Added
+
+- **Seen Deals**: click a deal to mark it seen; click again to unmark. See a dimmed overlay on seen rows, filter them from the list with "Hide seen", mass-mark visible deals in one hit, or clear the entire history. Everything is stored locally with a soft 30-day expiry.
+- Keyboard shortcuts: `h` toggles hide-seen, `m` marks all visible deals as seen.
+
+### Changed
+
+- Toolbar's seen-deals controls collapsed into a single eye icon dropdown matching the sort icon pattern.
+- Frontend version bumped to 0.8.0.
+
 ## [0.7.0] - 2026-05-22
 
 ### Changed
