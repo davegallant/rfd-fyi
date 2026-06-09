@@ -453,6 +453,19 @@ export default {
         color: color.text,
       };
     },
+
+    isHotDeal(topic) {
+      const score = Number(topic.score) || 0;
+      if (score < 15) return false;
+
+      const postedAt = dayjs(topic.post_time);
+      if (!postedAt.isValid()) return false;
+
+      const ageHours = Math.max(dayjs().diff(postedAt, "hour", true), 1);
+      const hotness = score / Math.pow(ageHours + 2, 0.6);
+      return hotness >= 5;
+    },
+
     toggleInfoOverlay() {
       this.infoOverlayVisible = !this.infoOverlayVisible;
     },
@@ -603,11 +616,22 @@ export default {
           <span class="material-symbols-outlined spinning loading-spinner">refresh</span>
         </div>
         <div class="list-view">
+        <div v-if="filteredTopics.length === 0" class="empty-state">
+          <span class="material-symbols-outlined">search_off</span>
+          <p>No deals match your filters.</p>
+          <button v-if="activeFilters.length > 0" class="empty-state-button" @click="clearAllFilters">
+            Clear filters
+          </button>
+        </div>
+        <template v-else>
         <div
           v-for="topic in filteredTopics"
           :key="topic.topic_id"
           class="deal-row"
-          :class="{ 'deal-row--seen': seen.has(String(topic.topic_id)) }"
+          :class="{
+            'deal-row--seen': seen.has(String(topic.topic_id)),
+            'deal-row--hot': isHotDeal(topic),
+          }"
           @click.capture="onDealClick(topic)"
         >
           <div class="card-header">
@@ -641,6 +665,7 @@ export default {
             </div>
           </div>
           <div class="card-meta" v-if="topic.Offer.dealer_name">
+            <span v-if="isHotDeal(topic)" class="hot-deal-icon" title="Hot deal" aria-label="Hot deal">🔥</span>
             <button
               class="dealer-name dealer-label dealer-label--clickable"
               :style="getDealerStyle(topic.Offer.dealer_name)"
@@ -653,6 +678,7 @@ export default {
             <span class="stat-compact">{{ formatDate(topic.post_time) }} - {{ formatDate(topic.last_post_time) }}</span>
           </div>
         </div>
+        </template>
         </div>
       </div>
     </div>
@@ -699,6 +725,47 @@ export default {
 .loading-overlay .loading-spinner {
   font-size: 48px;
   color: var(--text-primary);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 20px;
+  border: 1px dashed var(--border-color-light);
+  border-radius: 8px;
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.empty-state .material-symbols-outlined {
+  font-size: 36px;
+}
+
+.empty-state p {
+  margin: 0;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.empty-state-button {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color-light);
+  border-radius: 4px;
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.empty-state-button:hover {
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--border-color-hover));
+  color: var(--accent);
 }
 
 /* ============================================

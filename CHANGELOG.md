@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - Deal rows now show the merchant first with a larger, bolder label to make scanning by merchant easier.
+- Fast-rising hot deals are flagged with a fire icon, and filtered-out lists now show an empty state with a clear-filters action.
 
 ## [0.8.0] - 2026-05-26
 

@@ -486,7 +486,22 @@ a:visited {
   border-color: color-mix(in srgb, var(--accent) 35%, var(--border-color-hover));
 }
 
+.deal-row--hot .score-bubble.positive {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--score-positive-bg) 24%, transparent), 0 1px 3px rgba(34, 139, 34, 0.2);
+}
+
+.hot-deal-icon {
+  order: -1;
+  flex-shrink: 0;
+  font-size: 15px;
+  line-height: 1;
+  pointer-events: none;
+}
+
 .deal-row .card-meta {
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
   margin-bottom: 0;
   flex-shrink: 0;
   order: 1;
@@ -494,10 +509,13 @@ a:visited {
 
 .deal-row .title-with-link {
   flex: 1;
+  min-width: 0;
   order: 2;
 }
 
 .deal-row .deal-title {
+  flex: 0 1 auto;
+  min-width: 0;
   font-size: 14px;
   font-weight: 600;
   line-height: 1.48;
@@ -652,6 +670,9 @@ a:visited {
   display: inline-block;
   width: fit-content;
   max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-weight: 700;
   font-size: 12px;
   padding: 3px 8px;
