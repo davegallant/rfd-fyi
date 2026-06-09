@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.0] - 2026-06-09
+
+### Changed
+
+- Deal rows now show the merchant first with a larger, bolder label to make scanning by merchant easier.
+
 ## [0.8.0] - 2026-05-26
 
 ### Added
