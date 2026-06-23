@@ -4,6 +4,27 @@ This repository provides a simple, less-distracting overlay for hot deals posted
 
 The frontend is made with Vue 3. Cloudflare Pages serves the frontend and Pages Functions serve `/topics.json` and `/html` from Cloudflare KV. A scheduled Cloudflare Worker refreshes the cached topics to avoid excessive requests to RedFlagDeals itself.
 
+## Architecture
+
+```mermaid
+flowchart TD
+  Browser[Browser] -->|GET /| Pages[Cloudflare Pages static assets]
+  Browser -->|GET /topics.json| TopicsFn[Pages Function: /topics.json]
+  Browser -->|GET /html| HtmlFn[Pages Function: /html]
+
+  TopicsFn -->|read topics.json| KV[(Cloudflare KV: TOPICS_KV)]
+  HtmlFn -->|read topics.json| KV
+
+  Cron[Cloudflare Cron Trigger<br/>every 5 minutes] --> RefreshWorker[Scheduled Worker: rfd-fyi-refresh]
+  RefreshWorker -->|fetch topic pages| RFD[RedFlagDeals API]
+  RefreshWorker -->|fetch redirect rules| Redirects[Redirect rules JSON]
+  RefreshWorker -->|write topics.json| KV
+
+  Admin[Manual refresh<br/>/admin/refresh or /refresh] --> RefreshWorker
+  Admin --> TopicsRefreshFn[Pages Function: /admin/refresh]
+  TopicsRefreshFn -->|write topics.json| KV
+```
+
 ## Cloudflare deployment
 
 Install dependencies and log in to Cloudflare:
