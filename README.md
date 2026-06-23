@@ -29,12 +29,22 @@ Deploy the Pages app:
 
 ```sh
 npm run pages:deploy
+# or
+just deploy-pages
 ```
 
 Deploy the scheduled refresh Worker:
 
 ```sh
 npm run worker:deploy
+# or
+just deploy-worker
+```
+
+Deploy both:
+
+```sh
+just deploy
 ```
 
 The Worker runs every 5 minutes and writes the latest topics to KV. Pages reads that cached JSON at `/topics.json` and renders a no-JavaScript view at `/html`.
