@@ -491,30 +491,34 @@ a:visited {
 }
 
 .hot-deal-icon {
-  order: -1;
-  flex-shrink: 0;
+  display: inline-block;
   font-size: 15px;
   line-height: 1;
   pointer-events: none;
-}
-
-.deal-row .card-meta {
-  flex-direction: row;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 0;
-  flex-shrink: 0;
-  order: 1;
+  vertical-align: baseline;
+  margin-right: 4px;
 }
 
 .deal-row .title-with-link {
   flex: 1;
   min-width: 0;
-  order: 2;
+  order: 1;
+}
+
+.deal-text {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.48;
+}
+
+.dealer-title-gap {
+  display: inline-block;
+  width: 3px;
+  vertical-align: baseline;
 }
 
 .deal-row .deal-title {
-  flex: 0 1 auto;
+  display: inline;
   min-width: 0;
   font-size: 14px;
   font-weight: 600;
@@ -552,20 +556,14 @@ a:visited {
     gap: 6px;
   }
 
-  .deal-row .card-meta {
-    min-width: 0;
-    max-width: 28%;
-  }
-
   .deal-row .dealer-name {
-    max-width: 100%;
+    max-width: 42vw;
+    line-height: 1.2;
+    vertical-align: baseline;
   }
 
   .deal-row .deal-title {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
   }
 
   .row-stats {

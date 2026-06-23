@@ -641,12 +641,23 @@ export default {
         >
           <div class="card-header">
             <div class="title-with-link">
-              <a
-                :href="`https://forums.redflagdeals.com${topic.web_path}`"
-                target="_blank"
-                class="deal-title"
-                v-html="highlightText(topic.title)"
-              ></a>
+              <span class="deal-text">
+                <span v-if="isHotDeal(topic)" class="hot-deal-icon" title="Hot deal" aria-label="Hot deal">🔥</span>
+                <button
+                  v-if="topic.Offer.dealer_name"
+                  class="dealer-name dealer-label dealer-label--clickable"
+                  :style="getDealerStyle(topic.Offer.dealer_name)"
+                  :title="`Filter by ${topic.Offer.dealer_name}`"
+                  @click="filterByDealer(topic.Offer.dealer_name)"
+                  v-html="highlightText(topic.Offer.dealer_name)"
+                ></button><span v-if="topic.Offer.dealer_name" class="dealer-title-gap" aria-hidden="true"></span>
+                <a
+                  :href="`https://forums.redflagdeals.com${topic.web_path}`"
+                  target="_blank"
+                  class="deal-title"
+                  v-html="highlightText(topic.title)"
+                ></a>
+              </span>
               <a
                 v-if="topic.Offer.url"
                 :href="topic.Offer.url"
@@ -668,16 +679,6 @@ export default {
               <span v-if="topic.score > 0">+{{ topic.score }}</span>
               <span v-else>{{ topic.score }}</span>
             </div>
-          </div>
-          <div class="card-meta" v-if="topic.Offer.dealer_name">
-            <span v-if="isHotDeal(topic)" class="hot-deal-icon" title="Hot deal" aria-label="Hot deal">🔥</span>
-            <button
-              class="dealer-name dealer-label dealer-label--clickable"
-              :style="getDealerStyle(topic.Offer.dealer_name)"
-              :title="`Filter by ${topic.Offer.dealer_name}`"
-              @click="filterByDealer(topic.Offer.dealer_name)"
-              v-html="highlightText(topic.Offer.dealer_name)"
-            ></button>
           </div>
           <div class="row-stats">
             <span class="stat-compact">{{ formatDate(topic.post_time) }} - {{ formatDate(topic.last_post_time) }}</span>
