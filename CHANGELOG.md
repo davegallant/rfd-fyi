@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.1] - 2026-06-23
+
+### Added
+
+- Just recipes for local Cloudflare Pages, local Worker, frontend-only dev, and seeding local KV.
+
+### Changed
+
+- Mobile deal rows now keep content inline, constrain long retailer names, and hide compact dates to preserve narrow-screen space.
+
 ## [0.10.0] - 2026-06-23
 
 ### Added

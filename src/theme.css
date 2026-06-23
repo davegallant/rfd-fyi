@@ -548,14 +548,28 @@ a:visited {
 
 @media (max-width: 768px) {
   .deal-row {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .deal-row .card-meta {
+    min-width: 0;
+    max-width: 28%;
+  }
+
+  .deal-row .dealer-name {
+    max-width: 100%;
+  }
+
+  .deal-row .deal-title {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .row-stats {
-    width: 100%;
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid var(--border-color);
+    display: none;
   }
 }
 
