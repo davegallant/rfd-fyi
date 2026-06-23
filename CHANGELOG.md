@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.0] - 2026-06-23
+
+### Added
+
+- Cloudflare Pages deployment with Pages Functions serving `/topics.json`, `/html`, and a protected manual refresh endpoint from KV.
+- Scheduled Cloudflare Worker refreshes RedFlagDeals topics into KV every five minutes.
+- Wrangler scripts and local development docs for running Pages Functions, seeding local KV, and deploying the refresh Worker.
+
+### Removed
+
+- Go backend and Docker/container deployment in favour of Cloudflare Pages, Workers, and KV.
+
 ## [0.9.0] - 2026-06-09
 
 ### Changed

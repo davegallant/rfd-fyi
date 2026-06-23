@@ -1,0 +1,16 @@
+name = "rfd-fyi-refresh"
+main = "src/index.ts"
+compatibility_date = "2026-06-22"
+
+# Run often enough to keep the static Pages app fresh without hammering RFD.
+[triggers]
+crons = ["*/5 * * * *"]
+
+# Use the same KV namespace IDs as the Pages project.
+[[kv_namespaces]]
+binding = "TOPICS_KV"
+id = "6b6f2586181b44b4a51ab6457fbfef0c"
+preview_id = "0c38926cedc84133bd80f5c291ea34fa"
+
+# Optional manual refresh endpoint secret:
+#   npx wrangler secret put REFRESH_SECRET --config worker/wrangler.toml

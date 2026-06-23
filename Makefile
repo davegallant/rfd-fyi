@@ -13,29 +13,28 @@ help:
 	@echo
 .PHONY: help
 
-## backend: Build and run the backend from source
-backend:
-	@cd backend && CGO_ENABLED=0 HTTP_PORT=8080 go run .
-.PHONY: backend
-
-## frontend: Build and run the frontend from source
+## frontend: Run the Vite frontend from source
 frontend:
 	@npm run serve
 .PHONY: frontend
 
-## dev: Build and run in Docker
-dev:
-	docker build -t rfd-fyi:dev .
-	docker run --rm --name rfd-fyi -p 8080:8080 rfd-fyi:dev
-.PHONY: dev
+## pages-dev: Build and run Cloudflare Pages locally
+pages-dev:
+	@npm run pages:dev
+.PHONY: pages-dev
 
-## prod: Run the latest image in Docker
-prod:
-	@docker run -d --name rfd-fyi -p 8080:8080 ghcr.io/davegallant/rfd-fyi --pull always
-.PHONY: prod
+## pages-deploy: Build and deploy Cloudflare Pages
+pages-deploy:
+	@npm run pages:deploy
+.PHONY: pages-deploy
 
-## teardown: Teardown Docker
-teardown:
-	docker stop rfd-fyi || true
-	docker rm rfd-fyi || true
-.PHONY: teardown
+## worker-dev: Run the scheduled refresh Worker locally
+worker-dev:
+	@npm run worker:dev
+.PHONY: worker-dev
+
+## worker-deploy: Deploy the scheduled refresh Worker
+worker-deploy:
+	@npm run worker:deploy
+.PHONY: worker-deploy
+

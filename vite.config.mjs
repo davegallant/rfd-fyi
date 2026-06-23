@@ -1,5 +1,4 @@
 // Plugins
-import Components from "unplugin-vue-components/vite";
 import Vue from "@vitejs/plugin-vue";
 
 // Utilities
@@ -13,7 +12,6 @@ const version = readFileSync("VERSION", "utf-8").trim();
 export default defineConfig({
   plugins: [
     Vue(),
-    Components(),
   ],
   define: { "process.env": {}, __APP_VERSION__: JSON.stringify(version) },
   resolve: {
@@ -25,18 +23,8 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      "/topics.json": "http://localhost:8080",
-      "/html": "http://localhost:8080",
-    },
-  },
-  css: {
-    preprocessorOptions: {
-      sass: {
-        api: "modern-compiler",
-      },
-      scss: {
-        api: "modern-compiler",
-      },
+      "/topics.json": process.env.VITE_API_ORIGIN || "https://rfd-fyi.pages.dev",
+      "/html": process.env.VITE_API_ORIGIN || "https://rfd-fyi.pages.dev",
     },
   },
   build: {
@@ -50,7 +38,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          if (["axios", "dayjs", "vue-router", "vue-loading-overlay"].some((pkg) => id.includes(`/node_modules/${pkg}/`))) {
+          if (["axios", "dayjs", "vue-router"].some((pkg) => id.includes(`/node_modules/${pkg}/`))) {
             return "vendor";
           }
         },

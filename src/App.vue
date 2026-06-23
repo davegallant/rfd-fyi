@@ -6,6 +6,7 @@ import utc from "dayjs/plugin/utc";
 import { getFilteredSortedTopics, parseFilterTerm } from "./filterTopics.js";
 import { loadUiPreferences, persistUiPreferences, SORT_METHOD_KEYS } from "./preferences.js";
 import { seen, markSeen, markUnseen, isSeen, markAllSeen, clearSeen } from "./composables/useSeenDeals.js";
+import InfoOverlay from "./components/InfoOverlay.vue";
 
 import "./theme.css";
 
@@ -56,6 +57,10 @@ function hashString(str) {
 }
 
 export default {
+  components: {
+    InfoOverlay,
+  },
+
   setup() {
     return { seen, markSeen, markUnseen, markAllSeen, clearSeen };
   },
