@@ -23,6 +23,26 @@ frontend:
 	@npm run serve
 .PHONY: frontend
 
+## pages-dev: Build and run Cloudflare Pages locally
+pages-dev:
+	@npm run pages:dev
+.PHONY: pages-dev
+
+## pages-deploy: Build and deploy Cloudflare Pages
+pages-deploy:
+	@npm run pages:deploy
+.PHONY: pages-deploy
+
+## worker-dev: Run the scheduled refresh Worker locally
+worker-dev:
+	@npm run worker:dev
+.PHONY: worker-dev
+
+## worker-deploy: Deploy the scheduled refresh Worker
+worker-deploy:
+	@npm run worker:deploy
+.PHONY: worker-deploy
+
 ## dev: Build and run in Docker
 dev:
 	docker build -t rfd-fyi:dev .

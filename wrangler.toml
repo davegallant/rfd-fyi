@@ -1,0 +1,11 @@
+name = "rfd-fyi"
+compatibility_date = "2026-06-22"
+pages_build_output_dir = "dist"
+
+# Replace these IDs after creating the namespace:
+#   npx wrangler kv namespace create TOPICS_KV
+#   npx wrangler kv namespace create TOPICS_KV --preview
+[[kv_namespaces]]
+binding = "TOPICS_KV"
+id = "6b6f2586181b44b4a51ab6457fbfef0c"
+preview_id = "0c38926cedc84133bd80f5c291ea34fa"

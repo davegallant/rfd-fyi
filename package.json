@@ -6,6 +6,10 @@
     "serve": "vite",
     "preview": "vite preview",
     "build": "vite build",
+    "pages:dev": "npm run build && wrangler pages dev dist",
+    "pages:deploy": "npm run build && wrangler pages deploy dist",
+    "worker:dev": "wrangler dev --config worker/wrangler.toml",
+    "worker:deploy": "wrangler deploy --config worker/wrangler.toml",
     "test": "npx vitest run",
     "test:coverage": "npx vitest run --coverage",
     "lint": "npx --yes oxlint"
@@ -26,6 +30,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.22.10",
+    "@cloudflare/workers-types": "^4.20260621.1",
     "@vitejs/plugin-vue": "^6.0.0",
     "@vitest/coverage-v8": "^4.0.0",
     "@vue/cli-plugin-babel": "~5.0.0",
@@ -36,6 +41,7 @@
     "sass-embedded": "^1.89.2",
     "unplugin-vue-components": "^32.0.0",
     "vite": "^8.0.0",
-    "vitest": "^4.0.0"
+    "vitest": "^4.0.0",
+    "wrangler": "^4.103.0"
   }
 }
