@@ -3,27 +3,30 @@
 Compact, actionable rules for automated agents and contributors.
 
 - Production / build notes:
-  - The Go backend embeds frontend files via `//go:embed dist/*` (backend expects `backend/dist/` to exist at build time).
-  - To produce an embedded binary locally: run `npm run build` in the repo root and copy the generated `dist` into `backend/dist` (Dockerfile does this for you). If `backend/dist` lacks the built frontend, `go build`/`go run` that depends on embed may fail or embed placeholders.
-  - The Dockerfile builds the frontend then the backend and sets `TOPICS_PATH=/tmp/topics.json` in the image.
+  - Cloudflare Pages serves the Vite/Vue `dist/` output.
+  - Pages Functions in `functions/` serve `/topics.json`, `/html`, and `/admin/refresh` from Cloudflare KV.
+  - The scheduled Worker in `worker/` refreshes RedFlagDeals topics into KV every 5 minutes.
+  - `wrangler.toml` configures Pages; `worker/wrangler.toml` configures the scheduled Worker.
 
-- Important env vars and files:
-  - `TOPICS_PATH` (default `./topics.json`) controls where the backend writes/reads topics. Docker image uses `/tmp/topics.json`.
-  - `HTTP_PORT` (default `8080` in Makefile/main) controls the server port.
-  - `LOG_LEVEL` controls zerolog level; .env is auto-loaded (package `joho/godotenv/autoload` is imported).
+- Important env vars, bindings, and files:
+  - `TOPICS_KV` is the KV binding used by both Pages Functions and the Worker.
+  - `REFRESH_SECRET` optionally protects manual refresh endpoints.
+  - `RFD_BASE_URL` and `REDIRECTS_URL` can override fetch targets for the Worker/Functions.
   - `VERSION` is read by Vite at build time and injected as `__APP_VERSION__`. Updating `VERSION` requires rebuilding the frontend to take effect.
 
-- Backend behavior and gotchas an agent might miss:
-  - Backend periodically refreshes topics from RedFlagDeals on a randomized 60–90s interval and performs an immediate first fetch on startup.
-  - Topics are written atomically (tmp file + rename). If the topics file is missing the server will serve `[]` — this is normal.
-  - Redirect stripping uses `regexp2` named groups; redirects are fetched from an external JSON by default (overridable via `RedirectsURL`).
-  - The backend can serve a cached topics response when `TopicsResponseCache` is enabled in tests; production behavior is file-backed.
+- Cloudflare behavior and gotchas an agent might miss:
+  - The frontend expects `/topics.json` to preserve the old API shape, including `Offer`, `Votes`, and `score` fields.
+  - KV can return `null`; functions should serve `[]` when topics are missing.
+  - Redirect stripping uses JavaScript `RegExp` named groups and may need adjustment if redirect patterns use regexp features unsupported by JS.
+  - The Worker URL is not the app UI; it intentionally returns `404` except for the protected `/refresh` endpoint.
 
 - Tests & linting:
   - Frontend tests: `npm test` (runs Vitest per `vite.config.mjs`). Coverage: `npm run test:coverage`.
   - Lint: `npm run lint` (eslint configured in package.json).
-  - Backend tests: `cd backend && go test ./...`.
+  - Build: `npm run build`.
+  - Worker dry run: `npx wrangler deploy --dry-run --config worker/wrangler.toml`.
+  - Pages Functions build: `npx wrangler pages functions build functions --outdir /tmp/rfd-fyi-pages-functions`.
 
 - CI / release conventions:
   - Versioning: update `VERSION` and add the release notes to `CHANGELOG.md` in the same commit before cutting a release.
-  - The repository keeps `package-lock.json` and `go.sum` committed; dependency updates are managed by Renovate.
+  - The repository keeps `package-lock.json` committed; dependency updates are managed by Renovate.

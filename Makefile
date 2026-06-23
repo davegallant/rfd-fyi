@@ -13,12 +13,7 @@ help:
 	@echo
 .PHONY: help
 
-## backend: Build and run the backend from source
-backend:
-	@cd backend && CGO_ENABLED=0 HTTP_PORT=8080 go run .
-.PHONY: backend
-
-## frontend: Build and run the frontend from source
+## frontend: Run the Vite frontend from source
 frontend:
 	@npm run serve
 .PHONY: frontend
@@ -43,19 +38,3 @@ worker-deploy:
 	@npm run worker:deploy
 .PHONY: worker-deploy
 
-## dev: Build and run in Docker
-dev:
-	docker build -t rfd-fyi:dev .
-	docker run --rm --name rfd-fyi -p 8080:8080 rfd-fyi:dev
-.PHONY: dev
-
-## prod: Run the latest image in Docker
-prod:
-	@docker run -d --name rfd-fyi -p 8080:8080 ghcr.io/davegallant/rfd-fyi --pull always
-.PHONY: prod
-
-## teardown: Teardown Docker
-teardown:
-	docker stop rfd-fyi || true
-	docker rm rfd-fyi || true
-.PHONY: teardown

@@ -53,14 +53,7 @@ curl -H "Authorization: Bearer $REFRESH_SECRET" https://rfd-fyi-refresh.<your-su
 
 ## Local Development
 
-To run the Vite frontend against the existing Go backend:
-
-```sh
-make backend
-make frontend
-```
-
-To run the Cloudflare Pages build locally:
+To run the Cloudflare Pages build locally, including Pages Functions:
 
 ```sh
 npm run pages:dev
@@ -72,10 +65,8 @@ To run the refresh Worker locally:
 npm run worker:dev
 ```
 
-## Docker legacy deployment
-
-The previous Docker deployment is still present while the Cloudflare migration is in progress:
+For frontend-only Vite development:
 
 ```sh
-make dev
+npm run serve
 ```
