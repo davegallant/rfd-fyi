@@ -1,6 +1,8 @@
 node_modules
 /coverage
 /dist
+/.wrangler
+/worker/.wrangler
 data/
 backend/bin/
 .vscode

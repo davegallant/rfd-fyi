@@ -24,6 +24,10 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    proxy: {
+      "/topics.json": process.env.VITE_API_ORIGIN || "https://rfd-fyi.pages.dev",
+      "/html": process.env.VITE_API_ORIGIN || "https://rfd-fyi.pages.dev",
+    },
   },
   css: {
     preprocessorOptions: {

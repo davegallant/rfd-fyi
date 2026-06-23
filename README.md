@@ -59,6 +59,12 @@ To run the Cloudflare Pages build locally, including Pages Functions:
 npm run pages:dev
 ```
 
+The local Pages KV starts empty. Seed it by calling the local manual refresh endpoint in another shell:
+
+```sh
+curl -X POST -H "Authorization: Bearer dev" http://localhost:8788/admin/refresh
+```
+
 To run the refresh Worker locally:
 
 ```sh
@@ -70,3 +76,5 @@ For frontend-only Vite development:
 ```sh
 npm run serve
 ```
+
+The Vite dev server proxies `/topics.json` and `/html` to `https://rfd-fyi.pages.dev` by default. Override with `VITE_API_ORIGIN` if needed.
