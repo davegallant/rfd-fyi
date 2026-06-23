@@ -53,23 +53,48 @@ curl -H "Authorization: Bearer $REFRESH_SECRET" https://rfd-fyi-refresh.<your-su
 
 ## Local Development
 
-To run the Cloudflare Pages build locally, including Pages Functions:
+### Full Cloudflare Pages local dev
+
+Run the Cloudflare Pages build locally, including Pages Functions:
 
 ```sh
 npm run pages:dev
 ```
 
-The local Pages KV starts empty. Seed it by calling the local manual refresh endpoint in another shell:
+Wrangler serves the app at:
+
+```text
+http://localhost:8788
+```
+
+Local Pages KV starts empty, so the app may initially show no deals. Seed local KV by calling the manual refresh endpoint in another shell:
 
 ```sh
 curl -X POST -H "Authorization: Bearer dev" http://localhost:8788/admin/refresh
 ```
 
-To run the refresh Worker locally:
+A successful refresh returns something like:
+
+```json
+{"refreshed":191}
+```
+
+After that, these local endpoints should return populated data:
+
+```text
+http://localhost:8788/topics.json
+http://localhost:8788/html
+```
+
+### Refresh Worker local dev
+
+To run the scheduled refresh Worker locally:
 
 ```sh
 npm run worker:dev
 ```
+
+### Frontend-only Vite dev
 
 For frontend-only Vite development:
 
@@ -77,4 +102,8 @@ For frontend-only Vite development:
 npm run serve
 ```
 
-The Vite dev server proxies `/topics.json` and `/html` to `https://rfd-fyi.pages.dev` by default. Override with `VITE_API_ORIGIN` if needed.
+The Vite dev server proxies `/topics.json` and `/html` to `https://rfd-fyi.pages.dev` by default, so it should show live deals without seeding local KV. Override with `VITE_API_ORIGIN` if needed:
+
+```sh
+VITE_API_ORIGIN=http://localhost:8788 npm run serve
+```
