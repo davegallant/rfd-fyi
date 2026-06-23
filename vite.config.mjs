@@ -25,8 +25,8 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      "/topics.json": "http://localhost:8080",
-      "/html": "http://localhost:8080",
+      "/topics.json": process.env.VITE_API_ORIGIN || "https://rfd-fyi.pages.dev",
+      "/html": process.env.VITE_API_ORIGIN || "https://rfd-fyi.pages.dev",
     },
   },
   css: {

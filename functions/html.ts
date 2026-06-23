@@ -1,4 +1,26 @@
-<!DOCTYPE html>
+import { withSecurityHeaders } from "./_shared/responses";
+import { readTopics } from "./_shared/topics";
+
+const RFD_FORUM_BASE = "https://forums.redflagdeals.com";
+
+export async function onRequestGet({ env }) {
+  const topics = await readTopics(env);
+  topics.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+
+  return new Response(renderHtml(topics), {
+    headers: withSecurityHeaders({
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "public, max-age=30",
+    }),
+  });
+}
+
+function renderHtml(topics) {
+  const rows = topics.length > 0
+    ? `<ol>${topics.map(renderTopic).join("")}</ol>`
+    : `<p class="empty">No deals loaded yet.</p>`;
+
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -10,7 +32,6 @@
       --fg: #1a1d22;
       --muted: #5c6570;
       --border: #d8dde3;
-      /* Match SPA theme.css --link-color (same as primary text, not default browser blue) */
       --link: #212529;
       --card: #fff;
     }
@@ -53,9 +74,7 @@
       color: var(--link);
       transition: color 0.2s ease;
     }
-    a:visited {
-      color: var(--link);
-    }
+    a:visited { color: var(--link); }
     main {
       max-width: 52rem;
       margin: 0 auto;
@@ -97,24 +116,34 @@
     <h1>rfd-fyi</h1>
     <p class="sub"><a href="/topics.json">Raw JSON</a></p>
   </header>
-  <main>
-    {{if .Topics}}
-    <ol>
-      {{range .Topics}}
-      <li>
-        <p class="title"><a href="{{.ThreadURL}}">{{.Title}}</a></p>
-        <p class="meta">
-          Score {{.Score}}
-          {{if .HasOffer}}
-          · {{if .DealerName}}{{.DealerName}} — {{end}}<a href="{{.OfferURL}}">Offer link</a>
-          {{end}}
-        </p>
-      </li>
-      {{end}}
-    </ol>
-    {{else}}
-    <p class="empty">No deals loaded yet.</p>
-    {{end}}
-  </main>
+  <main>${rows}</main>
 </body>
-</html>
+</html>`;
+}
+
+function renderTopic(topic) {
+  const title = escapeHtml(topic.title ?? "");
+  const threadUrl = escapeAttribute(`${RFD_FORUM_BASE}${topic.web_path ?? ""}`);
+  const score = escapeHtml(String(topic.score ?? 0));
+  const dealerName = topic.Offer?.dealer_name ? `${escapeHtml(topic.Offer.dealer_name)} — ` : "";
+  const offerUrl = topic.Offer?.url;
+  const offer = offerUrl ? ` · ${dealerName}<a href="${escapeAttribute(offerUrl)}">Offer link</a>` : "";
+
+  return `<li>
+        <p class="title"><a href="${threadUrl}">${title}</a></p>
+        <p class="meta">Score ${score}${offer}</p>
+      </li>`;
+}
+
+function escapeHtml(value) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function escapeAttribute(value) {
+  return escapeHtml(value);
+}
