@@ -802,8 +802,10 @@ export default {
   appearance: none;
   border: none;
   padding: 0;
-  font: inherit;
-  line-height: inherit;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
   cursor: pointer;
   /* subtle interactive cue */
   text-decoration: underline;
