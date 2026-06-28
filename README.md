@@ -2,7 +2,7 @@
 
 This repository provides a simple, less-distracting frontend for Hot Deals posted on https://forums.redflagdeals.com.
 
-The frontend is a Vite/Vue 3 app. Cloudflare Pages serves the static `dist/` output, Pages Functions serve `/topics.json`, `/html`, and `/admin/refresh` from Cloudflare KV, and a scheduled Cloudflare Worker refreshes cached topics every 5 minutes to avoid excessive requests to RedFlagDeals itself.
+The frontend is a Vite/Vue 3 app. Cloudflare Pages serves the static output, Pages Functions serve `/topics.json`, `/html`, and `/admin/refresh` from Cloudflare KV, and a scheduled Cloudflare Worker refreshes cached topics to avoid excessive requests to RedFlagDeals itself.
 
 ## Architecture
 
