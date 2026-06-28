@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.11.1] - 2026-06-28
+
+### Changed
+
+- Scheduled refresh now fetches RedFlagDeals pages in bounded parallel batches and reuses compiled redirect matchers, reducing CPU usage so new deals continue to appear promptly.
+
 ## [0.11.0] - 2026-06-27
 
 ### Added

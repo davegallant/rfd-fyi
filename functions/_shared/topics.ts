@@ -1,6 +1,7 @@
 const TOPICS_KEY = "topics.json";
 const RFD_FORUM_BASE = "https://forums.redflagdeals.com";
 const DEFAULT_REDIRECTS_URL = "https://raw.githubusercontent.com/davegallant/rfd-redirect-stripper/main/redirects.json";
+const DEALS_FETCH_CONCURRENCY = 5;
 
 export interface Env {
   TOPICS_KV: {
@@ -46,6 +47,10 @@ interface Redirect {
   pattern: string;
 }
 
+interface CompiledRedirect extends Redirect {
+  regex: RegExp;
+}
+
 export async function readTopicsJson(env: Env): Promise<string> {
   return (await env.TOPICS_KV.get(TOPICS_KEY)) ?? "[]";
 }
@@ -79,30 +84,38 @@ export async function refreshTopics(env: Env): Promise<Topic[]> {
 async function getDeals(env: Env, id: number, firstPage: number, lastPage: number): Promise<Topic[]> {
   const topics: Topic[] = [];
   const base = (env.RFD_BASE_URL || RFD_FORUM_BASE).replace(/\/$/, "");
+  const pages = Array.from({ length: lastPage - firstPage }, (_, index) => firstPage + index);
 
-  for (let page = firstPage; page < lastPage; page += 1) {
-    const requestUrl = `${base}/api/topics?forum_id=${id}&per_page=40&page=${page}`;
-
-    try {
-      const response = await fetch(requestUrl, {
-        headers: {
-          "accept": "application/json",
-          "user-agent": "rfd-fyi/1.0 (+https://github.com/davegallant/rfd-fyi)",
-        },
-      });
-      if (!response.ok) {
-        console.warn(`unexpected status fetching deals: ${response.status}`);
-        continue;
-      }
-
-      const body = await response.json<TopicsResponse>();
-      topics.push(...filterNonSponsorTopics(body.topics ?? []).map(normalizeTopic));
-    } catch (error) {
-      console.warn("error fetching deals", error);
-    }
+  for (let index = 0; index < pages.length; index += DEALS_FETCH_CONCURRENCY) {
+    const batch = pages.slice(index, index + DEALS_FETCH_CONCURRENCY);
+    const results = await Promise.all(batch.map((page) => fetchDealsPage(base, id, page)));
+    topics.push(...results.flat());
   }
 
   return topics;
+}
+
+async function fetchDealsPage(base: string, id: number, page: number): Promise<Topic[]> {
+  const requestUrl = `${base}/api/topics?forum_id=${id}&per_page=40&page=${page}`;
+
+  try {
+    const response = await fetch(requestUrl, {
+      headers: {
+        "accept": "application/json",
+        "user-agent": "rfd-fyi/1.0 (+https://github.com/davegallant/rfd-fyi)",
+      },
+    });
+    if (!response.ok) {
+      console.warn(`unexpected status fetching deals: ${response.status}`);
+      return [];
+    }
+
+    const body = await response.json<TopicsResponse>();
+    return filterNonSponsorTopics(body.topics ?? []).map(normalizeTopic);
+  } catch (error) {
+    console.warn("error fetching deals", error);
+    return [];
+  }
 }
 
 async function getRedirects(env: Env): Promise<Redirect[]> {
@@ -160,19 +173,14 @@ function normalizeTopic(topic: Topic): Topic {
 }
 
 export function stripRedirects(topics: Topic[], redirects: Redirect[]): Topic[] {
+  const compiledRedirects = compileRedirects(redirects);
+
   return topics.map((topic) => {
     const offerUrl = topic.Offer?.url;
     if (!offerUrl) return topic;
 
-    for (const redirect of redirects) {
-      let match: RegExpMatchArray | null = null;
-      try {
-        match = offerUrl.match(new RegExp(redirect.pattern));
-      } catch (error) {
-        console.warn(`invalid redirect pattern ${redirect.name}`, error);
-        continue;
-      }
-
+    for (const redirect of compiledRedirects) {
+      const match = offerUrl.match(redirect.regex);
       const baseUrl = match?.groups?.baseUrl;
       if (!baseUrl) continue;
 
@@ -192,4 +200,18 @@ export function stripRedirects(topics: Topic[], redirects: Redirect[]): Topic[] 
 
     return topic;
   });
+}
+
+function compileRedirects(redirects: Redirect[]): CompiledRedirect[] {
+  const compiledRedirects: CompiledRedirect[] = [];
+
+  for (const redirect of redirects) {
+    try {
+      compiledRedirects.push({ ...redirect, regex: new RegExp(redirect.pattern) });
+    } catch (error) {
+      console.warn(`invalid redirect pattern ${redirect.name}`, error);
+    }
+  }
+
+  return compiledRedirects;
 }
