@@ -12,6 +12,9 @@ import "./theme.css";
 
 dayjs.extend(utc);
 
+const TOPICS_BATCH_SIZE = 100;
+const INFINITE_SCROLL_THRESHOLD_PX = 600;
+
 // Color palette for dealer labels - muted, visually distinct colors
 const DEALER_COLORS = [
   { bg: '#e8eef4', border: '#5a7a9a', text: '#4a6a8a' },  // Muted Blue
@@ -82,12 +85,14 @@ export default {
       infoOverlayVisible: false,
       hideSeen: loadUiPreferences().hideSeen,
       seenDropdownOpen: false,
+      visibleTopicCount: TOPICS_BATCH_SIZE,
     };
   },
 
   mounted() {
     window.addEventListener("keydown", this.handleKeyDown);
     window.addEventListener("resize", this.handleResize);
+    window.addEventListener("scroll", this.handleScroll, { passive: true });
     window.addEventListener("click", this.handleClickOutside);
     this.detectMobile();
     this.fetchDeals();
@@ -99,6 +104,7 @@ export default {
   beforeUnmount() {
     window.removeEventListener("keydown", this.handleKeyDown);
     window.removeEventListener("resize", this.handleResize);
+    window.removeEventListener("scroll", this.handleScroll);
     window.removeEventListener("click", this.handleClickOutside);
     if (this.darkModeQuery && this.themeChangeHandler) {
       this.darkModeQuery.removeEventListener("change", this.themeChangeHandler);
@@ -106,8 +112,20 @@ export default {
   },
 
   watch: {
+    activeFilters: {
+      deep: true,
+      handler() {
+        this.resetVisibleTopics();
+      },
+    },
+
+    sortMethod() {
+      this.resetVisibleTopics();
+    },
+
     hideSeen(val) {
       persistUiPreferences({ ...loadUiPreferences(), hideSeen: val });
+      this.resetVisibleTopics();
     },
   },
 
@@ -118,6 +136,14 @@ export default {
       // Access seen.value so Vue tracks reactivity
       const seenMap = this.seen;
       return base.filter(t => !seenMap.has(String(t.topic_id)));
+    },
+
+    displayedTopics() {
+      return this.filteredTopics.slice(0, this.visibleTopicCount);
+    },
+
+    hasMoreDisplayedTopics() {
+      return this.visibleTopicCount < this.filteredTopics.length;
     },
 
     isRegexError() {
@@ -244,6 +270,26 @@ export default {
 
     handleResize() {
       this.detectMobile();
+      this.loadMoreTopicsIfNearBottom();
+    },
+
+    handleScroll() {
+      this.loadMoreTopicsIfNearBottom();
+    },
+
+    resetVisibleTopics() {
+      this.visibleTopicCount = TOPICS_BATCH_SIZE;
+      this.$nextTick(() => this.loadMoreTopicsIfNearBottom());
+    },
+
+    loadMoreTopicsIfNearBottom() {
+      if (!this.hasMoreDisplayedTopics) return;
+
+      const scrollBottom = window.innerHeight + window.scrollY;
+      const pageBottom = document.documentElement.offsetHeight;
+      if (pageBottom - scrollBottom <= INFINITE_SCROLL_THRESHOLD_PX) {
+        this.visibleTopicCount += TOPICS_BATCH_SIZE;
+      }
     },
 
     handleKeyDown(event) {
@@ -379,6 +425,7 @@ export default {
       ])
         .then(([response]) => {
           this.topics = response.data;
+          this.resetVisibleTopics();
         })
         .catch((err) => {
           console.error("Failed to fetch deals:", err.response || err);
@@ -480,9 +527,7 @@ export default {
     },
 
     handleMarkAllSeen() {
-      // Mark all currently visible (pre-hideSeen filter) deals as seen
-      const base = getFilteredSortedTopics(this.topics, this.activeFilters, this.sortMethod);
-      this.markAllSeen(base);
+      this.markAllSeen(this.displayedTopics);
     },
 
     handleClearSeen() {
@@ -509,7 +554,7 @@ export default {
                 ref="filterInput"
                 v-model="filterInput"
                 type="text"
-                placeholder="filter - supports /regex/"
+                placeholder="filter"
                 class="search-input"
                 :class="{ 'search-input--regex-error': isRegexError }"
                 :title="isRegexError ? 'Invalid regex' : ''"
@@ -630,7 +675,7 @@ export default {
         </div>
         <template v-else>
         <div
-          v-for="topic in filteredTopics"
+          v-for="topic in displayedTopics"
           :key="topic.topic_id"
           class="deal-row"
           :class="{
@@ -683,6 +728,9 @@ export default {
           <div class="row-stats">
             <span class="stat-compact">{{ formatDate(topic.post_time) }} - {{ formatDate(topic.last_post_time) }}</span>
           </div>
+        </div>
+        <div v-if="hasMoreDisplayedTopics" class="load-more-status">
+          Showing {{ displayedTopics.length }} of {{ filteredTopics.length }} deals. Scroll for more.
         </div>
         </template>
         </div>
@@ -772,6 +820,13 @@ export default {
 .empty-state-button:hover {
   border-color: color-mix(in srgb, var(--accent) 32%, var(--border-color-hover));
   color: var(--accent);
+}
+
+.load-more-status {
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  text-align: center;
 }
 
 /* ============================================

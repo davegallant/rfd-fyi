@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.11.0] - 2026-06-27
+
+### Added
+
+- Infinite scrolling renders the first 100 matching deals up front, then loads additional batches as you scroll while filters and sorting still apply to the full fetched dataset.
+
+### Changed
+
+- Backend refresh now fetches up to 1,000 Hot Deals topics so filtering can search a deeper deal history.
+
 ## [0.10.1] - 2026-06-23
 
 ### Added

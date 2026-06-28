@@ -61,7 +61,7 @@ export async function readTopics(env: Env): Promise<Topic[]> {
 }
 
 export async function refreshTopics(env: Env): Promise<Topic[]> {
-  let topics = await getDeals(env, 9, 1, 6);
+  let topics = await getDeals(env, 9, 1, 26);
 
   if (topics.length === 0) {
     return [];
