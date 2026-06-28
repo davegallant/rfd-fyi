@@ -1,8 +1,8 @@
 # rfd-fyi
 
-This repository provides a simple, less-distracting overlay for hot deals posted on https://forums.redflagdeals.com.
+This repository provides a simple, less-distracting frontend for Hot Deals posted on https://forums.redflagdeals.com.
 
-The frontend is made with Vue 3. Cloudflare Pages serves the frontend and Pages Functions serve `/topics.json` and `/html` from Cloudflare KV. A scheduled Cloudflare Worker refreshes the cached topics to avoid excessive requests to RedFlagDeals itself.
+The frontend is a Vite/Vue 3 app. Cloudflare Pages serves the static `dist/` output, Pages Functions serve `/topics.json`, `/html`, and `/admin/refresh` from Cloudflare KV, and a scheduled Cloudflare Worker refreshes cached topics every 5 minutes to avoid excessive requests to RedFlagDeals itself.
 
 ## Architecture
 
@@ -20,8 +20,10 @@ flowchart TD
   RefreshWorker -->|fetch redirect rules| Redirects[Redirect rules JSON]
   RefreshWorker -->|write topics.json| KV
 
-  Admin[Manual refresh<br/>/admin/refresh or /refresh] --> RefreshWorker
-  Admin --> TopicsRefreshFn[Pages Function: /admin/refresh]
+  AdminPages[Manual refresh<br/>POST /admin/refresh] --> TopicsRefreshFn[Pages Function: /admin/refresh]
+  AdminWorker[Manual refresh<br/>GET /refresh] --> RefreshWorker
+  TopicsRefreshFn -->|fetch topic pages| RFD
+  TopicsRefreshFn -->|fetch redirect rules| Redirects
   TopicsRefreshFn -->|write topics.json| KV
 ```
 
@@ -30,7 +32,7 @@ flowchart TD
 Install dependencies and log in to Cloudflare:
 
 ```sh
-npm install
+npm ci
 npx wrangler login
 ```
 
@@ -46,12 +48,13 @@ Copy the returned namespace IDs into both:
 - `wrangler.toml`
 - `worker/wrangler.toml`
 
-Deploy the Pages app:
+Build and deploy the Pages app:
 
 ```sh
+npm run build
 npm run pages:deploy
 # or
-just deploy-pages
+npm run build && just deploy-pages
 ```
 
 Deploy the scheduled refresh Worker:
@@ -82,6 +85,29 @@ npx wrangler secret put REFRESH_SECRET --config worker/wrangler.toml
 curl -H "Authorization: Bearer $REFRESH_SECRET" https://rfd-fyi-refresh.<your-subdomain>.workers.dev/refresh
 ```
 
+## Tests and checks
+
+Run the unit test suite:
+
+```sh
+npm test -- --run
+```
+
+Run coverage:
+
+```sh
+npm run test:coverage -- --run
+```
+
+Run linting and a production build:
+
+```sh
+npm run lint
+npm run build
+```
+
+GitHub Actions runs `npm ci`, tests, linting, and build on every push and pull request.
+
 ## Local Development
 
 ### Full Cloudflare Pages local dev
@@ -107,7 +133,7 @@ curl -X POST -H "Authorization: Bearer dev" http://localhost:8788/admin/refresh
 A successful refresh returns something like:
 
 ```json
-{"refreshed":191}
+{"refreshed":1000}
 ```
 
 After that, these local endpoints should return populated data:
@@ -133,7 +159,7 @@ For frontend-only Vite development:
 npm run serve
 ```
 
-The Vite dev server proxies `/topics.json` and `/html` to `https://rfd-fyi.pages.dev` by default, so it should show live deals without seeding local KV. Override with `VITE_API_ORIGIN` if needed:
+The Vite dev server proxies `/topics.json` and `/html` to the configured production Pages origin by default, so it should show live deals without seeding local KV. Override with `VITE_API_ORIGIN` if needed:
 
 ```sh
 VITE_API_ORIGIN=http://localhost:8788 npm run serve
