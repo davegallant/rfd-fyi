@@ -218,6 +218,11 @@ describe("refreshTopics", () => {
         topic({ topic_id: 10, title: "First copy", votes: { total_up: 5, total_down: 1 } }),
         topic({ topic_id: 10, title: "Second copy", votes: { total_up: 99, total_down: 0 } }),
         topic({ topic_id: 11, title: "[Sponsored] Paid placement" }),
+        topic({
+          topic_id: 12,
+          title: "Paid placement without sponsored title marker",
+          offer: { dealer_name: "Advertiser", url: "https://pubads.g.doubleclick.net/gampad/clk?id=123&iu=/1030735/redflagdeals" },
+        }),
       ] });
     }));
 
@@ -274,11 +279,16 @@ describe("topic transforms", () => {
     ]);
   });
 
-  it("filters only topics with sponsored titles", () => {
+  it("filters sponsored title markers and ad click placements", () => {
     expect(filterNonSponsorTopics([
       topic({ topic_id: 1, title: "[Sponsored] Paid placement" }),
       topic({ topic_id: 2, title: "Great deal" }),
       topic({ topic_id: 3, title: "Not [Sponsored] in the middle" }),
+      topic({
+        topic_id: 4,
+        title: "Paid placement without sponsored title marker",
+        offer: { dealer_name: "Advertiser", url: "https://pubads.g.doubleclick.net/gampad/clk?id=123&iu=/1030735/redflagdeals" },
+      }),
     ])).toEqual([
       expect.objectContaining({ topic_id: 2 }),
       expect.objectContaining({ topic_id: 3 }),

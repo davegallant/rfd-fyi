@@ -86,6 +86,7 @@ export default {
       hideSeen: loadUiPreferences().hideSeen,
       seenDropdownOpen: false,
       visibleTopicCount: TOPICS_BATCH_SIZE,
+      refreshIntervalId: null,
     };
   },
 
@@ -96,6 +97,7 @@ export default {
     window.addEventListener("click", this.handleClickOutside);
     this.detectMobile();
     this.fetchDeals();
+    this.refreshIntervalId = window.setInterval(() => this.fetchDeals(), 5 * 60 * 1000);
     this.initializeSortMethod();
     this.initializeTheme();
     this.setupThemeListener();
@@ -106,6 +108,9 @@ export default {
     window.removeEventListener("resize", this.handleResize);
     window.removeEventListener("scroll", this.handleScroll);
     window.removeEventListener("click", this.handleClickOutside);
+    if (this.refreshIntervalId) {
+      window.clearInterval(this.refreshIntervalId);
+    }
     if (this.darkModeQuery && this.themeChangeHandler) {
       this.darkModeQuery.removeEventListener("change", this.themeChangeHandler);
     }
@@ -420,7 +425,9 @@ export default {
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 500));
 
       Promise.all([
-        axios.get("/topics.json"),
+        axios.get(`/topics.json?_=${Date.now()}`, {
+          headers: { "cache-control": "no-cache" },
+        }),
         minLoadingTime
       ])
         .then(([response]) => {

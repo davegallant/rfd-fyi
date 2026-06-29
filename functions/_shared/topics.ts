@@ -160,7 +160,12 @@ export function deduplicateTopics(topics: Topic[]): Topic[] {
 }
 
 export function filterNonSponsorTopics(topics: Topic[]): Topic[] {
-  return topics.filter((topic) => !topic.title.startsWith("[Sponsored]"));
+  return topics.filter((topic) => !isSponsoredTopic(topic));
+}
+
+function isSponsoredTopic(topic: Topic): boolean {
+  const offerUrl = topic.Offer?.url ?? topic.offer?.url ?? "";
+  return topic.title.startsWith("[Sponsored]") || offerUrl.includes("pubads.g.doubleclick.net/gampad/clk");
 }
 
 function normalizeTopic(topic: Topic): Topic {
