@@ -96,8 +96,8 @@ describe("refreshTopics", () => {
 
     const refreshed = await refreshTopics({ TOPICS_KV: { get: vi.fn(), put } });
 
-    expect(fetchMock).toHaveBeenCalledTimes(16);
-    expect(refreshed).toHaveLength(600);
+    expect(fetchMock).toHaveBeenCalledTimes(11);
+    expect(refreshed).toHaveLength(400);
     expect(refreshed).toContainEqual(expect.objectContaining({
       topic_id: 2818435,
       title: "[Premium Only] 1000 Scene+ Pts on 25L Fill V-Power at Shell",
@@ -147,7 +147,7 @@ describe("refreshTopics", () => {
 
     const refreshed = await refreshTopics({ TOPICS_KV: { get: vi.fn(), put: vi.fn() } });
 
-    expect(refreshed).toHaveLength(14);
+    expect(refreshed).toHaveLength(9);
     expect(refreshed).not.toContainEqual(expect.objectContaining({ topic_id: 2 }));
     expect(warn).toHaveBeenCalledWith("error fetching deals", expect.any(Error));
   });
@@ -163,7 +163,7 @@ describe("refreshTopics", () => {
 
     const refreshed = await refreshTopics({ TOPICS_KV: { get: vi.fn(), put } });
 
-    expect(refreshed).toHaveLength(14);
+    expect(refreshed).toHaveLength(9);
     expect(refreshed).not.toContainEqual(expect.objectContaining({ topic_id: 2 }));
     expect(put).toHaveBeenCalledOnce();
   });
@@ -178,7 +178,7 @@ describe("refreshTopics", () => {
 
     const refreshed = await refreshTopics({ TOPICS_KV: { get: vi.fn(), put: vi.fn() } });
 
-    expect(refreshed).toHaveLength(15);
+    expect(refreshed).toHaveLength(10);
     expect(warn).toHaveBeenCalledWith("unexpected status fetching redirects: 503");
   });
 
@@ -192,7 +192,7 @@ describe("refreshTopics", () => {
 
     const refreshed = await refreshTopics({ TOPICS_KV: { get: vi.fn(), put: vi.fn() } });
 
-    expect(refreshed).toHaveLength(15);
+    expect(refreshed).toHaveLength(10);
     expect(warn).toHaveBeenCalledWith("error fetching redirects", expect.any(Error));
   });
 
@@ -205,7 +205,7 @@ describe("refreshTopics", () => {
 
     const refreshed = await refreshTopics({ TOPICS_KV: { get: vi.fn(), put: vi.fn() } });
 
-    expect(refreshed).toHaveLength(15);
+    expect(refreshed).toHaveLength(10);
   });
 
   it("filters sponsored topics, deduplicates repeated topics, and preserves first occurrence", async () => {

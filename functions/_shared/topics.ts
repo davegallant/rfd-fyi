@@ -2,7 +2,7 @@ const TOPICS_KEY = "topics.json";
 const RFD_FORUM_BASE = "https://forums.redflagdeals.com";
 const DEFAULT_REDIRECTS_URL = "https://raw.githubusercontent.com/davegallant/rfd-redirect-stripper/main/redirects.json";
 const DEALS_FETCH_CONCURRENCY = 5;
-const HOT_DEALS_PAGE_COUNT = 15;
+const HOT_DEALS_PAGE_COUNT = 10;
 
 export interface Env {
   TOPICS_KV: {
