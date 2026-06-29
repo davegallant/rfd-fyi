@@ -74,8 +74,9 @@ describe("refreshTopics", () => {
     const target = topic({
       topic_id: 2818435,
       title: "[Premium Only] 1000 Scene+ Pts on 25L Fill V-Power at Shell",
-      votes: { total_up: 19, total_down: 1 },
-      offer: { dealer_name: "Shell", url: "" },
+      votes: { total_up: 19, total_down: 1, current_vote: 0 },
+      offer: { dealer_name: "Shell", url: "", price: "CA $1" },
+      summary: { body: "unused API payload" },
     });
     const put = vi.fn();
 
@@ -96,8 +97,8 @@ describe("refreshTopics", () => {
 
     const refreshed = await refreshTopics({ TOPICS_KV: { get: vi.fn(), put } });
 
-    expect(fetchMock).toHaveBeenCalledTimes(11);
-    expect(refreshed).toHaveLength(400);
+    expect(fetchMock).toHaveBeenCalledTimes(26);
+    expect(refreshed).toHaveLength(1000);
     expect(refreshed).toContainEqual(expect.objectContaining({
       topic_id: 2818435,
       title: "[Premium Only] 1000 Scene+ Pts on 25L Fill V-Power at Shell",
@@ -105,7 +106,11 @@ describe("refreshTopics", () => {
       Offer: expect.objectContaining({ dealer_name: "Shell" }),
     }));
     expect(put).toHaveBeenCalledOnce();
-    expect(JSON.parse(put.mock.calls[0][1])).toContainEqual(expect.objectContaining({ topic_id: 2818435 }));
+    const storedTarget = JSON.parse(put.mock.calls[0][1]).find((row) => row.topic_id === 2818435);
+    expect(storedTarget).toEqual(expect.objectContaining({ topic_id: 2818435 }));
+    expect(storedTarget.summary).toBeUndefined();
+    expect(storedTarget.Offer.price).toBeUndefined();
+    expect(storedTarget.Votes.current_vote).toBeUndefined();
   });
 
   it("uses configured API and redirects origins", async () => {
@@ -147,7 +152,7 @@ describe("refreshTopics", () => {
 
     const refreshed = await refreshTopics({ TOPICS_KV: { get: vi.fn(), put: vi.fn() } });
 
-    expect(refreshed).toHaveLength(9);
+    expect(refreshed).toHaveLength(24);
     expect(refreshed).not.toContainEqual(expect.objectContaining({ topic_id: 2 }));
     expect(warn).toHaveBeenCalledWith("error fetching deals", expect.any(Error));
   });
@@ -163,7 +168,7 @@ describe("refreshTopics", () => {
 
     const refreshed = await refreshTopics({ TOPICS_KV: { get: vi.fn(), put } });
 
-    expect(refreshed).toHaveLength(9);
+    expect(refreshed).toHaveLength(24);
     expect(refreshed).not.toContainEqual(expect.objectContaining({ topic_id: 2 }));
     expect(put).toHaveBeenCalledOnce();
   });
@@ -178,7 +183,7 @@ describe("refreshTopics", () => {
 
     const refreshed = await refreshTopics({ TOPICS_KV: { get: vi.fn(), put: vi.fn() } });
 
-    expect(refreshed).toHaveLength(10);
+    expect(refreshed).toHaveLength(25);
     expect(warn).toHaveBeenCalledWith("unexpected status fetching redirects: 503");
   });
 
@@ -192,7 +197,7 @@ describe("refreshTopics", () => {
 
     const refreshed = await refreshTopics({ TOPICS_KV: { get: vi.fn(), put: vi.fn() } });
 
-    expect(refreshed).toHaveLength(10);
+    expect(refreshed).toHaveLength(25);
     expect(warn).toHaveBeenCalledWith("error fetching redirects", expect.any(Error));
   });
 
@@ -205,7 +210,7 @@ describe("refreshTopics", () => {
 
     const refreshed = await refreshTopics({ TOPICS_KV: { get: vi.fn(), put: vi.fn() } });
 
-    expect(refreshed).toHaveLength(10);
+    expect(refreshed).toHaveLength(25);
   });
 
   it("filters sponsored topics, deduplicates repeated topics, and preserves first occurrence", async () => {

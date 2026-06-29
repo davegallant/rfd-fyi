@@ -2,7 +2,7 @@ const TOPICS_KEY = "topics.json";
 const RFD_FORUM_BASE = "https://forums.redflagdeals.com";
 const DEFAULT_REDIRECTS_URL = "https://raw.githubusercontent.com/davegallant/rfd-redirect-stripper/main/redirects.json";
 const DEALS_FETCH_CONCURRENCY = 5;
-const HOT_DEALS_PAGE_COUNT = 10;
+const HOT_DEALS_PAGE_COUNT = 25;
 
 export interface Env {
   TOPICS_KV: {
@@ -139,11 +139,12 @@ async function getRedirects(env: Env): Promise<Redirect[]> {
 
 export function computeScores(topics: Topic[]): Topic[] {
   return topics.map((topic) => {
-    const votes = topic.Votes ?? topic.votes;
-    return {
-      ...normalizeTopic(topic),
+    const normalized = normalizeTopic(topic);
+    const votes = normalized.Votes;
+    return compactTopic({
+      ...normalized,
       score: (votes?.total_up ?? 0) - (votes?.total_down ?? 0),
-    };
+    });
   });
 }
 
@@ -175,6 +176,32 @@ function normalizeTopic(topic: Topic): Topic {
     ...rest,
     Votes: topic.Votes ?? votes,
     Offer: topic.Offer ?? offer,
+  };
+}
+
+function compactTopic(topic: Topic): Topic {
+  return {
+    topic_id: topic.topic_id,
+    forum_id: topic.forum_id,
+    title: topic.title,
+    total_views: topic.total_views,
+    total_replies: topic.total_replies,
+    web_path: topic.web_path,
+    post_time: topic.post_time,
+    last_post_time: topic.last_post_time,
+    Votes: topic.Votes
+      ? {
+          total_up: topic.Votes.total_up,
+          total_down: topic.Votes.total_down,
+        }
+      : undefined,
+    Offer: topic.Offer
+      ? {
+          dealer_name: topic.Offer.dealer_name,
+          url: topic.Offer.url,
+        }
+      : undefined,
+    score: topic.score,
   };
 }
 
