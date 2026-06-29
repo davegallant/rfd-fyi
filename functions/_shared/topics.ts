@@ -2,6 +2,7 @@ const TOPICS_KEY = "topics.json";
 const RFD_FORUM_BASE = "https://forums.redflagdeals.com";
 const DEFAULT_REDIRECTS_URL = "https://raw.githubusercontent.com/davegallant/rfd-redirect-stripper/main/redirects.json";
 const DEALS_FETCH_CONCURRENCY = 5;
+const HOT_DEALS_PAGE_COUNT = 15;
 
 export interface Env {
   TOPICS_KV: {
@@ -66,7 +67,7 @@ export async function readTopics(env: Env): Promise<Topic[]> {
 }
 
 export async function refreshTopics(env: Env): Promise<Topic[]> {
-  let topics = await getDeals(env, 9, 1, 26);
+  let topics = await getDeals(env, 9, 1, HOT_DEALS_PAGE_COUNT + 1);
 
   if (topics.length === 0) {
     return [];

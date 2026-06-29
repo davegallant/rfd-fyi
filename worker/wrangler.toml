@@ -2,6 +2,10 @@ name = "rfd-fyi-refresh"
 main = "src/index.ts"
 compatibility_date = "2026-06-22"
 
+[observability.logs]
+enabled = true
+invocation_logs = true
+
 # Run often enough to keep the static Pages app fresh without hammering RFD.
 [triggers]
 crons = ["*/5 * * * *"]
