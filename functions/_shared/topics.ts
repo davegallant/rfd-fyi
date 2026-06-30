@@ -133,12 +133,14 @@ async function fetchDealsPage(base: string, id: number, page: number): Promise<T
   try {
     const response = await fetch(requestUrl, {
       headers: {
-        "accept": "application/json",
-        "user-agent": "rfd-fyi/1.0 (+https://github.com/davegallant/rfd-fyi)",
+        "accept": "application/json, text/plain, */*",
+        "accept-language": "en-CA,en;q=0.9",
+        "cache-control": "no-cache",
+        "user-agent": "Mozilla/5.0 (compatible; rfd-fyi/1.0; +https://github.com/davegallant/rfd-fyi)",
       },
     });
     if (!response.ok) {
-      console.warn(`unexpected status fetching deals: ${response.status}`);
+      console.warn(`unexpected status fetching deals page ${page}: ${response.status}`);
       return [];
     }
 
