@@ -3,7 +3,7 @@ const REFRESH_STATUS_KEY = "refresh-status.json";
 const RFD_FORUM_BASE = "https://forums.redflagdeals.com";
 const DEFAULT_REDIRECTS_URL = "https://raw.githubusercontent.com/davegallant/rfd-redirect-stripper/main/redirects.json";
 const DEALS_FETCH_CONCURRENCY = 5;
-const REFRESHED_HOT_DEALS_PAGE_COUNT = 5;
+const REFRESHED_HOT_DEALS_PAGE_COUNT = 3;
 const MAX_STORED_TOPIC_COUNT = 1000;
 
 export interface Env {
