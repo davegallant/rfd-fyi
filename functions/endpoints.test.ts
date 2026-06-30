@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { onRequestGet as getHealthJson } from "./health.json";
 import { onRequestGet as getHtml } from "./html";
 import { onRequestGet as getTopicsJson } from "./topics.json";
 
@@ -33,6 +34,18 @@ describe("topics.json function", () => {
     const response = await getTopicsJson({ env: envWithTopics(null) });
 
     await expect(response.text()).resolves.toBe("[]");
+  });
+});
+
+describe("health.json function", () => {
+  it("serves refresh status without caching", async () => {
+    const status = JSON.stringify({ ok: true, refreshed: 400, stored: 1000, completed_at: "2026-06-29T19:55:00.000Z" });
+    const response = await getHealthJson({ env: envWithTopics(status) });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("application/json; charset=utf-8");
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    await expect(response.json()).resolves.toEqual(expect.objectContaining({ ok: true, stored: 1000 }));
   });
 });
 

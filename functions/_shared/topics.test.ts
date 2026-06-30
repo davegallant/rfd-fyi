@@ -79,6 +79,11 @@ describe("refreshTopics", () => {
       summary: { body: "unused API payload" },
     });
     const put = vi.fn();
+    const existingTopics = Array.from({ length: 800 }, (_, index) => topic({
+      topic_id: 100000 + index,
+      title: `Cached deal ${index}`,
+    }));
+    const get = vi.fn(async (key) => key === "topics.json" ? JSON.stringify(existingTopics) : null);
 
     const fetchMock = vi.fn(async (url) => {
       const requestUrl = String(url);
@@ -95,9 +100,9 @@ describe("refreshTopics", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const refreshed = await refreshTopics({ TOPICS_KV: { get: vi.fn(), put } });
+    const refreshed = await refreshTopics({ TOPICS_KV: { get, put } });
 
-    expect(fetchMock).toHaveBeenCalledTimes(26);
+    expect(fetchMock).toHaveBeenCalledTimes(6);
     expect(refreshed).toHaveLength(1000);
     expect(refreshed).toContainEqual(expect.objectContaining({
       topic_id: 2818435,
@@ -105,8 +110,12 @@ describe("refreshTopics", () => {
       score: 18,
       Offer: expect.objectContaining({ dealer_name: "Shell" }),
     }));
-    expect(put).toHaveBeenCalledOnce();
-    const storedTarget = JSON.parse(put.mock.calls[0][1]).find((row) => row.topic_id === 2818435);
+    expect(put).toHaveBeenCalledTimes(2);
+    const storedTopicsJson = put.mock.calls.find(([key]) => key === "topics.json")[1];
+    const storedStatusJson = put.mock.calls.find(([key]) => key === "refresh-status.json")[1];
+    const storedTarget = JSON.parse(storedTopicsJson).find((row) => row.topic_id === 2818435);
+    const storedStatus = JSON.parse(storedStatusJson);
+    expect(storedStatus).toEqual(expect.objectContaining({ ok: true, refreshed: 200, stored: 1000 }));
     expect(storedTarget).toEqual(expect.objectContaining({ topic_id: 2818435 }));
     expect(storedTarget.summary).toBeUndefined();
     expect(storedTarget.Offer.price).toBeUndefined();
@@ -152,7 +161,7 @@ describe("refreshTopics", () => {
 
     const refreshed = await refreshTopics({ TOPICS_KV: { get: vi.fn(), put: vi.fn() } });
 
-    expect(refreshed).toHaveLength(24);
+    expect(refreshed).toHaveLength(4);
     expect(refreshed).not.toContainEqual(expect.objectContaining({ topic_id: 2 }));
     expect(warn).toHaveBeenCalledWith("error fetching deals", expect.any(Error));
   });
@@ -168,9 +177,9 @@ describe("refreshTopics", () => {
 
     const refreshed = await refreshTopics({ TOPICS_KV: { get: vi.fn(), put } });
 
-    expect(refreshed).toHaveLength(24);
+    expect(refreshed).toHaveLength(4);
     expect(refreshed).not.toContainEqual(expect.objectContaining({ topic_id: 2 }));
-    expect(put).toHaveBeenCalledOnce();
+    expect(put).toHaveBeenCalledTimes(2);
   });
 
   it("continues without redirects when the redirects endpoint fails", async () => {
@@ -183,7 +192,7 @@ describe("refreshTopics", () => {
 
     const refreshed = await refreshTopics({ TOPICS_KV: { get: vi.fn(), put: vi.fn() } });
 
-    expect(refreshed).toHaveLength(25);
+    expect(refreshed).toHaveLength(5);
     expect(warn).toHaveBeenCalledWith("unexpected status fetching redirects: 503");
   });
 
@@ -197,7 +206,7 @@ describe("refreshTopics", () => {
 
     const refreshed = await refreshTopics({ TOPICS_KV: { get: vi.fn(), put: vi.fn() } });
 
-    expect(refreshed).toHaveLength(25);
+    expect(refreshed).toHaveLength(5);
     expect(warn).toHaveBeenCalledWith("error fetching redirects", expect.any(Error));
   });
 
@@ -210,7 +219,7 @@ describe("refreshTopics", () => {
 
     const refreshed = await refreshTopics({ TOPICS_KV: { get: vi.fn(), put: vi.fn() } });
 
-    expect(refreshed).toHaveLength(25);
+    expect(refreshed).toHaveLength(5);
   });
 
   it("filters sponsored topics, deduplicates repeated topics, and preserves first occurrence", async () => {

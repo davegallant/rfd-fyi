@@ -1,8 +1,10 @@
 const TOPICS_KEY = "topics.json";
+const REFRESH_STATUS_KEY = "refresh-status.json";
 const RFD_FORUM_BASE = "https://forums.redflagdeals.com";
 const DEFAULT_REDIRECTS_URL = "https://raw.githubusercontent.com/davegallant/rfd-redirect-stripper/main/redirects.json";
 const DEALS_FETCH_CONCURRENCY = 5;
-const HOT_DEALS_PAGE_COUNT = 25;
+const REFRESHED_HOT_DEALS_PAGE_COUNT = 5;
+const MAX_STORED_TOPIC_COUNT = 1000;
 
 export interface Env {
   TOPICS_KV: {
@@ -15,6 +17,13 @@ export interface Env {
 
 interface TopicsResponse {
   topics?: Topic[];
+}
+
+export interface RefreshStatus {
+  ok: boolean;
+  refreshed: number;
+  stored: number;
+  completed_at: string;
 }
 
 export interface Topic {
@@ -66,20 +75,42 @@ export async function readTopics(env: Env): Promise<Topic[]> {
   }
 }
 
-export async function refreshTopics(env: Env): Promise<Topic[]> {
-  let topics = await getDeals(env, 9, 1, HOT_DEALS_PAGE_COUNT + 1);
+export async function readRefreshStatusJson(env: Env): Promise<string> {
+  return (await env.TOPICS_KV.get(REFRESH_STATUS_KEY)) ?? JSON.stringify({
+    ok: false,
+    refreshed: 0,
+    stored: 0,
+    completed_at: null,
+  });
+}
 
-  if (topics.length === 0) {
+export async function refreshTopics(env: Env): Promise<Topic[]> {
+  let refreshedTopics = await getDeals(env, 9, 1, REFRESHED_HOT_DEALS_PAGE_COUNT + 1);
+
+  if (refreshedTopics.length === 0) {
     return [];
   }
 
-  topics = deduplicateTopics(topics);
-  topics = computeScores(topics);
+  refreshedTopics = deduplicateTopics(refreshedTopics);
+  refreshedTopics = computeScores(refreshedTopics);
   const redirects = await getRedirects(env);
-  topics = stripRedirects(topics, redirects);
+  refreshedTopics = stripRedirects(refreshedTopics, redirects);
+
+  const existingTopics = (await readTopics(env)).map((topic) => compactTopic(normalizeTopic(topic)));
+  const topics = deduplicateTopics([...refreshedTopics, ...existingTopics]).slice(0, MAX_STORED_TOPIC_COUNT);
 
   await env.TOPICS_KV.put(TOPICS_KEY, JSON.stringify(topics));
+  await writeRefreshStatus(env, {
+    ok: true,
+    refreshed: refreshedTopics.length,
+    stored: topics.length,
+    completed_at: new Date().toISOString(),
+  });
   return topics;
+}
+
+async function writeRefreshStatus(env: Env, status: RefreshStatus): Promise<void> {
+  await env.TOPICS_KV.put(REFRESH_STATUS_KEY, JSON.stringify(status));
 }
 
 async function getDeals(env: Env, id: number, firstPage: number, lastPage: number): Promise<Topic[]> {
