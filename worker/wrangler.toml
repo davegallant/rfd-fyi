@@ -8,7 +8,7 @@ invocation_logs = true
 
 # Run often enough to keep the static Pages app fresh without hammering RFD.
 [triggers]
-crons = ["*/5 * * * *"]
+crons = ["*/10 * * * *"]
 
 # Use the same KV namespace IDs as the Pages project.
 [[kv_namespaces]]
