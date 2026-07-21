@@ -18,109 +18,111 @@
    ============================================ */
 
 :root {
-  /* Light theme (default) */
-  --bg-primary: #dddddd;
-  --bg-secondary: #e8e8e8;
-  --bg-input: #f5f5f5;
-  --bg-input-focus: #ffffff;
-  --text-primary: #212529;
-  --text-secondary: #6c757d;
+  /* Light theme (default) — Catppuccin Latte */
+  --bg-primary: #eff1f5;
+  --bg-secondary: #e6e9ef;
+  --bg-input: #dce0e8;
+  --bg-input-focus: #eff1f5;
+  --text-primary: #4c4f69;
+  --text-secondary: #6c6f85;
   --text-meta: color-mix(in srgb, var(--text-secondary) 62%, var(--bg-primary));
-  --border-color: #d0d0d0;
-  --border-color-light: #cccccc;
-  --border-color-hover: #999999;
-  --link-color: #212529;
-  --accent: #c00;
-  --accent-hover: #a10000;
+  --border-color: #ccd0da;
+  --border-color-light: #bcc0cc;
+  --border-color-hover: #9ca0b0;
+  --link-color: #4c4f69;
+  --accent: #d20f39;
+  --accent-hover: #b20d30;
   --accent-subtle: color-mix(in srgb, var(--accent) 10%, var(--bg-secondary));
   --accent-ring: color-mix(in srgb, var(--accent) 28%, transparent);
-  --score-positive-bg: rgb(90, 140, 90);
+  --score-positive-bg: rgb(64, 160, 43);
   --score-positive-text: white;
-  --score-negative-bg: rgb(140, 50, 50);
+  --score-negative-bg: rgb(230, 69, 83);
   --score-negative-text: white;
-  --mark-bg: rgba(255, 193, 7, 0.3);
-  --shadow-light: rgba(0, 0, 0, 0.05);
-  --shadow-medium: rgba(0, 0, 0, 0.1);
+  --mark-bg: rgba(223, 142, 29, 0.3);
+  --shadow-light: rgba(76, 79, 105, 0.06);
+  --shadow-medium: rgba(76, 79, 105, 0.12);
 }
 
-/* Dark theme via media query */
+/* Dark theme via media query — Catppuccin Mocha */
 @media (prefers-color-scheme: dark) {
   :root:not([data-bs-theme="light"]):not(.light-theme) {
-    --bg-primary: #1a1a1a;
-    --bg-secondary: #2a2a2a;
-    --bg-input: #1a1a1a;
-    --bg-input-focus: #2a2a2a;
-    --text-primary: #e0e0e0;
-    --text-secondary: #a0a0a0;
+    --bg-primary: #1e1e2e;
+    --bg-secondary: #313244;
+    --bg-input: #181825;
+    --bg-input-focus: #1e1e2e;
+    --text-primary: #cdd6f4;
+    --text-secondary: #a6adc8;
     --text-meta: color-mix(in srgb, var(--text-secondary) 58%, var(--bg-primary));
-    --border-color: #3a3a3a;
-    --border-color-light: #555555;
-    --border-color-hover: #777777;
-    --link-color: #e0e0e0;
-    --accent: #e64040;
-    --accent-hover: #fb8080;
+    --border-color: #313244;
+    --border-color-light: #45475a;
+    --border-color-hover: #6c7086;
+    --link-color: #cdd6f4;
+    --accent: #f38ba8;
+    --accent-hover: #f2cdcd;
     --accent-subtle: color-mix(in srgb, var(--accent) 12%, var(--bg-secondary));
     --accent-ring: color-mix(in srgb, var(--accent) 32%, transparent);
-    --score-positive-bg: rgb(100, 140, 80);
-    --score-positive-text: white;
-    --score-negative-bg: rgb(120, 45, 45);
-    --score-negative-text: white;
-    --mark-bg: rgba(255, 193, 7, 0.4);
-    --shadow-light: rgba(255, 255, 255, 0.1);
-    --shadow-medium: rgba(0, 0, 0, 0.35);
+    --score-positive-bg: rgb(166, 227, 161);
+    --score-positive-text: #1e1e2e;
+    --score-negative-bg: rgb(235, 160, 172);
+    --score-negative-text: #1e1e2e;
+    --mark-bg: rgba(249, 226, 175, 0.4);
+    --shadow-light: rgba(205, 214, 244, 0.08);
+    --shadow-medium: rgba(17, 17, 27, 0.4);
   }
 }
 
-/* Explicit dark theme */
+/* Explicit dark theme — Catppuccin Mocha */
 html[data-bs-theme="dark"],
 html.dark-theme {
-  --bg-primary: #1a1a1a;
-  --bg-secondary: #2a2a2a;
-  --bg-input: #1a1a1a;
-  --bg-input-focus: #2a2a2a;
-  --text-primary: #e0e0e0;
-  --text-secondary: #a0a0a0;
+  --bg-primary: #1e1e2e;
+  --bg-secondary: #313244;
+  --bg-input: #181825;
+  --bg-input-focus: #1e1e2e;
+  --text-primary: #cdd6f4;
+  --text-secondary: #a6adc8;
   --text-meta: color-mix(in srgb, var(--text-secondary) 58%, var(--bg-primary));
-  --border-color: #3a3a3a;
-  --border-color-light: #555555;
-  --border-color-hover: #777777;
-  --link-color: #e0e0e0;
-  --accent: #e64040;
-  --accent-hover: #fb8080;
+  --border-color: #313244;
+  --border-color-light: #45475a;
+  --border-color-hover: #6c7086;
+  --link-color: #cdd6f4;
+  --accent: #f38ba8;
+  --accent-hover: #f2cdcd;
   --accent-subtle: color-mix(in srgb, var(--accent) 12%, var(--bg-secondary));
   --accent-ring: color-mix(in srgb, var(--accent) 32%, transparent);
-  --score-positive-bg: rgb(100, 140, 80);
-  --score-positive-text: white;
-  --score-negative-bg: rgb(120, 45, 45);
-  --score-negative-text: white;
-  --mark-bg: rgba(255, 193, 7, 0.4);
-  --shadow-light: rgba(255, 255, 255, 0.1);
-  --shadow-medium: rgba(0, 0, 0, 0.35);
+  --score-positive-bg: rgb(166, 227, 161);
+  --score-positive-text: #1e1e2e;
+  --score-negative-bg: rgb(235, 160, 172);
+  --score-negative-text: #1e1e2e;
+  --mark-bg: rgba(249, 226, 175, 0.4);
+  --shadow-light: rgba(205, 214, 244, 0.08);
+  --shadow-medium: rgba(17, 17, 27, 0.4);
 }
 
-/* Explicit light theme */
+/* Explicit light theme — Catppuccin Latte */
 html[data-bs-theme="light"],
 html.light-theme {
-  --bg-primary: #dddddd;
-  --bg-secondary: #e8e8e8;
-  --bg-input: #f5f5f5;
-  --bg-input-focus: #ffffff;
-  --text-primary: #212529;
-  --text-secondary: #6c757d;
+  --bg-primary: #eff1f5;
+  --bg-secondary: #e6e9ef;
+  --bg-input: #dce0e8;
+  --bg-input-focus: #eff1f5;
+  --text-primary: #4c4f69;
+  --text-secondary: #6c6f85;
   --text-meta: color-mix(in srgb, var(--text-secondary) 62%, var(--bg-primary));
-  --border-color: #d0d0d0;
-  --border-color-light: #cccccc;
-  --border-color-hover: #999999;
-  --link-color: #212529;
-  --accent: #c00;
-  --accent-hover: #a10000;
+  --border-color: #ccd0da;
+  --border-color-light: #bcc0cc;
+  --border-color-hover: #9ca0b0;
+  --link-color: #4c4f69;
+  --accent: #d20f39;
+  --accent-hover: #b20d30;
   --accent-subtle: color-mix(in srgb, var(--accent) 10%, var(--bg-secondary));
   --accent-ring: color-mix(in srgb, var(--accent) 28%, transparent);
-  --score-positive-bg: rgb(90, 140, 90);
+  --score-positive-bg: rgb(64, 160, 43);
   --score-positive-text: white;
-  --mark-bg: rgba(255, 193, 7, 0.3);
-  --shadow-light: rgba(0, 0, 0, 0.05);
-  --shadow-medium: rgba(0, 0, 0, 0.1);
+  --score-negative-bg: rgb(230, 69, 83);
+  --score-negative-text: white;
+  --mark-bg: rgba(223, 142, 29, 0.3);
+  --shadow-light: rgba(76, 79, 105, 0.06);
+  --shadow-medium: rgba(76, 79, 105, 0.12);
 }
 
 /* ============================================
@@ -224,8 +226,8 @@ a:visited {
   right: 0;
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color-light);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px var(--shadow-medium);
+  border-radius: 14px;
+  box-shadow: 0 6px 20px var(--shadow-medium);
   min-width: 180px;
   z-index: 100;
   overflow: hidden;
@@ -301,7 +303,7 @@ a:visited {
   padding: 10px 12px;
   font-size: 14px;
   border: 1px solid var(--border-color-light);
-  border-radius: 4px;
+  border-radius: 10px;
   background-color: var(--bg-input);
   color: var(--text-primary);
   transition: all 0.2s ease;
@@ -331,7 +333,7 @@ a:visited {
   gap: 8px;
   padding: 6px 10px;
   border: 1px solid var(--border-color-light);
-  border-radius: 4px;
+  border-radius: 10px;
   background-color: var(--bg-input);
   transition: all 0.2s ease;
 }
@@ -361,7 +363,7 @@ a:visited {
   gap: 4px;
   padding: 4px 8px 4px 10px;
   background-color: var(--border-color-light);
-  border-radius: 4px;
+  border-radius: 999px;
   font-size: 12px;
   font-weight: 500;
   color: var(--text-primary);
@@ -402,7 +404,7 @@ a:visited {
   width: 40px;
   height: 40px;
   border: 1px solid var(--border-color-light);
-  border-radius: 4px;
+  border-radius: 10px;
   background-color: var(--bg-input);
   color: var(--text-primary);
   cursor: pointer;
@@ -434,7 +436,7 @@ a:visited {
   width: 40px;
   height: 40px;
   border: 1px solid var(--border-color-light);
-  border-radius: 4px;
+  border-radius: 10px;
   background-color: var(--bg-input);
   color: var(--text-primary);
   cursor: pointer;
@@ -469,7 +471,7 @@ a:visited {
 .deal-row {
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color-light);
-  border-radius: 6px;
+  border-radius: 12px;
   padding: 9px 12px;
   display: flex;
   align-items: center;
@@ -637,7 +639,7 @@ a:visited {
   justify-content: center;
   min-width: 40px;
   height: 28px;
-  border-radius: 4px;
+  border-radius: 999px;
   font-weight: 700;
   font-size: 11px;
   flex-shrink: 0;
@@ -688,7 +690,7 @@ a:visited {
   font-weight: 700;
   font-size: 12px;
   padding: 3px 8px;
-  border-radius: 3px;
+  border-radius: 999px;
   border: 1px solid currentColor;
   background-color: transparent;
   transition: all 0.2s ease;

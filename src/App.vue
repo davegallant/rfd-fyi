@@ -758,8 +758,8 @@ export default {
   right: 0;
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color-light);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px var(--shadow-medium);
+  border-radius: 14px;
+  box-shadow: 0 6px 20px var(--shadow-medium);
   min-width: 170px;
   z-index: 100;
   overflow: hidden;
@@ -780,7 +780,7 @@ export default {
   align-items: center;
   justify-content: center;
   z-index: 10;
-  border-radius: 12px;
+  border-radius: 16px;
 }
 
 .loading-overlay .loading-spinner {
@@ -796,7 +796,7 @@ export default {
   gap: 10px;
   padding: 48px 20px;
   border: 1px dashed var(--border-color-light);
-  border-radius: 8px;
+  border-radius: 16px;
   background-color: var(--bg-secondary);
   color: var(--text-secondary);
   text-align: center;
@@ -815,7 +815,7 @@ export default {
 .empty-state-button {
   padding: 8px 12px;
   border: 1px solid var(--border-color-light);
-  border-radius: 4px;
+  border-radius: 10px;
   background-color: var(--bg-input);
   color: var(--text-primary);
   cursor: pointer;
@@ -893,8 +893,8 @@ export default {
   right: 0;
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color-light);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px var(--shadow-medium);
+  border-radius: 14px;
+  box-shadow: 0 6px 20px var(--shadow-medium);
   min-width: 170px;
   z-index: 100;
   overflow: hidden;

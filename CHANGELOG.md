@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.11.2] - 2026-07-21
+
+### Changed
+
+- Light and dark themes now use the Catppuccin Latte and Mocha palettes, respectively, instead of the previous stark white/grey and plain near-black schemes.
+- Rounded corners across buttons, inputs, dropdowns, deal cards, and overlays for a more relaxed, casual look.
+
 ## [0.11.1] - 2026-06-28
 
 ### Changed

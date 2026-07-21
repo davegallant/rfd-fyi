@@ -82,11 +82,11 @@ export default {
 .info-panel {
   background: var(--bg-secondary);
   color: var(--text-primary);
-  border-radius: 8px;
+  border-radius: 16px;
   padding: 20px;
   max-width: 400px;
   width: 90%;
-  box-shadow: 0 4px 24px var(--shadow-medium);
+  box-shadow: 0 8px 28px var(--shadow-medium);
   border: 1px solid var(--border-color-light);
   text-align: center;
 }
@@ -131,7 +131,7 @@ export default {
   background-color: var(--accent);
   color: var(--score-positive-text);
   border: none;
-  border-radius: 4px;
+  border-radius: 10px;
   cursor: pointer;
   font-family: inherit;
   font-weight: 600;
