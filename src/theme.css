@@ -690,7 +690,7 @@ a:visited {
   font-weight: 700;
   font-size: 12px;
   padding: 3px 8px;
-  border-radius: 999px;
+  border-radius: 3px;
   border: 1px solid currentColor;
   background-color: transparent;
   transition: all 0.2s ease;
