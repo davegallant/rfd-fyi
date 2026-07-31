@@ -78,6 +78,7 @@ export default {
       topics: [],
       isMobile: false,
       currentTheme: "auto",
+      resolvedTheme: "light",
       darkModeQuery: null,
       themeChangeHandler: null,
       isLoading: false,
@@ -253,6 +254,7 @@ export default {
     },
 
     applyThemeActual(theme) {
+      this.resolvedTheme = theme;
       document.documentElement.setAttribute("data-bs-theme", theme);
       document.documentElement.classList.toggle("dark-theme", theme === "dark");
       document.documentElement.classList.toggle("light-theme", theme === "light");
@@ -495,10 +497,7 @@ export default {
 
     getDealerColor(dealerName) {
       if (!dealerName) return null;
-      const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark' ||
-                     document.documentElement.classList.contains('dark-theme') ||
-                     (this.currentTheme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-      const colors = isDark ? DEALER_COLORS_DARK : DEALER_COLORS;
+      const colors = this.resolvedTheme === 'dark' ? DEALER_COLORS_DARK : DEALER_COLORS;
       const index = hashString(dealerName) % colors.length;
       return colors[index];
     },
