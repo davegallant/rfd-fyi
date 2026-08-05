@@ -11,7 +11,7 @@
  *   REFRESH_SECRET=... node tools/enricher/enrich.mjs
  */
 
-import { chunk, classifyBatch, selectUntagged } from "./lib.mjs";
+import { chunk, classifyBatch, formatProgress, selectUntagged } from "./lib.mjs";
 import { resolveProvider } from "./providers.mjs";
 
 const origin = (process.env.RFD_FYI_ORIGIN || "https://rfd.fyi").replace(/\/$/, "");
@@ -40,7 +40,7 @@ async function getJson(url) {
   return response.json();
 }
 
-async function flush(tags, model) {
+async function flush(tags, model, progress) {
   if (Object.keys(tags).length === 0) return;
 
   const response = await fetch(`${origin}/admin/enrich`, {
@@ -54,7 +54,7 @@ async function flush(tags, model) {
   }
 
   const body = await response.json();
-  console.log(`  flushed ${body.accepted} tagged, ${body.stored} stored`);
+  console.log(`  flushed ${body.accepted} tagged, ${body.stored} stored — ${progress}`);
   for (const entry of body.rejected ?? []) {
     console.warn(`  rejected ${entry.topic_id}: ${entry.reason}`);
   }
@@ -68,7 +68,7 @@ async function main() {
     getJson(`${origin}/enrichment.json`),
   ]);
 
-  const { vocabulary, glosses, max_tags: maxTags } = enrichment;
+  const { vocabulary, glosses, instructions, max_tags: maxTags } = enrichment;
   if (!Array.isArray(vocabulary) || vocabulary.length === 0) {
     throw new Error("server published no vocabulary; is /enrichment.json deployed?");
   }
@@ -85,19 +85,21 @@ async function main() {
   const startedAt = Date.now();
   let tagged = 0;
   let skipped = 0;
+  let processed = 0;
 
   for (const batch of chunk(pending, flushEvery)) {
     const result = await classifyBatch(batch, {
-      provider, config, vocabulary, glosses, maxTags, concurrency,
+      provider, config, vocabulary, glosses, instructions, maxTags, concurrency,
     });
 
     tagged += Object.keys(result.tags).length;
     skipped += result.skipped.length;
+    processed += batch.length;
     for (const topic of result.skipped) {
       console.warn(`  no usable tags for ${topic.topic_id}: ${topic.title}`);
     }
 
-    await flush(result.tags, config.model);
+    await flush(result.tags, config.model, formatProgress(processed, pending.length, Date.now() - startedAt));
   }
 
   const seconds = Math.round((Date.now() - startedAt) / 1000);

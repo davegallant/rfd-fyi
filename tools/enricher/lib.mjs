@@ -74,6 +74,29 @@ export async function mapWithConcurrency(items, limit, worker) {
   return results;
 }
 
+/**
+ * Progress line for a long backfill: `450/1000 (45%), ~4m 30s left`.
+ *
+ * The estimate is dropped when it would be meaningless — nothing processed yet,
+ * no time elapsed, or already finished — rather than printed as NaN.
+ */
+export function formatProgress(processed, total, elapsedMs) {
+  const percent = total > 0 ? Math.round((processed / total) * 100) : 100;
+  const position = `${processed}/${total} (${percent}%)`;
+
+  if (processed >= total || processed === 0 || elapsedMs <= 0) return position;
+
+  const perSecond = processed / (elapsedMs / 1000);
+  return `${position}, ~${formatSeconds(Math.round((total - processed) / perSecond))} left`;
+}
+
+function formatSeconds(seconds) {
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  const rest = seconds % 60;
+  return rest === 0 ? `${minutes}m` : `${minutes}m ${rest}s`;
+}
+
 export function chunk(items, size) {
   const batches = [];
   for (let index = 0; index < items.length; index += size) {
@@ -89,9 +112,9 @@ export function chunk(items, size) {
  * A provider failure propagates: a rate limit or bad key should stop the run,
  * not quietly write a partial batch.
  */
-export async function classifyBatch(topics, { provider, config, vocabulary, glosses, maxTags, concurrency, fetchImpl }) {
+export async function classifyBatch(topics, { provider, config, vocabulary, glosses, instructions, maxTags, concurrency, fetchImpl }) {
   const results = await mapWithConcurrency(topics, concurrency, (topic) =>
-    classifyTopic(topic, { provider, config, vocabulary, glosses, maxTags, fetchImpl }));
+    classifyTopic(topic, { provider, config, vocabulary, glosses, instructions, maxTags, fetchImpl }));
 
   const tags = {};
   const skipped = [];
@@ -110,8 +133,8 @@ export async function classifyBatch(topics, { provider, config, vocabulary, glos
  * than quietly tagging nothing; returns null when the call succeeded but the
  * model produced no usable tags.
  */
-export async function classifyTopic(topic, { provider, config, vocabulary, glosses, maxTags, fetchImpl = fetch }) {
-  const { url, headers, body } = provider.buildRequest({ topic, vocabulary, glosses, maxTags, config });
+export async function classifyTopic(topic, { provider, config, vocabulary, glosses, instructions, maxTags, fetchImpl = fetch }) {
+  const { url, headers, body } = provider.buildRequest({ topic, vocabulary, glosses, instructions, maxTags, config });
 
   const response = await fetchImpl(url, {
     method: "POST",

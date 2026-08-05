@@ -59,13 +59,37 @@ export const TAG_GLOSSES: Record<Tag, string> = {
 };
 
 /**
- * Bump to re-tag every stored entry against a changed vocabulary.
+ * Instructions sent to the model, published alongside the vocabulary so the
+ * enricher carries no copy of its own.
+ *
+ * The promotion-mechanism rule is measured, not decorative: across 1000 deals,
+ * six RYOBI power tools landed in three different categories depending on
+ * whether the title said "(Tool-Only)", and gift-card or spend-and-get deals
+ * (Cineplex, Arby's, Uber One) fell to `other` regardless of what they bought.
+ * The model was categorising the offer structure instead of the product.
+ */
+export const CLASSIFIER_INSTRUCTIONS = [
+  "You classify Canadian online shopping deals into categories.",
+  "Choose only from the allowed categories, and choose the single best one.",
+  "Add a second category only when the deal genuinely spans two —",
+  "most deals need exactly one.",
+  "Categorise by the product or service the deal is for, ignoring how the offer",
+  "is structured: a gift card, bundle, tool-only listing, cashback promotion or",
+  "spend-and-get is categorised by what the buyer ends up with.",
+  "Use \"other\" only when nothing else fits.",
+].join(" ");
+
+/**
+ * Bump to re-tag every stored entry against a changed vocabulary, gloss or
+ * prompt — anything that changes how tags are produced.
  *
  * v2 added `dining` and `pets` and glossed every tag.
  * v3 added `sports` after golf balls and a camping tent were tagged `pets` over
  *    1000 real deals, and moved bikes out of `automotive` into it.
+ * v4 moved the prompt server-side and told the model to categorise by product
+ *    rather than by promotion mechanism.
  */
-export const VOCABULARY_VERSION = 3;
+export const VOCABULARY_VERSION = 4;
 
 /** Longest model identifier stored on an entry. */
 const MAX_MODEL_NAME_LENGTH = 64;
@@ -87,6 +111,7 @@ export interface EnrichmentDocument {
   /** Published so the enricher can build its schema and prompt without its own copy. */
   vocabulary: Tag[];
   glosses: Record<string, string>;
+  instructions: string;
   max_tags: number;
   updated_at: string | null;
   topics: Record<string, EnrichmentEntry>;
@@ -109,6 +134,7 @@ function emptyDocument(): EnrichmentDocument {
     vocabulary_version: VOCABULARY_VERSION,
     vocabulary: [...TAG_VOCABULARY],
     glosses: TAG_GLOSSES,
+    instructions: CLASSIFIER_INSTRUCTIONS,
     max_tags: MAX_TAGS_PER_TOPIC,
     updated_at: null,
     topics: {},
@@ -140,6 +166,7 @@ export function parseEnrichment(raw: string | null): EnrichmentDocument {
     vocabulary_version: VOCABULARY_VERSION,
     vocabulary: [...TAG_VOCABULARY],
     glosses: TAG_GLOSSES,
+    instructions: CLASSIFIER_INSTRUCTIONS,
     max_tags: MAX_TAGS_PER_TOPIC,
     updated_at: typeof parsed.updated_at === "string" ? parsed.updated_at : null,
     topics,
@@ -219,6 +246,7 @@ export function mergeEnrichment(
     vocabulary_version: VOCABULARY_VERSION,
     vocabulary: [...TAG_VOCABULARY],
     glosses: TAG_GLOSSES,
+    instructions: CLASSIFIER_INSTRUCTIONS,
     max_tags: MAX_TAGS_PER_TOPIC,
     updated_at: new Date().toISOString(),
     topics,

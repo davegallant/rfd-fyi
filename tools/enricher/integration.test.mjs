@@ -55,13 +55,16 @@ describe("classifyBatch end to end", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(3);
   });
 
-  it("sends the vocabulary, the glosses, and the deal in one request", async () => {
+  it("sends the vocabulary, glosses, instructions, and the deal in one request", async () => {
     const seen = [];
-    await run(TOPICS.slice(0, 1), fakeOllama(ANSWERS, (req) => seen.push(req)));
+    await run(TOPICS.slice(0, 1), fakeOllama(ANSWERS, (req) => seen.push(req)), {
+      instructions: "Categorise by what the buyer ends up with.",
+    });
 
     const [{ url, body }] = seen;
     expect(url).toBe("http://localhost:11434/api/chat");
     expect(body.format.properties.tags.items.enum).toEqual(VOCABULARY);
+    expect(body.messages[0].content).toContain("Categorise by what the buyer ends up with.");
     expect(body.messages[0].content).toContain("restaurants, fast food, cafes");
     expect(body.messages[1].content).toContain("Lian Li Vector V100");
     expect(body.messages[1].content).toContain("Amazon.ca");

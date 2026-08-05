@@ -7,7 +7,12 @@
  * cannot drift from the vocabulary the server will accept.
  */
 
-const SYSTEM_PROMPT = [
+/**
+ * Used only when the server publishes no instructions (an older deployment).
+ * The authoritative copy lives in functions/_shared/enrichment.ts, so a wording
+ * change is covered by VOCABULARY_VERSION like any other tagging change.
+ */
+const FALLBACK_INSTRUCTIONS = [
   "You classify Canadian online shopping deals into categories.",
   "Choose only from the allowed categories, and choose the single best one.",
   "Add a second category only when the deal genuinely spans two —",
@@ -25,16 +30,16 @@ export function describeDeal(topic) {
 }
 
 /**
- * Builds the system prompt from the server-published vocabulary.
+ * Builds the system prompt entirely from what the server publishes.
  *
  * Glosses matter: with bare tag names, a 7B model read `automotive` so narrowly
  * that motor oil and a bike rack fell through to `other`.
  */
-export function systemPrompt(vocabulary, glosses) {
+export function systemPrompt(vocabulary, glosses, instructions) {
   const list = vocabulary
     .map((tag) => (glosses?.[tag] ? `- ${tag}: ${glosses[tag]}` : `- ${tag}`))
     .join("\n");
-  return `${SYSTEM_PROMPT}\n\nAllowed categories:\n${list}`;
+  return `${instructions || FALLBACK_INSTRUCTIONS}\n\nAllowed categories:\n${list}`;
 }
 
 /** JSON schema constraining the model to the published vocabulary. */
@@ -61,7 +66,7 @@ const ollama = {
   // One GPU: queueing requests buys nothing.
   defaultConcurrency: 1,
 
-  buildRequest({ topic, vocabulary, glosses, maxTags, config }) {
+  buildRequest({ topic, vocabulary, glosses, instructions, maxTags, config }) {
     return {
       url: `${stripTrailingSlash(config.baseUrl || this.defaultBaseUrl)}/api/chat`,
       headers: { "content-type": "application/json" },
@@ -70,7 +75,7 @@ const ollama = {
         stream: false,
         options: { temperature: 0 },
         messages: [
-          { role: "system", content: systemPrompt(vocabulary, glosses) },
+          { role: "system", content: systemPrompt(vocabulary, glosses, instructions) },
           { role: "user", content: `Deal: ${describeDeal(topic)}` },
         ],
         format: tagSchema(vocabulary, maxTags),

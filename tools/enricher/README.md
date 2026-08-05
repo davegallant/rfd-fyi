@@ -96,12 +96,15 @@ starting over. Steady state is only a handful of new deals per run.
 | `ENRICH_FLUSH_EVERY` | `50` | Topics per write back |
 | `ENRICH_LIMIT` | `0` (no limit) | Cap topics per run, for trying things out |
 
-The tag vocabulary is deliberately **not** configured here. It is fetched from
-the server's `/enrichment.json`, so this script cannot drift from what
-`/admin/enrich` will accept. To change the tags, edit
-`functions/_shared/enrichment.ts` (both `TAG_VOCABULARY` and `TAG_GLOSSES`),
-bump `VOCABULARY_VERSION`, and redeploy — the next run re-tags every stored
-entry automatically.
+The vocabulary, the glosses **and the prompt** are deliberately not configured
+here. All three are fetched from the server's `/enrichment.json`, so this script
+cannot drift from what `/admin/enrich` will accept. To change any of them, edit
+`functions/_shared/enrichment.ts` (`TAG_VOCABULARY`, `TAG_GLOSSES`,
+`CLASSIFIER_INSTRUCTIONS`), bump `VOCABULARY_VERSION`, and redeploy — the next
+run re-tags every stored entry automatically.
+
+`providers.mjs` keeps a fallback prompt used only when the server publishes
+none, e.g. against an older deployment.
 
 ## Judging tag quality
 

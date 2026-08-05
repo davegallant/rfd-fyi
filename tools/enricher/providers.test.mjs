@@ -36,8 +36,20 @@ describe("systemPrompt", () => {
     }
   });
 
-  it("asks for one tag by default, since a forced second tag is usually noise", () => {
-    expect(systemPrompt(VOCABULARY, GLOSSES)).toMatch(/single|one/i);
+  it("uses the instructions the server publishes", () => {
+    const prompt = systemPrompt(VOCABULARY, GLOSSES, "Categorise by what the buyer ends up with.");
+    expect(prompt).toContain("Categorise by what the buyer ends up with.");
+  });
+
+  it("prefers published instructions over its own fallback copy", () => {
+    const prompt = systemPrompt(VOCABULARY, GLOSSES, "Only this.");
+    expect(prompt).not.toMatch(/Canadian online shopping deals/);
+  });
+
+  it("falls back to a built-in prompt when the server publishes none", () => {
+    for (const missing of [undefined, "", null]) {
+      expect(systemPrompt(VOCABULARY, GLOSSES, missing)).toMatch(/single|one/i);
+    }
   });
 });
 

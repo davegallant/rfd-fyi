@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  CLASSIFIER_INSTRUCTIONS,
   MAX_TAGS_PER_TOPIC,
   TAG_GLOSSES,
   TAG_VOCABULARY,
@@ -50,13 +51,14 @@ describe("vocabulary", () => {
   });
 
   /**
-   * Tripwire: changing the tag set without bumping VOCABULARY_VERSION would
-   * leave every stored entry on the old vocabulary forever, since re-tagging is
-   * driven entirely by that number. Update both together.
+   * Tripwire in both directions: changing the tag set, the glosses or the
+   * instructions without bumping VOCABULARY_VERSION would leave every stored
+   * entry tagged the old way forever, since re-tagging is driven entirely by
+   * that number. Bumping without changing anything is equally deliberate.
    */
   it("pairs the current tag set with a version that has been bumped for it", () => {
     expect({ version: VOCABULARY_VERSION, tags: [...TAG_VOCABULARY] }).toEqual({
-      version: 3,
+      version: 4,
       tags: [
         "computing", "electronics", "gaming", "telecom", "grocery", "dining",
         "home", "apparel", "sports", "health", "pets", "travel", "financial",
@@ -72,6 +74,7 @@ describe("parseEnrichment", () => {
       vocabulary_version: VOCABULARY_VERSION,
       vocabulary: [...TAG_VOCABULARY],
       glosses: TAG_GLOSSES,
+      instructions: CLASSIFIER_INSTRUCTIONS,
       max_tags: MAX_TAGS_PER_TOPIC,
       updated_at: null,
       topics: {},
@@ -112,6 +115,31 @@ describe("parseEnrichment", () => {
 
   it("round-trips an empty document through JSON, as the endpoint serves it", () => {
     expect(JSON.parse(JSON.stringify(parseEnrichment(null))).topics).toEqual({});
+  });
+});
+
+describe("published classifier instructions", () => {
+  /**
+   * The prompt is published with the vocabulary rather than living in the
+   * enricher, so a wording change is covered by VOCABULARY_VERSION like any
+   * other change to how tags are produced. Previously it sat in providers.mjs,
+   * where editing it changed every future tag while leaving stored entries
+   * looking current.
+   */
+  it("is published so the enricher does not carry its own copy", () => {
+    expect(parseEnrichment(null).instructions).toBe(CLASSIFIER_INSTRUCTIONS);
+    expect(mergeEnrichment(parseEnrichment(null), {}, []).instructions).toBe(CLASSIFIER_INSTRUCTIONS);
+  });
+
+  // RYOBI tools split across home/other/computing depending on whether the
+  // title said "(Tool-Only)"; gift-card and spend-and-get deals fell to `other`.
+  it("tells the model to ignore how the promotion is structured", () => {
+    expect(CLASSIFIER_INSTRUCTIONS).toMatch(/gift card/i);
+    expect(CLASSIFIER_INSTRUCTIONS).toMatch(/promotion/i);
+  });
+
+  it("still asks for a single tag by default", () => {
+    expect(CLASSIFIER_INSTRUCTIONS).toMatch(/single|one/i);
   });
 });
 

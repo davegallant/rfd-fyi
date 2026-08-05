@@ -1,5 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { chunk, classifyTopic, mapWithConcurrency, parseTags, selectUntagged } from "./lib.mjs";
+import {
+  chunk,
+  classifyTopic,
+  formatProgress,
+  mapWithConcurrency,
+  parseTags,
+  selectUntagged,
+} from "./lib.mjs";
 import { resolveProvider } from "./providers.mjs";
 
 const VOCABULARY = ["computing", "gaming", "grocery", "other"];
@@ -144,6 +151,37 @@ describe("mapWithConcurrency", () => {
   it("rejects when a worker throws", async () => {
     await expect(mapWithConcurrency([1, 2], 2, async () => { throw new Error("boom"); }))
       .rejects.toThrow("boom");
+  });
+});
+
+describe("formatProgress", () => {
+  it("reports position and percentage", () => {
+    expect(formatProgress(450, 1000, 60_000)).toContain("450/1000 (45%)");
+  });
+
+  it("estimates the time left from the rate so far", () => {
+    // 100 items in 10s = 10/s; 900 left is 90s.
+    expect(formatProgress(100, 1000, 10_000)).toContain("~1m 30s left");
+  });
+
+  it("shows seconds alone when under a minute remains", () => {
+    expect(formatProgress(900, 1000, 90_000)).toContain("~10s left");
+  });
+
+  it("omits the estimate on the final batch", () => {
+    expect(formatProgress(1000, 1000, 60_000)).toBe("1000/1000 (100%)");
+  });
+
+  it("omits the estimate before anything has been processed", () => {
+    expect(formatProgress(0, 1000, 0)).toBe("0/1000 (0%)");
+  });
+
+  it("does not divide by zero when no time has elapsed yet", () => {
+    expect(formatProgress(50, 1000, 0)).toBe("50/1000 (5%)");
+  });
+
+  it("handles an empty work set without producing NaN", () => {
+    expect(formatProgress(0, 0, 0)).not.toMatch(/NaN|Infinity/);
   });
 });
 
