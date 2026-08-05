@@ -1,0 +1,14 @@
+.git
+.github
+.wrangler
+worker/.wrangler
+node_modules
+mcp/node_modules
+mcp/dist
+dist
+coverage
+data
+.env
+.env.*
+!.env.example
+*.log

@@ -1,0 +1,38 @@
+services:
+  rfd:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rfd-fyi:local
+    init: true
+    restart: unless-stopped
+    ports:
+      - "${RFD_HOST:-127.0.0.1}:${RFD_PORT:-8788}:8788"
+    environment:
+      REFRESH_SECRET: "${RFD_REFRESH_SECRET:-local}"
+      RFD_BASE_URL: "${RFD_BASE_URL:-https://forums.redflagdeals.com}"
+      REDIRECTS_URL: "${REDIRECTS_URL:-https://raw.githubusercontent.com/davegallant/rfd-redirect-stripper/main/redirects.json}"
+    volumes:
+      - rfd-state:/var/lib/rfd
+
+  refresh:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rfd-fyi:local
+    init: true
+    depends_on:
+      rfd:
+        condition: service_healthy
+    environment:
+      RFD_REFRESH_URL: http://rfd:8788/admin/refresh
+      REFRESH_SECRET: "${RFD_REFRESH_SECRET:-local}"
+      RFD_REFRESH_INTERVAL_SECONDS: "${RFD_REFRESH_INTERVAL_SECONDS:-600}"
+      RFD_REFRESH_RETRY_SECONDS: "${RFD_REFRESH_RETRY_SECONDS:-30}"
+    healthcheck:
+      disable: true
+    restart: unless-stopped
+    command: ["node", "/app/docker/refresh.mjs"]
+
+volumes:
+  rfd-state:

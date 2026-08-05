@@ -6,12 +6,14 @@ Compact, actionable rules for automated agents and contributors.
   - Cloudflare Pages serves the Vite/Vue `dist/` output.
   - Pages Functions in `functions/` serve `/topics.json`, `/enrichment.json`, `/html`, `/health.json`, `/admin/refresh`, and `/admin/enrich` from Cloudflare KV.
   - The scheduled Worker in `worker/` refreshes RedFlagDeals topics into KV every 10 minutes.
+  - `docker-compose.yml` runs the Pages app and a local refresh loop with persistent Wrangler KV state.
   - `wrangler.toml` configures Pages; `worker/wrangler.toml` configures the scheduled Worker.
 
 - Important env vars, bindings, and files:
   - `TOPICS_KV` is the KV binding used by both Pages Functions and the Worker.
   - `REFRESH_SECRET` optionally protects manual refresh endpoints.
   - `RFD_BASE_URL` and `REDIRECTS_URL` can override fetch targets for the Worker/Functions.
+  - `RFD_HOST`, `RFD_PORT`, `RFD_REFRESH_SECRET`, and `RFD_REFRESH_INTERVAL_SECONDS` configure the self-hosted Compose deployment.
   - `VERSION` is read by Vite at build time and injected as `__APP_VERSION__`. Updating `VERSION` requires rebuilding the frontend to take effect.
 
 - Cloudflare behavior and gotchas an agent might miss:
