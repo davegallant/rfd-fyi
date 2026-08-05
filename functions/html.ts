@@ -1,3 +1,4 @@
+import { ENRICHMENT_KEY, parseEnrichment } from "./_shared/enrichment";
 import { withSecurityHeaders } from "./_shared/responses";
 import { readTopics } from "./_shared/topics";
 
@@ -6,6 +7,12 @@ const RFD_FORUM_BASE = "https://forums.redflagdeals.com";
 export async function onRequestGet({ env }) {
   const topics = await readTopics(env);
   topics.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+
+  // The no-JS view cannot join client-side, so tags are merged here.
+  const enrichment = parseEnrichment(await env.TOPICS_KV.get(ENRICHMENT_KEY));
+  for (const topic of topics) {
+    topic.tags = enrichment.topics[String(topic.topic_id)]?.tags ?? [];
+  }
 
   return new Response(renderHtml(topics), {
     headers: withSecurityHeaders({
@@ -104,6 +111,18 @@ function renderHtml(topics) {
       margin: 0;
     }
     .meta a { color: var(--link); }
+    .tags {
+      margin: 0.35rem 0 0;
+    }
+    .tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0 0.5rem;
+      margin-right: 0.3rem;
+    }
     .empty {
       color: var(--muted);
       text-align: center;
@@ -128,10 +147,13 @@ function renderTopic(topic) {
   const dealerName = topic.Offer?.dealer_name ? `${escapeHtml(topic.Offer.dealer_name)} — ` : "";
   const offerUrl = topic.Offer?.url;
   const offer = offerUrl ? ` · ${dealerName}<a href="${escapeAttribute(offerUrl)}">Offer link</a>` : "";
+  const tags = Array.isArray(topic.tags) && topic.tags.length > 0
+    ? `<p class="tags">${topic.tags.map((tag) => `<span class="tag">${escapeHtml(String(tag))}</span>`).join(" ")}</p>`
+    : "";
 
   return `<li>
         <p class="title"><a href="${threadUrl}">${title}</a></p>
-        <p class="meta">Score ${score}${offer}</p>
+        <p class="meta">Score ${score}${offer}</p>${tags}
       </li>`;
 }
 

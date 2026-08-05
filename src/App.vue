@@ -3,6 +3,7 @@ import axios from "axios";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 
+import { attachTags, tagFilterTerm } from "./enrichment.js";
 import { getFilteredSortedTopics, parseFilterTerm } from "./filterTopics.js";
 import { loadUiPreferences, persistUiPreferences, SORT_METHOD_KEYS } from "./preferences.js";
 import { seen, markSeen, markUnseen, isSeen, markAllSeen, clearSeen } from "./composables/useSeenDeals.js";
@@ -422,6 +423,14 @@ export default {
       });
     },
 
+    filterByTag(tag) {
+      const term = tagFilterTerm(tag);
+      if (!this.activeFilters.includes(term)) {
+        this.activeFilters.push(term);
+        this.updateUrl();
+      }
+    },
+
     fetchDeals() {
       this.isLoading = true;
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 500));
@@ -430,10 +439,14 @@ export default {
         axios.get(`/topics.json?_=${Date.now()}`, {
           headers: { "cache-control": "no-cache" },
         }),
+        // Tags are optional garnish: a failure here must not cost us the deals.
+        axios.get(`/enrichment.json?_=${Date.now()}`, {
+          headers: { "cache-control": "no-cache" },
+        }).catch(() => ({ data: null })),
         minLoadingTime
       ])
-        .then(([response]) => {
-          this.topics = response.data;
+        .then(([response, enrichment]) => {
+          this.topics = attachTags(response.data, enrichment.data);
           this.resetVisibleTopics();
         })
         .catch((err) => {
@@ -707,7 +720,15 @@ export default {
                   target="_blank"
                   class="deal-title"
                   v-html="highlightText(topic.title)"
-                ></a>
+                ></a><span v-if="topic.tags && topic.tags.length" class="tag-chips">
+                  <button
+                    v-for="tag in topic.tags"
+                    :key="tag"
+                    class="tag-chip"
+                    :title="`Filter by ${tag}`"
+                    @click.stop="filterByTag(tag)"
+                  >{{ tag }}</button>
+                </span>
               </span>
               <a
                 v-if="topic.Offer.url"
@@ -879,6 +900,42 @@ export default {
 .dealer-label--clickable:focus-visible {
   opacity: 0.8;
   box-shadow: 0 0 0 2px currentColor;
+  outline: none;
+}
+
+/* ============================================
+   Tag chips
+   ============================================ */
+
+/* Chips sit inline after the title, not in .row-stats — putting them beside the
+   dates threw the date column out of alignment across rows. */
+.tag-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: 8px;
+  vertical-align: baseline;
+}
+
+.tag-chip {
+  appearance: none;
+  padding: 1px 8px;
+  border: 1px solid var(--border-color-light);
+  border-radius: 10px;
+  background-color: var(--bg-input);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.tag-chip:hover,
+.tag-chip:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border-color-hover));
+  color: var(--accent);
   outline: none;
 }
 
