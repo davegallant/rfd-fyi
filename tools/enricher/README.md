@@ -109,6 +109,91 @@ run re-tags every stored entry automatically.
 `providers.mjs` keeps a fallback prompt used only when the server publishes
 none, e.g. against an older deployment.
 
+## Iterating without deploying
+
+`evaluate.mjs` measures a vocabulary change against the model **before** it goes
+anywhere near Cloudflare. It reads the vocabulary from
+`functions/_shared/enrichment.ts` — the file you are editing — instead of from
+`/enrichment.json`, and never writes tags back, so the only thing it talks to is
+Ollama.
+
+```sh
+# Score the current glosses against 121 hand-labelled deals.
+node tools/enricher/evaluate.mjs
+
+# Save a baseline, change a gloss, then measure what moved.
+node tools/enricher/evaluate.mjs --out before.json
+$EDITOR functions/_shared/enrichment.ts
+node tools/enricher/evaluate.mjs --compare before.json
+```
+
+Output is per-class, because a single accuracy number hides the trade a change
+actually made:
+
+```
+class                   expect        score
+power tools             home          6/7
+video games             gaming        4/6
+...
+vs before.json:
+  power tools              3 -> 6  +3
+  video games              6 -> 4  -2
+```
+
+`eval-cases.json` holds real RFD titles with the category their gloss implies.
+Only unambiguous deals are in it — a gaming laptop or a bank promo that pays out
+in AirPods was dropped, because scoring arguable cases measures the labeller
+rather than the model. Add cases as you find real misclassifications; that is
+how the set earns its keep.
+
+Other flags:
+
+| Flag | Purpose |
+| --- | --- |
+| `--rotate` | Rotate the category list per topic (see below) |
+| `--corpus topics.json` | Also classify a full snapshot and print distribution shape |
+| `--limit N` | First N cases only, for a quick smoke test |
+
+`--corpus` wants a saved `/topics.json`; fetch one with
+`curl -o topics.json https://rfd.davegallant.ca/topics.json`. It is gitignored.
+A full 1000-deal run takes a while — the labelled cases are the fast loop.
+
+Requires Node 22.6+, which imports the TypeScript source directly. Everything
+else here still runs on Node 18.
+
+### The head-slot bias, and `--rotate`
+
+**Whichever tag is listed first over-attracts by roughly 140 deals in 1000,
+regardless of what any gloss says.** v9 measured this by moving `computing` from
+first to last-but-one and changing nothing else: `computing` fell 140 → 13 while
+`electronics`, which inherited the slot, rose 116 → 256. Laptops and monitors
+left `computing`, whose gloss names them, for `electronics`, whose gloss does
+not.
+
+Reordering can only aim that bias, since some tag must be first. `--rotate`
+spreads it instead, seeding the rotation with the topic id so each tag leads for
+about one deal in eighteen and a given deal still classifies the same way on
+every run.
+
+**It was measured and it does not work: 101 → 93.** The bias does not spread
+across eighteen tags, it moves to `electronics`, which wins anything electrical
+once `computing` is no longer reliably first — monitors fell 5/8 → 1/8. Moving
+`home` to the head instead was equally bad (-8): power tools reached 7/7 while
+monitors went 6/8 → 0/8. The flag stays for re-testing against a different
+model, but it is off, and the head slot remains an open problem.
+
+### Two runs, then trust the number
+
+Ollama at `temperature: 0` reproduces exactly between back-to-back runs, but not
+across a model reload — the same prompt scored 107 once and 105 twice. **Treat a
+delta of ±2 as noise, and always re-measure the baseline in the same session as
+the variant**, which `--out`/`--compare` makes cheap:
+
+```sh
+git stash && node tools/enricher/evaluate.mjs --out base.json && git stash pop
+node tools/enricher/evaluate.mjs --compare base.json
+```
+
 ## Judging tag quality
 
 Each entry records the model that produced it, so a model change is measurable

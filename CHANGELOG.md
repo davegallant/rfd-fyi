@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.4] - 2026-08-06
+
+### Added
+
+- `tools/enricher/evaluate.mjs` measures a vocabulary change against the model without deploying it, scoring 121 hand-labelled deals from `eval-cases.json` in about a minute. It reads the vocabulary from `functions/_shared/enrichment.ts` rather than `/enrichment.json` and never writes tags back, so the loop is edit → score → compare instead of edit → commit → deploy → re-tag 1000 deals. Scoring is per-class, since a single accuracy number hides the trade a change makes.
+
+### Changed
+
+- Vocabulary version 11 tells the model that running on electricity or having a battery does not decide the category. Worth +4 on the benchmark (101 → 105) and the largest single win measured: espresso machines, blenders, cordless drills and car battery chargers were being read as `computing` or `electronics` because they plug in.
+- `grocery` now names supermarket pickup passes, PC Express among them. "PC Express Pass" was tagged `computing`, because "PC" reads as personal computer and the dealer field saying "President's Choice" was not enough to override it.
+
+### Fixed
+
+- `classifyTopic` now names the host and provider when a connection fails, instead of a bare `fetch failed`. An unreachable Ollama is the enricher's most common failure.
+
 ## [0.13.3] - 2026-08-06
 
 ### Fixed

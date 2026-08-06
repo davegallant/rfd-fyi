@@ -1,0 +1,737 @@
+{
+  "note": "Hand-verified evaluation cases, harvested from real RedFlagDeals titles on rfd.davegallant.ca. Only deals whose category follows unambiguously from a gloss are included: anything that genuinely spans two categories (a gaming laptop, a bank promo that pays out in AirPods) was dropped, because a benchmark that scores arguable cases measures the labeller, not the model. Titles are verbatim so the model sees exactly what it sees in production.",
+  "cases": [
+    {
+      "class": "power tools",
+      "expect": "home",
+      "title": "Dewalt 20V Max Oscillating Tool $99.95",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "power tools",
+      "expect": "home",
+      "title": "Amazon Business - KNIPEX Tools 86 01 250 Pliers Wrench with Black Finish, 10\" - $69.95 YMMV",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "power tools",
+      "expect": "home",
+      "title": "$41.60 - Knipex Pliers Wrench 86 03 180 (180mm)",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "power tools",
+      "expect": "home",
+      "title": "Milwaukee M12 4amp/h battery pack 2 batts 1 charger and bag $115.13",
+      "dealer": "Mississauga Hardware"
+    },
+    {
+      "class": "power tools",
+      "expect": "home",
+      "title": "[QC] Metabo HPT MultiVolt 36-Volt 1/2-in Hybrid Hammer Drill Kit with Batteries and Charger $212.50 (reg. $425)",
+      "dealer": "Rona"
+    },
+    {
+      "class": "power tools",
+      "expect": "home",
+      "title": "Picquic Dash-7 Multi-Bit Screwdriver 7 piece $7.99 (July 23 - 29)",
+      "dealer": "Canadian Tire"
+    },
+    {
+      "class": "power tools",
+      "expect": "home",
+      "title": "Atlas Tools - 15% off all Dewalt tools + free shipping- no minimum spend",
+      "dealer": "Atlas Tools"
+    },
+    {
+      "class": "kitchen appliances",
+      "expect": "home",
+      "title": "$449.99 (in store price) Philips 3200 Series Fully Automatic Coffee & Espresso Machine with LatteGo",
+      "dealer": "Costco"
+    },
+    {
+      "class": "kitchen appliances",
+      "expect": "home",
+      "title": "Breville Bambino Espresso Machine $329.99",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "kitchen appliances",
+      "expect": "home",
+      "title": "Sodastream Enso $135 plus tax",
+      "dealer": "Sodastream"
+    },
+    {
+      "class": "kitchen appliances",
+      "expect": "home",
+      "title": "Keurig K-Slim Single Serve K-Cup Pod Coffee Maker $29.98 YMMV",
+      "dealer": "Walmart"
+    },
+    {
+      "class": "kitchen appliances",
+      "expect": "home",
+      "title": "Nespresso Essenza Mini Black - $99 - Initial Price $179 (44% off)",
+      "dealer": "Nespresso"
+    },
+    {
+      "class": "kitchen appliances",
+      "expect": "home",
+      "title": "Hamilton Beach 4 Slice Toaster Oven 50% off@24.97$",
+      "dealer": "Walmart"
+    },
+    {
+      "class": "kitchen appliances",
+      "expect": "home",
+      "title": "VAVSEA 1100W 5-in-1 Immersion Hand Blender (12 speed) - $42.99",
+      "dealer": "Walmart"
+    },
+    {
+      "class": "kitchen appliances",
+      "expect": "home",
+      "title": "Cuisinart Touch To Toast Leverless 2 Slice Toaster Pearl White",
+      "dealer": "https://www.visions.ca"
+    },
+    {
+      "class": "laptops and PCs",
+      "expect": "computing",
+      "title": "Lian Li Vector V100 ATX Mid-Tower PC Case with 4 ARGB PWM Fans $80",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "laptops and PCs",
+      "expect": "computing",
+      "title": "Lenovo Slim 7i 14\" Touchscreen - Intel Core Ultra 7 258V - 32GB LPDDR5x - 1TB SSD - $1499",
+      "dealer": "Best Buy"
+    },
+    {
+      "class": "laptops and PCs",
+      "expect": "computing",
+      "title": "Apple MacBook Air 13.6\" M4 24gb/512gb $1699",
+      "dealer": "Best Buy"
+    },
+    {
+      "class": "laptops and PCs",
+      "expect": "computing",
+      "title": "Acer Swift 14 AI 14\" - Ryzen AI 9 365, 32GB LPDDR5X, 1TB SSD, IPS, USB4 ($1300)",
+      "dealer": "Best Buy"
+    },
+    {
+      "class": "monitors",
+      "expect": "computing",
+      "title": "GS Open Box - Samsung 32\" Odyssey G8 - 4K 240Hz OLED monitor @ $674.97",
+      "dealer": "Best Buy"
+    },
+    {
+      "class": "monitors",
+      "expect": "computing",
+      "title": "ThinkVision 34 inch VA WQHD 120hz USB-C Curved Monitor - T34WD-40 @ $353.11 (codes)",
+      "dealer": "Lenovo Canada"
+    },
+    {
+      "class": "monitors",
+      "expect": "computing",
+      "title": "AOC 16T20 Portable Monitor 15.6\" FHD 1080p IPS/USB-C/Mini HDMI/Speakers - $69.99 (down from $100)",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "monitors",
+      "expect": "computing",
+      "title": "2026 Samsung 32-inch 6K 165Hz / 3K 330Hz Gaming Monitor (G80HS) $1,649.99",
+      "dealer": "Samsung"
+    },
+    {
+      "class": "monitors",
+      "expect": "computing",
+      "title": "MSI MAG341CQP QD-OLED, 34 Curved Gaming Monitor, 3440 x 1440, 0.03ms Response time, 175Hz HDR - $799.99 reg $1049.99",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "monitors",
+      "expect": "computing",
+      "title": "AOC 16T20 Portable Monitor 15.6\" FHD 1080p IPS Display   $69.99",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "monitors",
+      "expect": "computing",
+      "title": "40\" Odyssey G7 G75F 180Hz 5K2K Monitor @ $664.99 (w/ SPC, $700 without)",
+      "dealer": "Samsung"
+    },
+    {
+      "class": "monitors",
+      "expect": "computing",
+      "title": "Geek Squad Open Box ASUS ZenScreen 15.6\" FHD 144Hz 3ms GTG IPS LED FreeSync Portable Gaming Monitor",
+      "dealer": "Best Buy"
+    },
+    {
+      "class": "phones",
+      "expect": "electronics",
+      "title": "$999 Samsung Galaxy S25 Edge 256GB - Titanium Silver - Unlocked",
+      "dealer": "Best Buy"
+    },
+    {
+      "class": "phones",
+      "expect": "electronics",
+      "title": "US Mint Mobile pixel 10 bundle $329 USD",
+      "dealer": "Mint Mobile"
+    },
+    {
+      "class": "phones",
+      "expect": "electronics",
+      "title": "Samsung Galaxy Z Fold7 256GB (Blue Shadow) - $2049.99 (was $2499.99)",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "phones",
+      "expect": "electronics",
+      "title": "Pixel 10a 128GB $579",
+      "dealer": "Google, Staples, Amazon"
+    },
+    {
+      "class": "phones",
+      "expect": "electronics",
+      "title": "[Samsung] Galaxy Z Fold8 Ultra, Fold8 & Flip8 pre-order — $150–$300 off + up to $500 trade-in bonus",
+      "dealer": "Samsung"
+    },
+    {
+      "class": "phones",
+      "expect": "electronics",
+      "title": "Apple iphone 17 - $15 monthly - rogers cpo (pre owned)",
+      "dealer": "Rogers"
+    },
+    {
+      "class": "phones",
+      "expect": "electronics",
+      "title": "Apple iPhone 17 Pro Max 256gb Refurbished (excellent)",
+      "dealer": "Best Buy"
+    },
+    {
+      "class": "phones",
+      "expect": "electronics",
+      "title": "Staples - Google Pixel 10a - $540 (Last Day).",
+      "dealer": "Staples"
+    },
+    {
+      "class": "TVs",
+      "expect": "electronics",
+      "title": "TCL 65\" QM7K Series 4K UHD QD-MiniLED TV $1049.99",
+      "dealer": "Best Buy"
+    },
+    {
+      "class": "TVs",
+      "expect": "electronics",
+      "title": "TCL 65\" A400U QD-MiniLED Art/Wallpaper TV @ $1098",
+      "dealer": "Costco"
+    },
+    {
+      "class": "TVs",
+      "expect": "electronics",
+      "title": "YMMV Costco 65\" C5 OLED TV - $1799.97",
+      "dealer": "Costco"
+    },
+    {
+      "class": "TVs",
+      "expect": "electronics",
+      "title": "TCL 65\" Class 4K (2160p) Smart QLED TV (65Q650G)",
+      "dealer": "eBay.ca"
+    },
+    {
+      "class": "TVs",
+      "expect": "electronics",
+      "title": "[LG] [Soundbar free] $2699 LG C5 77inch with LG S90TR",
+      "dealer": "Best Buy"
+    },
+    {
+      "class": "TVs",
+      "expect": "electronics",
+      "title": "TCL 75\" QM67K. 4K QLED Mini LED TV  ($996.99)",
+      "dealer": "Costco"
+    },
+    {
+      "class": "TVs",
+      "expect": "electronics",
+      "title": "Hisense QD7SV Mini-LED QLED 4K Smart TV 65” - $449.97 (North Oshawa)",
+      "dealer": "Costco"
+    },
+    {
+      "class": "TVs",
+      "expect": "electronics",
+      "title": "Samsung Q990F Soundbar Open Box - $900",
+      "dealer": "London Drugs"
+    },
+    {
+      "class": "headphones",
+      "expect": "electronics",
+      "title": "AirPods Pro 3rd Generation - $210 (pickup only)",
+      "dealer": "Staples"
+    },
+    {
+      "class": "headphones",
+      "expect": "electronics",
+      "title": "soundcore P42i True Wireless Earbuds, Adaptive ANC, 56H Playtime 94.99 (was 99.99)",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "headphones",
+      "expect": "electronics",
+      "title": "Sennheiser ACCENTUM True Wireless Earbuds @ $79.99 (atl)",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "headphones",
+      "expect": "electronics",
+      "title": "Sennheiser ACCENTUM In-Ear Noise Cancelling True Wireless Earbuds",
+      "dealer": "Best Buy"
+    },
+    {
+      "class": "headphones",
+      "expect": "electronics",
+      "title": "Amazon.ca: JBL Tune 770NC Wireless Over-Ear Headphones (Adaptive ANC, Bluetooth 5.3, 70H Battery) - $99.98 (47% off)",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "headphones",
+      "expect": "electronics",
+      "title": "Sennheiser ACCENTUM Over-Ear Noise Cancelling Bluetooth Headphones - Blue - $99.99",
+      "dealer": "Best Buy"
+    },
+    {
+      "class": "video games",
+      "expect": "gaming",
+      "title": "[Twish Cart/ Costco] Nintendo Switch 2 + 256GB microSD Express + 1yr NSO Expansion Pack – $635.23 before tax",
+      "dealer": "Twish Cart"
+    },
+    {
+      "class": "video games",
+      "expect": "gaming",
+      "title": "Grand Theft Auto VI (GTA VI) - PS5/Xbox - Trade 3 worth $15 or more, get it free",
+      "dealer": "EB Games"
+    },
+    {
+      "class": "video games",
+      "expect": "gaming",
+      "title": "Xbox Series X 2tb Galaxy edition $879",
+      "dealer": "Microsoft"
+    },
+    {
+      "class": "video games",
+      "expect": "gaming",
+      "title": "Steam Free Game - Yet Another Zombie Defense HD",
+      "dealer": "STEAM"
+    },
+    {
+      "class": "video games",
+      "expect": "gaming",
+      "title": "Xbox ultimate sale up - FF integrade $18.74",
+      "dealer": "Xbox"
+    },
+    {
+      "class": "video games",
+      "expect": "gaming",
+      "title": "Assassin's Creed Black Flag Resynced Collectors Edition - Playstation 5 - $279.99",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "clothing and shoes",
+      "expect": "apparel",
+      "title": "Indian Motorcycle Men's Lambeth Jacket, Black, $162.50",
+      "dealer": "Indian Motorcycle"
+    },
+    {
+      "class": "clothing and shoes",
+      "expect": "apparel",
+      "title": "Under Armour Mens Charged Edge Sneaker $40.5",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "clothing and shoes",
+      "expect": "apparel",
+      "title": "Darn Tough Hunting Socks - Men's small/medium, womens small/L",
+      "dealer": "marche alpin"
+    },
+    {
+      "class": "clothing and shoes",
+      "expect": "apparel",
+      "title": "ASICS Novablast 5 Running Shoes - Men's",
+      "dealer": "Altitude Sports"
+    },
+    {
+      "class": "clothing and shoes",
+      "expect": "apparel",
+      "title": "Clifton 10 Road Running Shoes - Men's (also very good walking shoes) $122.39 (or $97.91 each if buy 3)",
+      "dealer": "The Last Hunt"
+    },
+    {
+      "class": "clothing and shoes",
+      "expect": "apparel",
+      "title": "HOKA Men's Clifton 10 Running Shoes 89.98 Limited colours",
+      "dealer": "Sport Chek"
+    },
+    {
+      "class": "clothing and shoes",
+      "expect": "apparel",
+      "title": "Mondetta Men's Pitch World Jacket $ 19.97",
+      "dealer": "Costco"
+    },
+    {
+      "class": "clothing and shoes",
+      "expect": "apparel",
+      "title": "adidas Questar 3 Running Shoes Men's Athletic & Sneakers ($35 - $41) free shipping)",
+      "dealer": "eBay.ca"
+    },
+    {
+      "class": "groceries",
+      "expect": "grocery",
+      "title": "ON: Metro Lactancia 4 litre Purfiltre Milk net $4.49, after $1 Moi points",
+      "dealer": "Metro"
+    },
+    {
+      "class": "groceries",
+      "expect": "grocery",
+      "title": "Terra Delyssa Premium Extra Virgin Olive Oil 1L $10.00 (reg. $20.00) August 6-12",
+      "dealer": "Loblaws"
+    },
+    {
+      "class": "groceries",
+      "expect": "grocery",
+      "title": "Café William Organic Medium Roast Colombian Coffee Beans 2 × 800 g - $43.99",
+      "dealer": "Costco"
+    },
+    {
+      "class": "groceries",
+      "expect": "grocery",
+      "title": "Caffè Borbone Espresso Intenso Whole Coffee Beans, 2 × 1 kg - $44.99-54.99",
+      "dealer": "Costco"
+    },
+    {
+      "class": "restaurants",
+      "expect": "dining",
+      "title": "A&W - Free Root Beer Float w/ $2 Min. Purchase, Aug. 6",
+      "dealer": "A&W"
+    },
+    {
+      "class": "restaurants",
+      "expect": "dining",
+      "title": "99 cent small Frosty season til Aug 31, breakfast combos $4.99-5.99",
+      "dealer": "Wendy's"
+    },
+    {
+      "class": "restaurants",
+      "expect": "dining",
+      "title": "Free A&W float with $2 purchase in app August 6",
+      "dealer": "A&W"
+    },
+    {
+      "class": "restaurants",
+      "expect": "dining",
+      "title": "50% off pizza menu",
+      "dealer": "Buster's Pizza"
+    },
+    {
+      "class": "restaurants",
+      "expect": "dining",
+      "title": "Pizza Hut $2.49 Personal Pan (2 toppings) Mon-Thu until 5PM(in -store, DT Toronto)",
+      "dealer": "Pizza Hut"
+    },
+    {
+      "class": "flights and hotels",
+      "expect": "travel",
+      "title": "Good Price: Toronto to Madrid, Spain only $587 CAD roundtrip 3rd party booking site (Or pay $617 to book on TAP)",
+      "dealer": "TAP"
+    },
+    {
+      "class": "flights and hotels",
+      "expect": "travel",
+      "title": "Calgary to Belize - $393 (CB) to $503 CAD roundtrip including taxes [Nonstop Flights]",
+      "dealer": "WestJet"
+    },
+    {
+      "class": "flights and hotels",
+      "expect": "travel",
+      "title": "NYC’s Northern Neighbour Deal 30% off hotels, sights + more",
+      "dealer": ""
+    },
+    {
+      "class": "flights and hotels",
+      "expect": "travel",
+      "title": "2 in 1 trip.  Cheap flights from Montreal  to  Cape Verde and Azores   $668 Return Taxes included",
+      "dealer": "Azores Airlines"
+    },
+    {
+      "class": "flights and hotels",
+      "expect": "travel",
+      "title": "Nonstop Economy Toronto (YYZ) to Tokyo (HND) Aug29th-Feb15th $1280-$1350",
+      "dealer": "Air Canada"
+    },
+    {
+      "class": "banking",
+      "expect": "financial",
+      "title": "[BC] High Interest Savings Account @ 5.00% (until Oct 31)($250K max) (Existing/New Customers)",
+      "dealer": "Beem Credit Union"
+    },
+    {
+      "class": "banking",
+      "expect": "financial",
+      "title": "Kawartha Financial Services HISA 4.50% (3 months)",
+      "dealer": ""
+    },
+    {
+      "class": "banking",
+      "expect": "financial",
+      "title": "[YMMV] BMO InvestorLine 3% Bonus Match for select clients + $20k vacation contest",
+      "dealer": "BMO"
+    },
+    {
+      "class": "banking",
+      "expect": "financial",
+      "title": "[AB only] 4.75% for 120 days - Savings Account - up to $1,000,000, $5k min (new customers only)",
+      "dealer": "Servus Credit Union"
+    },
+    {
+      "class": "banking",
+      "expect": "financial",
+      "title": "▶ ▶ 2 DAYS LEFT ◀ ◀ Get a $175 Visa card for opening a BMO Chequing Account + get $900 cash from BMO (see conditions)",
+      "dealer": "Finder.com"
+    },
+    {
+      "class": "banking",
+      "expect": "financial",
+      "title": "CIBC up to 5.00% interest eAdvantage HISA maybe Targeted",
+      "dealer": "CIBC"
+    },
+    {
+      "class": "loyalty points",
+      "expect": "rewards",
+      "title": "Gift Card Deals and Discounts (2026) - Deals Posts Only!",
+      "dealer": "Various Retailers"
+    },
+    {
+      "class": "loyalty points",
+      "expect": "rewards",
+      "title": "Air Canada Gift Card $1,000 for $894.99 | $500 for $449.99",
+      "dealer": "Costco"
+    },
+    {
+      "class": "loyalty points",
+      "expect": "rewards",
+      "title": "$50 USD Old Navy/GAP/Banana Republic/Athleta Gift Card, $38, egifter",
+      "dealer": "egifter"
+    },
+    {
+      "class": "loyalty points",
+      "expect": "rewards",
+      "title": "YMMV Door Dash Gift cards at Shoppers Drug Mart 35k PC points back",
+      "dealer": "Shoppers Drug Mart"
+    },
+    {
+      "class": "pet supplies",
+      "expect": "pets",
+      "title": "Fluval Stratum Aquarium Substrate 8.8lbs $25",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "pet supplies",
+      "expect": "pets",
+      "title": "Lesure Waterproof Dog Blankets $16.06",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "pet supplies",
+      "expect": "pets",
+      "title": "Toronto - $35 dog licence, rabies shot, and microchip ($25 for cats). Next one July 30",
+      "dealer": "City of Toronto"
+    },
+    {
+      "class": "pet supplies",
+      "expect": "pets",
+      "title": "K9 Advantix II Flea and Tick Treatment for Small Dogs weighing less than 4.5 kg -6 doses @ $34.99 (coupon S&S ymmv)",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "pet supplies",
+      "expect": "pets",
+      "title": "YMMV Petco X-Small Folding Dog Crate 81% off ($14.88 REG 79.99)",
+      "dealer": "Canadian Tire"
+    },
+    {
+      "class": "toys",
+      "expect": "kids",
+      "title": "YMMW: Costco HyperStrike Bow Toy - 19.97 In-Store Only",
+      "dealer": "Costco"
+    },
+    {
+      "class": "toys",
+      "expect": "kids",
+      "title": "LEGO Minecraft The Baby Pig House - $18",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "toys",
+      "expect": "kids",
+      "title": "Crayola Color Wonder Mess-Free Colouring Pages & Mini Markers, Batwheels - $2.00",
+      "dealer": "Walmart"
+    },
+    {
+      "class": "toys",
+      "expect": "kids",
+      "title": "Lego flowers for 50$",
+      "dealer": "Costco"
+    },
+    {
+      "class": "toys",
+      "expect": "kids",
+      "title": "LEGO Speed Champions Assortment (including Time Machine from Back to the Future)",
+      "dealer": "Costco"
+    },
+    {
+      "class": "toys",
+      "expect": "kids",
+      "title": "Fisher-Price Imaginext Star Wars Darth Vader Bot - CLEARANCE - $59.97",
+      "dealer": "Walmart"
+    },
+    {
+      "class": "bikes and sports",
+      "expect": "sports",
+      "title": "499.97 Louis Garneau SETTER 9.0 Hybrid Bike",
+      "dealer": "Costco"
+    },
+    {
+      "class": "bikes and sports",
+      "expect": "sports",
+      "title": "BODi MYX Fitness stationary bike $55 - In-store only",
+      "dealer": "Princess Auto"
+    },
+    {
+      "class": "bikes and sports",
+      "expect": "sports",
+      "title": "Northrock SR1 Road Bike - $499.98",
+      "dealer": "Costco"
+    },
+    {
+      "class": "bikes and sports",
+      "expect": "sports",
+      "title": "Sporting Life - Helinox Chair One (re) Camping Chair $151.98 (Reg. $189.99) + 10% Email Signup = $136.78",
+      "dealer": "Sporting Life"
+    },
+    {
+      "class": "car parts",
+      "expect": "automotive",
+      "title": "Schumacher 8A 12V Car Battery Charger/Tender - $21.14 (All Time Low)",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "car parts",
+      "expect": "automotive",
+      "title": "Supertech 0w20 engine oil on clearance $15+eco fee KW Bridgeport location",
+      "dealer": "Walmart"
+    },
+    {
+      "class": "car parts",
+      "expect": "automotive",
+      "title": "GOOLOO Jump Starters - from $44.99 F/S",
+      "dealer": "Walmart"
+    },
+    {
+      "class": "car parts",
+      "expect": "automotive",
+      "title": "GOOLOO GT4000S Supersafe Jump Starter 4000A $129.99",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "car parts",
+      "expect": "automotive",
+      "title": "Meguiar's Hot Shine Tire Foam, 3 pack $29.97",
+      "dealer": "Costco"
+    },
+    {
+      "class": "car parts",
+      "expect": "automotive",
+      "title": "Portable Tire Inflator Air Compressor 150PSI with Digital Pressure Gauge - $24.99",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "pharmacy",
+      "expect": "health",
+      "title": "Costco (Ritson Rd S): Vega Protein +.Creatine 1.97kg, $34.97",
+      "dealer": ""
+    },
+    {
+      "class": "pharmacy",
+      "expect": "health",
+      "title": "Revolution Nutrition High Whey Protein Powder Variety Pack, 2 x 2.27 kg $99",
+      "dealer": "Costco"
+    },
+    {
+      "class": "pharmacy",
+      "expect": "health",
+      "title": "Medline ReadyBath Rinse-Free Shampoo and Conditioning Caps, Scented  30 Pack $4.99 (reg. $18.99)",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "pharmacy",
+      "expect": "health",
+      "title": "Creaprime Creatine 2kg $44.99",
+      "dealer": "Popeyes Supplements"
+    },
+    {
+      "class": "pharmacy",
+      "expect": "health",
+      "title": "Jamieson Vitamin D3 1,000 IU - Value Pack 500 ea $8.24",
+      "dealer": "No Frills"
+    },
+    {
+      "class": "pharmacy",
+      "expect": "health",
+      "title": "Jamieson vitamins Canada Day Sale 30% x 30% off",
+      "dealer": "Jamieson"
+    },
+    {
+      "class": "phone plans",
+      "expect": "telecom",
+      "title": "150gb @2gb speed in Italy also 9gb euro/uk roaming",
+      "dealer": "lyca mobile"
+    },
+    {
+      "class": "phone plans",
+      "expect": "telecom",
+      "title": "[former Telus prepaid] $100 365 Day plan unlimited Canada-wide talk and text (no data, one-year only)",
+      "dealer": "Koodo"
+    },
+    {
+      "class": "phone plans",
+      "expect": "telecom",
+      "title": "Telus bring your own phone plan with $120 bill credit YMMV",
+      "dealer": "Telus"
+    },
+    {
+      "class": "phone plans",
+      "expect": "telecom",
+      "title": "Telus & Koodo New Roaming Passes",
+      "dealer": "Telus"
+    },
+    {
+      "class": "phone plans",
+      "expect": "telecom",
+      "title": "Rogers Plan Change Offer - $30 for 100GB at 1Gbps and Unlimited CAN Talk/Text",
+      "dealer": "Rogers"
+    },
+    {
+      "class": "phone plans",
+      "expect": "telecom",
+      "title": "Rogers EPP BYOD 175GB Can/US/Mex $40 after PAP discount",
+      "dealer": "Rogers"
+    },
+    {
+      "class": "phone plans",
+      "expect": "telecom",
+      "title": "Rogers Ultimate Plan 5-yr guarantee (targeted) $65",
+      "dealer": "Rogers"
+    },
+    {
+      "class": "grocery services",
+      "expect": "grocery",
+      "title": "Save over 80% with PC Express Pass $18.00 for first year regular price $99.00",
+      "dealer": "President’s Choice"
+    }
+  ]
+}

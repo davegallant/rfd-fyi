@@ -72,7 +72,7 @@ export const TAG_GLOSSES: Record<Tag, string> = {
   electronics: "TVs, audio, cameras, phones of every form factor including foldables, smartwatches, smart glasses and wearables, chargers, smart-home devices",
   gaming: "video games, consoles, handhelds, gaming hardware, board games, trading cards and tabletop games",
   telecom: "mobile, internet and TV plans, SIMs, roaming",
-  grocery: "food and drink bought from a supermarket, including alcohol",
+  grocery: "food and drink bought from a supermarket, including alcohol, and supermarket delivery or pickup passes such as PC Express and Voilà",
   dining: "restaurants, fast food, cafes, bakeries and dessert shops, food delivery",
   home: "furniture, kitchen and small appliances, coffee and espresso machines, air conditioners and fans, vacuums, cleaning, pest control, power and hand tools, lawn and garden equipment, BBQs and grills, coolers",
   apparel: "clothing, footwear, accessories, bags, jewellery",
@@ -118,6 +118,9 @@ export const CLASSIFIER_INSTRUCTIONS = [
   "When the value of the deal is points, miles or stored value rather than a",
   "product — a loyalty promotion, a discounted gift card, a fuel-points offer —",
   "use \"rewards\".",
+  "Running on electricity or having a battery does not decide the category:",
+  "an appliance, a power tool, a car accessory or a games console is",
+  "categorised by what it is for.",
   "A post covering a whole store's flyer, weekly sale or photo report spans",
   "every category at once, so use \"other\" for it.",
   "Use \"other\" only when nothing else fits.",
@@ -202,12 +205,36 @@ export const CLASSIFIER_INSTRUCTIONS = [
  *    v9 did confirm one thing worth keeping: with `computing` demoted, power
  *    tools reached `home` 13/24, their best across every version. The gloss was
  *    right all along; position was overriding it.
- *    Next single-variable experiment: rotate the category list per topic
- *    (`topic_id % length`) so the head slot lands on each tag equally often,
- *    spreading a systematic bias into uniform noise. Deterministic, so
- *    temperature 0 stays reproducible.
+ *    Rotating the category list per topic was the proposed fix for the head
+ *    slot. v11 measured it and it failed; see below.
+ * v11 is the first version measured before deploying, with
+ *    `tools/enricher/evaluate.mjs` against 121 hand-labelled deals. It adds one
+ *    sentence telling the model that running on electricity does not decide the
+ *    category, worth +4 on that benchmark (101 -> 105, baseline re-measured
+ *    back to back). It fixed the largest miss cluster there was: espresso
+ *    machines, blenders, cordless drills and car battery chargers were being
+ *    read as `computing` or `electronics` because they plug in.
+ *    It also names supermarket pickup passes in `grocery`. "PC Express Pass"
+ *    was `computing` live: "PC" reads as personal computer, `computing`'s gloss
+ *    says "PC parts", and the dealer field saying "President's Choice" was not
+ *    enough to override it. Spelling the brand out in the title, or adding the
+ *    word "grocery" to it, both fixed it — so the fix is to name PC Express in
+ *    `grocery`, the same way `rewards` already names Scene+ and PC Optimum.
+ *    Renaming `computing`'s "PC parts" to "computer parts" also worked but was
+ *    not needed once `grocery` claimed the brand, and cost more elsewhere.
+ *    Four changes were measured and rejected in the same session, which is the
+ *    point of measuring:
+ *    - rotating the category list per topic, to defeat the head-slot bias:
+ *      -8. The bias does not spread across eighteen tags, it just moves to
+ *      `electronics`, and monitors collapsed 5/8 -> 1/8.
+ *    - moving `home` to the head of the list: -8. Power tools reached 7/7 but
+ *      monitors went 6/8 -> 0/8 and phones lost 2.
+ *    - naming cordless drills, drivers and wrenches in `home`: -3. `home`
+ *      already has the longest gloss and lengthening it cost more than it won.
+ *    - narrowing `electronics`' "chargers" to "phone chargers and power banks",
+ *      to stop it taking tool batteries and car chargers: -4.
  */
-export const VOCABULARY_VERSION = 10;
+export const VOCABULARY_VERSION = 11;
 
 /** Longest model identifier stored on an entry. */
 const MAX_MODEL_NAME_LENGTH = 64;

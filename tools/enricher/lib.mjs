@@ -125,6 +125,26 @@ function parseJson(content) {
 }
 
 /**
+ * Rotates the category list so a different tag is listed first for each topic.
+ *
+ * Measured on 1000 live deals: whichever tag is listed first over-attracts by
+ * ~140 deals, independent of what any gloss says. v9 moved `computing` from
+ * first to last-but-one and it fell 140 -> 13 while `electronics`, which
+ * inherited the slot, rose 116 -> 256. Order can only aim that bias, since some
+ * tag must be first — rotating spreads it across every tag instead, turning a
+ * systematic distortion into roughly uniform noise.
+ *
+ * Seeded by topic id rather than shuffled, so a topic gets the same ordering on
+ * every run and the classifier stays reproducible at temperature 0.
+ */
+export function rotateVocabulary(vocabulary, seed) {
+  if (!Array.isArray(vocabulary) || vocabulary.length === 0) return vocabulary;
+  const offset = ((Math.trunc(seed) % vocabulary.length) + vocabulary.length) % vocabulary.length;
+  if (offset === 0) return [...vocabulary];
+  return [...vocabulary.slice(offset), ...vocabulary.slice(0, offset)];
+}
+
+/**
  * Runs `worker` over `items` with at most `limit` in flight, preserving input
  * order in the results. Serial is right for a single local GPU; a hosted API
  * wants several in flight or a 1000-item backfill crawls.
@@ -182,9 +202,9 @@ export function chunk(items, size) {
  * A provider failure propagates: a rate limit or bad key should stop the run,
  * not quietly write a partial batch.
  */
-export async function classifyBatch(topics, { provider, config, vocabulary, glosses, instructions, maxTags, concurrency, fetchImpl }) {
+export async function classifyBatch(topics, { provider, config, vocabulary, glosses, instructions, maxTags, concurrency, rotate, fetchImpl }) {
   const results = await mapWithConcurrency(topics, concurrency, (topic) =>
-    classifyTopic(topic, { provider, config, vocabulary, glosses, instructions, maxTags, fetchImpl }));
+    classifyTopic(topic, { provider, config, vocabulary, glosses, instructions, maxTags, rotate, fetchImpl }));
 
   const tags = {};
   const skipped = [];
@@ -203,14 +223,25 @@ export async function classifyBatch(topics, { provider, config, vocabulary, glos
  * than quietly tagging nothing; returns null when the call succeeded but the
  * model produced no usable tags.
  */
-export async function classifyTopic(topic, { provider, config, vocabulary, glosses, instructions, maxTags, fetchImpl = fetch }) {
-  const { url, headers, body } = provider.buildRequest({ topic, vocabulary, glosses, instructions, maxTags, config });
+export async function classifyTopic(topic, { provider, config, vocabulary, glosses, instructions, maxTags, rotate = false, fetchImpl = fetch }) {
+  // Rotation belongs here rather than in an adapter: adapters own only the wire
+  // format, so every provider gets it and none can forget it.
+  const ordered = rotate ? rotateVocabulary(vocabulary, Number(topic.topic_id) || 0) : vocabulary;
+  const { url, headers, body } = provider.buildRequest({ topic, vocabulary: ordered, glosses, instructions, maxTags, config });
 
-  const response = await fetchImpl(url, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(body),
-  });
+  let response;
+  try {
+    response = await fetchImpl(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    });
+  } catch (error) {
+    // Bare `fetch failed` names neither the host nor the port, and an
+    // unreachable model is this script's most common failure: Ollama binds to
+    // 127.0.0.1 and refuses LAN connections until OLLAMA_HOST is set.
+    throw new Error(`POST ${url} failed: ${error.message} — is ${provider.name} running and reachable?`);
+  }
 
   if (!response.ok) {
     const detail = (await response.text().catch(() => "")).slice(0, 300);

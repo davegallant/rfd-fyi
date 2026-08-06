@@ -7,6 +7,7 @@ import {
   postTags,
   mapWithConcurrency,
   parseTags,
+  rotateVocabulary,
   selectUntagged,
 } from "./lib.mjs";
 import { resolveProvider } from "./providers.mjs";
@@ -308,5 +309,106 @@ describe("classifyTopic", () => {
     const fetchMock = vi.fn(async () => Response.json({ message: { content: "I refuse" } }));
 
     await expect(run(fetchMock)).resolves.toBeNull();
+  });
+});
+
+describe("rotateVocabulary", () => {
+  const vocabulary = ["computing", "electronics", "gaming", "other"];
+
+  it("moves a different tag to the front for each offset", () => {
+    expect(rotateVocabulary(vocabulary, 1)).toEqual(["electronics", "gaming", "other", "computing"]);
+    expect(rotateVocabulary(vocabulary, 2)).toEqual(["gaming", "other", "computing", "electronics"]);
+  });
+
+  it("keeps every tag exactly once, so the schema enum stays complete", () => {
+    for (let seed = 0; seed < 10; seed += 1) {
+      expect([...rotateVocabulary(vocabulary, seed)].sort()).toEqual([...vocabulary].sort());
+    }
+  });
+
+  it("wraps rather than running off the end", () => {
+    expect(rotateVocabulary(vocabulary, 4)).toEqual(vocabulary);
+    expect(rotateVocabulary(vocabulary, 5)).toEqual(rotateVocabulary(vocabulary, 1));
+  });
+
+  // Seeded by topic id, so the same deal gets the same ordering on every run.
+  // Without that, a re-tag would move deals for no reason and no two
+  // evaluations would be comparable.
+  it("is deterministic for a given seed", () => {
+    expect(rotateVocabulary(vocabulary, 7)).toEqual(rotateVocabulary(vocabulary, 7));
+  });
+
+  it("does not mutate the list it was given", () => {
+    const original = [...vocabulary];
+    rotateVocabulary(vocabulary, 2);
+    expect(vocabulary).toEqual(original);
+  });
+
+  it("survives a negative or missing seed rather than producing a hole", () => {
+    expect(rotateVocabulary(vocabulary, -1)).toEqual(["other", "computing", "electronics", "gaming"]);
+    expect(rotateVocabulary(vocabulary, 0)).toEqual(vocabulary);
+  });
+
+  it("returns an empty vocabulary untouched", () => {
+    expect(rotateVocabulary([], 3)).toEqual([]);
+  });
+});
+
+describe("classifyTopic transport errors", () => {
+  /**
+   * The most common failure is an unreachable model: Ollama binds to 127.0.0.1
+   * and refuses LAN connections until OLLAMA_HOST is set. A bare `fetch failed`
+   * names neither the host nor the port.
+   */
+  it("names the URL and provider when the connection fails outright", async () => {
+    const fetchImpl = vi.fn(async () => { throw new TypeError("fetch failed"); });
+
+    const error = await classifyTopic(TOPIC, {
+      provider: resolveProvider("ollama"),
+      config: { baseUrl: "http://hephaestus:11434" },
+      vocabulary: VOCABULARY,
+      glosses: {},
+      instructions: "classify",
+      maxTags: 2,
+      fetchImpl,
+    }).catch((e) => e);
+
+    expect(error.message).toMatch(/hephaestus:11434/);
+    expect(error.message).toMatch(/ollama/);
+    expect(error.message).toMatch(/reachable/);
+  });
+});
+
+describe("classifyTopic rotation", () => {
+  const run = async (rotate, topicId) => {
+    const fetchImpl = vi.fn(async () => Response.json({ message: { content: '{"tags":["gaming"]}' } }));
+    await classifyTopic({ ...TOPIC, topic_id: topicId }, {
+      provider: resolveProvider("ollama"),
+      config: {},
+      vocabulary: VOCABULARY,
+      glosses: {},
+      instructions: "classify",
+      maxTags: 2,
+      rotate,
+      fetchImpl,
+    });
+    return JSON.parse(fetchImpl.mock.calls[0][1].body);
+  };
+
+  it("leaves the order alone unless rotation is asked for", async () => {
+    const body = await run(false, 1);
+    expect(body.format.properties.tags.items.enum).toEqual(VOCABULARY);
+  });
+
+  it("rotates both the prompt and the schema enum, so they cannot disagree", async () => {
+    const body = await run(true, 1);
+    expect(body.format.properties.tags.items.enum).toEqual(["gaming", "grocery", "other", "computing"]);
+    expect(body.messages[0].content).toMatch(/Allowed categories:\n- gaming/);
+  });
+
+  it("gives different topics different leading tags", async () => {
+    const first = await run(true, 1);
+    const second = await run(true, 2);
+    expect(first.format.properties.tags.items.enum[0]).not.toBe(second.format.properties.tags.items.enum[0]);
   });
 });

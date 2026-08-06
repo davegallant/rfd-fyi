@@ -104,7 +104,7 @@ describe("vocabulary", () => {
    */
   it("pairs the current tag set with a version that has been bumped for it", () => {
     expect({ version: VOCABULARY_VERSION, tags: [...TAG_VOCABULARY] }).toEqual({
-      version: 10,
+      version: 11,
       tags: [
         "computing", "electronics", "gaming", "telecom", "grocery", "dining",
         "home", "apparel", "sports", "health", "pets", "travel", "financial",
@@ -207,6 +207,29 @@ describe("vocabulary", () => {
   // grocery by latching onto a single item named in the title.
   it("tells the model where store-wide flyers belong", () => {
     expect(CLASSIFIER_INSTRUCTIONS).toMatch(/flyer/i);
+  });
+
+  /**
+   * Worth +4 on the 121-case benchmark (101 -> 105), the largest single win
+   * measured. Espresso machines, blenders, cordless drills and car battery
+   * chargers were all being read as `computing` or `electronics` for no better
+   * reason than that they plug in.
+   */
+  it("tells the model that being electrically powered does not decide the category", () => {
+    expect(CLASSIFIER_INSTRUCTIONS).toMatch(/electricity|battery/i);
+    expect(CLASSIFIER_INSTRUCTIONS).toMatch(/what it is for/i);
+  });
+
+  /**
+   * "PC Express Pass" was classified `computing` live: "PC" reads as personal
+   * computer, and the dealer field saying "President's Choice" did not override
+   * it. Naming the brand in `grocery` fixed it, which is the same device
+   * `rewards` already uses for Scene+ and PC Optimum — a two-letter brand
+   * abbreviation needs a gloss to claim it or the generic reading wins.
+   */
+  it("claims supermarket pickup passes for grocery by name", () => {
+    expect(TAG_GLOSSES.grocery).toMatch(/pickup|delivery/i);
+    expect(TAG_GLOSSES.grocery).toMatch(/PC Express/);
   });
 
   /**
