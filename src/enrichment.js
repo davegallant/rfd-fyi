@@ -15,7 +15,7 @@ export const TAG_FILTER_PREFIX = "#";
  *
  * `other` is a quarantine rather than a category: it holds deals that are not
  * products at all — megathreads, weekly flyer dumps — and keeps them out of the
- * 16 real categories. Deleting it from the vocabulary would not make those
+ * real categories. Deleting it from the vocabulary would not make those
  * classifiable, it would just scatter them into categories people filter by. So
  * it stays in the data and out of the UI. `#other` still filters, which is the
  * way to audit what has collected there.

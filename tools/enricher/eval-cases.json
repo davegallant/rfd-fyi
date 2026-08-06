@@ -3,43 +3,43 @@
   "cases": [
     {
       "class": "power tools",
-      "expect": "home",
+      "expect": "tools",
       "title": "Dewalt 20V Max Oscillating Tool $99.95",
       "dealer": "Amazon.ca"
     },
     {
       "class": "power tools",
-      "expect": "home",
+      "expect": "tools",
       "title": "Amazon Business - KNIPEX Tools 86 01 250 Pliers Wrench with Black Finish, 10\" - $69.95 YMMV",
       "dealer": "Amazon.ca"
     },
     {
       "class": "power tools",
-      "expect": "home",
+      "expect": "tools",
       "title": "$41.60 - Knipex Pliers Wrench 86 03 180 (180mm)",
       "dealer": "Amazon.ca"
     },
     {
       "class": "power tools",
-      "expect": "home",
+      "expect": "tools",
       "title": "Milwaukee M12 4amp/h battery pack 2 batts 1 charger and bag $115.13",
       "dealer": "Mississauga Hardware"
     },
     {
       "class": "power tools",
-      "expect": "home",
+      "expect": "tools",
       "title": "[QC] Metabo HPT MultiVolt 36-Volt 1/2-in Hybrid Hammer Drill Kit with Batteries and Charger $212.50 (reg. $425)",
       "dealer": "Rona"
     },
     {
       "class": "power tools",
-      "expect": "home",
+      "expect": "tools",
       "title": "Picquic Dash-7 Multi-Bit Screwdriver 7 piece $7.99 (July 23 - 29)",
       "dealer": "Canadian Tire"
     },
     {
       "class": "power tools",
-      "expect": "home",
+      "expect": "tools",
       "title": "Atlas Tools - 15% off all Dewalt tools + free shipping- no minimum spend",
       "dealer": "Atlas Tools"
     },

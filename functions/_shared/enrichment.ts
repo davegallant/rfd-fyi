@@ -32,6 +32,7 @@ export const TAG_VOCABULARY = [
   "grocery",
   "dining",
   "home",
+  "tools",
   "apparel",
   "sports",
   "health",
@@ -68,13 +69,14 @@ export type Tag = (typeof TAG_VOCABULARY)[number];
  * nowhere else.
  */
 export const TAG_GLOSSES: Record<Tag, string> = {
-  computing: "computers, laptops, tablets, PC parts, storage, monitors, keyboards, mice, docks and networking gear",
+  computing: "computers, laptops, tablets, PC parts, storage, computer monitors and portable displays, keyboards, mice, docks and networking gear",
   electronics: "TVs, audio, cameras, phones of every form factor including foldables, smartwatches, smart glasses and wearables, chargers, smart-home devices",
   gaming: "video games, consoles, handhelds, gaming hardware, board games, trading cards and tabletop games",
   telecom: "mobile, internet and TV plans, SIMs, roaming",
   grocery: "food and drink bought from a supermarket, including alcohol, and supermarket delivery or pickup passes such as PC Express and Voilà",
   dining: "restaurants, fast food, cafes, bakeries and dessert shops, food delivery",
-  home: "furniture, kitchen and small appliances, coffee and espresso machines, air conditioners and fans, vacuums, cleaning, pest control, power and hand tools, lawn and garden equipment, BBQs and grills, coolers",
+  home: "furniture, kitchen and small appliances, coffee and espresso machines, air conditioners and fans, vacuums, cleaning, pest control, lawn and garden equipment, BBQs and grills, coolers",
+  tools: "power tools, cordless drills, drivers, saws, sanders, wrenches, pliers, screwdrivers and tool storage",
   apparel: "clothing, footwear, accessories, bags, jewellery",
   sports: "sporting goods and equipment, bikes, kick scooters, skateboards, camping and outdoor gear, fitness equipment, treadmills, weights and home gyms",
   health: "pharmacy, personal care, hair dryers, shavers and trimmers, supplements, eyewear, medical devices",
@@ -82,8 +84,8 @@ export const TAG_GLOSSES: Record<Tag, string> = {
   travel: "flights, hotels, car rental, attractions, parking, airline and hotel points transfers",
   financial: "bank accounts, credit cards and their welcome bonuses, investing, insurance",
   rewards: "loyalty and points programs such as Scene+, PC Optimum, Air Miles and Aeroplan, gift cards, and points or cents-per-litre discounts earned at gas stations",
-  automotive: "cars, motorcycles, parts, tires, fuel, oil, maintenance, car care and car cleaning products, jacks and garage equipment, car racks and carriers, electric scooters",
-  kids: "toys, baby gear, diapers, strollers and car seats, children's products",
+  automotive: "cars, motorcycles, parts, tires, fuel, oil, maintenance, car care and car cleaning products, jump starters, battery chargers and tire inflators, jacks and garage equipment, car racks and carriers, electric scooters",
+  kids: "toys, LEGO and building sets, baby gear, diapers, strollers and car seats, children's products",
   entertainment: "streaming, books, movies, events, tickets",
   other: "anything that genuinely fits none of the above",
 };
@@ -233,8 +235,24 @@ export const CLASSIFIER_INSTRUCTIONS = [
  *      already has the longest gloss and lengthening it cost more than it won.
  *    - narrowing `electronics`' "chargers" to "phone chargers and power banks",
  *      to stop it taking tool batteries and car chargers: -4.
+ * v12 added `tools` and settled four boundaries, all measured with
+ *    `evaluate.mjs` against the same session baseline of 108/122:
+ *    - `tools` split out of `home`, worth +4 on its own: power tools went 3/7
+ *      to 7/7. `home` had the longest gloss in the vocabulary and kept losing
+ *      its own items to `computing` and `electronics`; a dedicated category
+ *      wins them outright. Trimming `home`'s gloss instead was measured first
+ *      and did nothing (-2, and power tools did not move), so the problem was
+ *      never dilution.
+ *    - `tools` then took jump starters, battery chargers and a tire inflator
+ *      off `automotive` (5/6 to 2/6) because its gloss said "tool batteries".
+ *      Naming those in `automotive` and dropping "tool batteries" fixed it.
+ *    - LEGO went to `gaming`, which has claimed "board games" since v8. Naming
+ *      LEGO and building sets in `kids` recovered it, +3.
+ *    - three monitors went to `electronics` — a monitor reads as a screen like
+ *      a TV. "monitors" became "computer monitors and portable displays", +2.
+ *    Net 108 -> 115 of 122 (94.3%).
  */
-export const VOCABULARY_VERSION = 11;
+export const VOCABULARY_VERSION = 12;
 
 /** Longest model identifier stored on an entry. */
 const MAX_MODEL_NAME_LENGTH = 64;

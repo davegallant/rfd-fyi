@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.5] - 2026-08-06
+
+### Added
+
+- New `tools` tag for power and hand tools, split out of `home`. Measured with `evaluate.mjs`: power tools went 3/7 to 7/7. `home` had the longest gloss in the vocabulary and kept losing its own items to `computing` and `electronics`; trimming that gloss was measured first and did nothing, so the cause was never dilution — the category simply had no dedicated claim. Tags render from the tag string, so no UI change was needed.
+
+### Changed
+
+- Vocabulary version 12 settles three more boundaries, each measured against the same session baseline: `automotive` names jump starters, battery chargers and tire inflators, which `tools` had taken; `kids` names LEGO and building sets, which `gaming` had taken via its board-game clause; and `computing` says "computer monitors and portable displays" rather than bare "monitors", which read as screens like TVs. Together 108 → 115 of 122 (94.3%).
+
 ## [0.13.4] - 2026-08-06
 
 ### Added

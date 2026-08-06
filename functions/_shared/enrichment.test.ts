@@ -67,7 +67,8 @@ describe("vocabulary", () => {
    */
   it("names kitchen appliances, power tools and personal care only where they belong", () => {
     expect(TAG_GLOSSES.home).toMatch(/appliances/i);
-    expect(TAG_GLOSSES.home).toMatch(/power and hand tools/i);
+    // Power tools lived in `home` from v8 until v12 split `tools` out.
+    expect(TAG_GLOSSES.tools).toMatch(/power tools/i);
     expect(TAG_GLOSSES.health).toMatch(/personal care/i);
     expect(TAG_GLOSSES.computing).not.toMatch(/appliances/i);
     expect(TAG_GLOSSES.computing).not.toMatch(/tools/i);
@@ -104,13 +105,50 @@ describe("vocabulary", () => {
    */
   it("pairs the current tag set with a version that has been bumped for it", () => {
     expect({ version: VOCABULARY_VERSION, tags: [...TAG_VOCABULARY] }).toEqual({
-      version: 11,
+      version: 12,
       tags: [
         "computing", "electronics", "gaming", "telecom", "grocery", "dining",
-        "home", "apparel", "sports", "health", "pets", "travel", "financial",
-        "rewards", "automotive", "kids", "entertainment", "other",
+        "home", "tools", "apparel", "sports", "health", "pets", "travel",
+        "financial", "rewards", "automotive", "kids", "entertainment", "other",
       ],
     });
+  });
+
+  /**
+   * `home` had the longest gloss in the vocabulary and kept losing its own
+   * items: power tools scored 3/7 inside it, against `computing` and
+   * `electronics` whose glosses never mentioned tools. Trimming `home` was
+   * measured first and did nothing, so the cause was not dilution — the
+   * category simply had no dedicated claim. Splitting `tools` out took it to
+   * 7/7.
+   */
+  it("gives tools their own category rather than a phrase inside home", () => {
+    expect(TAG_VOCABULARY).toContain("tools");
+    expect(TAG_GLOSSES.tools).toMatch(/power tools/i);
+    expect(TAG_GLOSSES.home).not.toMatch(/\btools\b/i);
+  });
+
+  /**
+   * `tools` then took jump starters, a battery charger and a tire inflator off
+   * `automotive`, which fell 5/6 to 2/6, because the `tools` gloss said "tool
+   * batteries". Same rule as always: name the noun in the category that should
+   * win, and nowhere else.
+   */
+  it("keeps car power accessories in automotive, not tools", () => {
+    expect(TAG_GLOSSES.automotive).toMatch(/jump starters/i);
+    expect(TAG_GLOSSES.automotive).toMatch(/battery chargers/i);
+    expect(TAG_GLOSSES.tools).not.toMatch(/batter/i);
+  });
+
+  // LEGO went to `gaming`, which has claimed "board games" since v8.
+  it("claims LEGO for kids, against gaming's board-game clause", () => {
+    expect(TAG_GLOSSES.kids).toMatch(/LEGO/);
+    expect(TAG_GLOSSES.gaming).toMatch(/board games/i);
+  });
+
+  // Three monitors read as screens like TVs and went to `electronics`.
+  it("says computer monitors, not bare monitors", () => {
+    expect(TAG_GLOSSES.computing).toMatch(/computer monitors/i);
   });
 
   /**
@@ -180,7 +218,7 @@ describe("vocabulary", () => {
    * Knipex pliers wrench landed in both. A negative alone did not settle it.
    */
   it("names power tools and coffee machines positively, not just as exclusions", () => {
-    expect(TAG_GLOSSES.home).toMatch(/power and hand tools/i);
+    expect(TAG_GLOSSES.tools).toMatch(/power tools/i);
     expect(TAG_GLOSSES.home).toMatch(/espresso/i);
   });
 
