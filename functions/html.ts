@@ -147,8 +147,11 @@ function renderTopic(topic) {
   const dealerName = topic.Offer?.dealer_name ? `${escapeHtml(topic.Offer.dealer_name)} — ` : "";
   const offerUrl = topic.Offer?.url;
   const offer = offerUrl ? ` · ${dealerName}<a href="${escapeAttribute(offerUrl)}">Offer link</a>` : "";
-  const tags = Array.isArray(topic.tags) && topic.tags.length > 0
-    ? `<p class="tags">${topic.tags.map((tag) => `<span class="tag">${escapeHtml(String(tag))}</span>`).join(" ")}</p>`
+  // `other` is a quarantine for non-products (megathreads, flyer dumps) rather
+  // than a category, so it is stored but never shown. See src/enrichment.js.
+  const visibleTags = (Array.isArray(topic.tags) ? topic.tags : []).filter((tag) => tag !== "other");
+  const tags = visibleTags.length > 0
+    ? `<p class="tags">${visibleTags.map((tag) => `<span class="tag">${escapeHtml(String(tag))}</span>`).join(" ")}</p>`
     : "";
 
   return `<li>

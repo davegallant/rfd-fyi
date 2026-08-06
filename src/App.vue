@@ -3,7 +3,7 @@ import axios from "axios";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 
-import { attachTags, tagFilterTerm } from "./enrichment.js";
+import { attachTags, tagFilterTerm, visibleTags } from "./enrichment.js";
 import { getFilteredSortedTopics, parseFilterTerm } from "./filterTopics.js";
 import { loadUiPreferences, persistUiPreferences, SORT_METHOD_KEYS } from "./preferences.js";
 import { seen, markSeen, markUnseen, isSeen, markAllSeen, clearSeen } from "./composables/useSeenDeals.js";
@@ -423,6 +423,8 @@ export default {
       });
     },
 
+    visibleTags,
+
     filterByTag(tag) {
       const term = tagFilterTerm(tag);
       if (!this.activeFilters.includes(term)) {
@@ -720,9 +722,9 @@ export default {
                   target="_blank"
                   class="deal-title"
                   v-html="highlightText(topic.title)"
-                ></a><span v-if="topic.tags && topic.tags.length" class="tag-chips">
+                ></a><span v-if="visibleTags(topic.tags).length" class="tag-chips">
                   <button
-                    v-for="tag in topic.tags"
+                    v-for="tag in visibleTags(topic.tags)"
                     :key="tag"
                     class="tag-chip"
                     :title="`Filter by ${tag}`"

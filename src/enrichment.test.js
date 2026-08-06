@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { TAG_FILTER_PREFIX, attachTags, tagFilterTerm } from "./enrichment.js";
+import { TAG_FILTER_PREFIX, attachTags, tagFilterTerm, visibleTags } from "./enrichment.js";
 
 function topic(overrides = {}) {
   return { topic_id: 1, title: "Sample Deal", Offer: { dealer_name: "Amazon" }, ...overrides };
@@ -58,5 +58,38 @@ describe("attachTags", () => {
 describe("tagFilterTerm", () => {
   it("prefixes a tag so it cannot collide with a plain title search", () => {
     expect(tagFilterTerm("computing")).toBe(`${TAG_FILTER_PREFIX}computing`);
+  });
+});
+
+describe("visibleTags", () => {
+  /**
+   * `other` is a quarantine for deals that are genuinely not products —
+   * megathreads, flyer dumps — so it stays in the vocabulary and keeps those
+   * out of real categories. It just tells a reader nothing, so it is not
+   * rendered. Filtering by `#other` still works, since that reads topic.tags.
+   */
+  it("hides the catch-all tag", () => {
+    expect(visibleTags(["other"])).toEqual([]);
+  });
+
+  it("keeps meaningful tags", () => {
+    expect(visibleTags(["computing"])).toEqual(["computing"]);
+  });
+
+  it("drops only the catch-all from a mixed list, preserving order", () => {
+    expect(visibleTags(["grocery", "other"])).toEqual(["grocery"]);
+    expect(visibleTags(["other", "sports"])).toEqual(["sports"]);
+  });
+
+  it("returns an empty array for a topic with no tags", () => {
+    expect(visibleTags(undefined)).toEqual([]);
+    expect(visibleTags(null)).toEqual([]);
+    expect(visibleTags([])).toEqual([]);
+  });
+
+  it("does not mutate the array it was given", () => {
+    const tags = ["grocery", "other"];
+    visibleTags(tags);
+    expect(tags).toEqual(["grocery", "other"]);
   });
 });

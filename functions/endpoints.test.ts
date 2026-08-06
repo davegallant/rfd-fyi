@@ -128,6 +128,19 @@ describe("html function", () => {
     expect(html).not.toContain("undefined");
   });
 
+  it("does not render the catch-all tag, which tells a reader nothing", async () => {
+    const store = new Map([
+      ["topics.json", JSON.stringify([topic({ topic_id: 7, title: "Weekly flyer thread" })])],
+      ["enrichment.json", JSON.stringify({ topics: { 7: { tags: ["other"], vv: 4 } } })],
+    ]);
+    const env = { TOPICS_KV: { get: async (key) => store.get(key) ?? null, put: async () => {} } };
+
+    const html = await (await getHtml({ env })).text();
+
+    expect(html).toContain("Weekly flyer thread");
+    expect(html).not.toContain('class="tag"');
+  });
+
   it("escapes tag content", async () => {
     const store = new Map([
       ["topics.json", JSON.stringify([topic({ topic_id: 7 })])],
