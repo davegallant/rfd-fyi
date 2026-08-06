@@ -58,6 +58,27 @@ describe("vocabulary", () => {
     expect(TAG_GLOSSES.automotive).toMatch(/scooter/i);
   });
 
+  // Observed live on rfd.davegallant.ca: an espresso machine, a hair styler,
+  // a milk frother, a trimmer and half a dozen power tools all landed in
+  // `computing`, even though `home` already covers tools/kitchen and `health`
+  // already covers personal care.
+  it("excludes kitchen appliances, power tools and personal-care devices from computing", () => {
+    expect(TAG_GLOSSES.computing).toMatch(/kitchen appliances/i);
+    expect(TAG_GLOSSES.computing).toMatch(/power tools/i);
+    expect(TAG_GLOSSES.computing).toMatch(/personal-care/i);
+    expect(TAG_GLOSSES.home).toMatch(/\btools\b/i);
+    expect(TAG_GLOSSES.health).toMatch(/personal care/i);
+  });
+
+  // Observed live: "120% Cashback on ExpressVPN" was tagged `financial` while
+  // "ExpressVPN 120% Cash Back" was tagged `telecom` — the bare word
+  // "cashback" in the financial gloss was overriding the instruction to
+  // categorise cashback deals by the underlying product.
+  it("does not let the financial gloss override the cashback-by-product instruction", () => {
+    expect(TAG_GLOSSES.financial).not.toMatch(/cashback/i);
+    expect(CLASSIFIER_INSTRUCTIONS).toMatch(/cashback promotion/i);
+  });
+
   /**
    * Tripwire in both directions: changing the tag set, the glosses or the
    * instructions without bumping VOCABULARY_VERSION would leave every stored
@@ -66,7 +87,7 @@ describe("vocabulary", () => {
    */
   it("pairs the current tag set with a version that has been bumped for it", () => {
     expect({ version: VOCABULARY_VERSION, tags: [...TAG_VOCABULARY] }).toEqual({
-      version: 5,
+      version: 6,
       tags: [
         "computing", "electronics", "gaming", "telecom", "grocery", "dining",
         "home", "apparel", "sports", "health", "pets", "travel", "financial",

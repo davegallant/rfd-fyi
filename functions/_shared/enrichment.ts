@@ -39,7 +39,7 @@ export type Tag = (typeof TAG_VOCABULARY)[number];
  * examples here are the observed failures, not hypotheticals.
  */
 export const TAG_GLOSSES: Record<Tag, string> = {
-  computing: "computers, laptops, PC parts, peripherals, storage, monitors",
+  computing: "computers, laptops, PC parts, peripherals, storage, monitors — not kitchen appliances, power tools or personal-care devices",
   electronics: "TVs, audio, cameras, phones, chargers, smart-home devices",
   gaming: "video games, consoles, handhelds, gaming hardware",
   telecom: "mobile, internet and TV plans, SIMs, roaming",
@@ -51,7 +51,7 @@ export const TAG_GLOSSES: Record<Tag, string> = {
   health: "pharmacy, personal care, supplements, eyewear, medical devices",
   pets: "pet food, supplies and services — only for animals",
   travel: "flights, hotels, car rental, attractions, parking, points transfers",
-  financial: "bank accounts, credit cards, investing, insurance, cashback",
+  financial: "bank accounts, credit cards, investing, insurance",
   automotive: "cars, motorcycles, parts, tires, fuel, oil, maintenance, car racks and carriers, electric scooters",
   kids: "toys, baby gear, children's products",
   entertainment: "streaming, books, movies, events, tickets",
@@ -91,8 +91,16 @@ export const CLASSIFIER_INSTRUCTIONS = [
  * v5 added kick scooters/skateboards to `sports` and electric scooters to
  *    `automotive` after an electric scooter, given only its bare title, was
  *    tagged `gaming` — the model had nowhere better to put it.
+ * v6 excluded kitchen appliances, power tools and personal-care devices from
+ *    `computing` (an espresso machine, a hair styler and half a dozen power
+ *    tools were landing there despite `home` and `health` already covering
+ *    them) and dropped `cashback` from `financial`'s gloss, which was
+ *    overriding the instruction to categorise cashback deals by the
+ *    underlying product — it sent VPN subscriptions to `financial` while
+ *    identical VPN deals worded without "cashback" correctly landed in
+ *    `telecom`.
  */
-export const VOCABULARY_VERSION = 5;
+export const VOCABULARY_VERSION = 6;
 
 /** Longest model identifier stored on an entry. */
 const MAX_MODEL_NAME_LENGTH = 64;
