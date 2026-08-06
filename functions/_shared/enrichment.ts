@@ -47,12 +47,12 @@ export const TAG_GLOSSES: Record<Tag, string> = {
   dining: "restaurants, fast food, cafes, food delivery",
   home: "furniture, appliances, kitchen, cleaning, tools, garden, BBQs",
   apparel: "clothing, footwear, accessories, bags, jewellery",
-  sports: "sporting goods and equipment, bikes, camping and outdoor gear, fitness equipment",
+  sports: "sporting goods and equipment, bikes, kick scooters, skateboards, camping and outdoor gear, fitness equipment",
   health: "pharmacy, personal care, supplements, eyewear, medical devices",
   pets: "pet food, supplies and services — only for animals",
   travel: "flights, hotels, car rental, attractions, parking, points transfers",
   financial: "bank accounts, credit cards, investing, insurance, cashback",
-  automotive: "cars, parts, tires, fuel, oil, maintenance, car racks and carriers",
+  automotive: "cars, motorcycles, parts, tires, fuel, oil, maintenance, car racks and carriers, electric scooters",
   kids: "toys, baby gear, children's products",
   entertainment: "streaming, books, movies, events, tickets",
   other: "anything that genuinely fits none of the above",
@@ -88,8 +88,11 @@ export const CLASSIFIER_INSTRUCTIONS = [
  *    1000 real deals, and moved bikes out of `automotive` into it.
  * v4 moved the prompt server-side and told the model to categorise by product
  *    rather than by promotion mechanism.
+ * v5 added kick scooters/skateboards to `sports` and electric scooters to
+ *    `automotive` after an electric scooter, given only its bare title, was
+ *    tagged `gaming` — the model had nowhere better to put it.
  */
-export const VOCABULARY_VERSION = 4;
+export const VOCABULARY_VERSION = 5;
 
 /** Longest model identifier stored on an entry. */
 const MAX_MODEL_NAME_LENGTH = 64;

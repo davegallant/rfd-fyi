@@ -50,6 +50,14 @@ describe("vocabulary", () => {
     expect(TAG_GLOSSES.sports).toMatch(/\bbikes?\b/i);
   });
 
+  // Observed on real data: an electric scooter, given only its bare title, was
+  // tagged `gaming` — the vocabulary had nowhere better for it to go.
+  it("gives scooters somewhere to go other than gaming", () => {
+    expect(TAG_GLOSSES.gaming).not.toMatch(/scooter/i);
+    expect(TAG_GLOSSES.sports).toMatch(/scooter/i);
+    expect(TAG_GLOSSES.automotive).toMatch(/scooter/i);
+  });
+
   /**
    * Tripwire in both directions: changing the tag set, the glosses or the
    * instructions without bumping VOCABULARY_VERSION would leave every stored
@@ -58,7 +66,7 @@ describe("vocabulary", () => {
    */
   it("pairs the current tag set with a version that has been bumped for it", () => {
     expect({ version: VOCABULARY_VERSION, tags: [...TAG_VOCABULARY] }).toEqual({
-      version: 4,
+      version: 5,
       tags: [
         "computing", "electronics", "gaming", "telecom", "grocery", "dining",
         "home", "apparel", "sports", "health", "pets", "travel", "financial",
