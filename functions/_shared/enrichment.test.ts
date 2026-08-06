@@ -104,24 +104,26 @@ describe("vocabulary", () => {
    */
   it("pairs the current tag set with a version that has been bumped for it", () => {
     expect({ version: VOCABULARY_VERSION, tags: [...TAG_VOCABULARY] }).toEqual({
-      version: 9,
+      version: 10,
       tags: [
-        "electronics", "gaming", "telecom", "grocery", "dining", "home",
-        "apparel", "sports", "health", "pets", "travel", "financial",
-        "rewards", "automotive", "kids", "entertainment", "computing", "other",
+        "computing", "electronics", "gaming", "telecom", "grocery", "dining",
+        "home", "apparel", "sports", "health", "pets", "travel", "financial",
+        "rewards", "automotive", "kids", "entertainment", "other",
       ],
     });
   });
 
   /**
-   * Order is part of the prompt, so it is pinned like the tag set. v9 moves
-   * `computing` off the head of the list to test whether that position is what
-   * kept pulling espresso machines and power tools into it, against glosses
-   * that name them in `home`. `other` stays last: the instructions describe it
-   * as the fallback, and it reads as one.
+   * Order is part of the prompt and is pinned like the tag set, because the
+   * first slot is worth ~140 deals in 1000 to whichever tag holds it. v9 moved
+   * `computing` off the head and `electronics` inherited both the slot and the
+   * inflation, rising to 25.8% while laptops and monitors left `computing`
+   * against its own gloss. `computing` is first here deliberately: it is broad
+   * enough to absorb the bias with the least distortion. `other` stays last —
+   * the instructions describe it as the fallback and it reads as one.
    */
-  it("keeps computing off the head of the list and other at the end", () => {
-    expect(TAG_VOCABULARY[0]).not.toBe("computing");
+  it("pins the head and tail of the list, since position outweighs the glosses", () => {
+    expect(TAG_VOCABULARY[0]).toBe("computing");
     expect(TAG_VOCABULARY[TAG_VOCABULARY.length - 1]).toBe("other");
   });
 

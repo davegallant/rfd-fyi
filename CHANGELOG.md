@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.3] - 2026-08-06
+
+### Fixed
+
+- Vocabulary version 10 restores the v8 tag order, reverting the v9 experiment. v9 answered its question and cost accuracy doing so: moving `computing` off the head of the list collapsed it from 140 to 13 while `electronics` inherited the slot and rose from 116 to 256 (25.8%). Laptops and monitors followed the position rather than the glosses, leaving `computing` — which names them — for `electronics`, which does not.
+- The finding is recorded on `TAG_VOCABULARY`: the first slot in the category list is worth roughly 140 deals in 1000 to whichever tag holds it, regardless of gloss text. Order can only aim that bias, not remove it, so `computing` holds the slot as the tag broad enough to absorb it with the least distortion.
+
 ## [0.13.2] - 2026-08-06
 
 ### Changed

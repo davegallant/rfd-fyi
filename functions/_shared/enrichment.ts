@@ -11,14 +11,21 @@
  * Closed set of tags. The model never gets to invent categories.
  *
  * The order is load-bearing, not cosmetic: it is the order the categories are
- * listed in the prompt. `computing` sat first through v8 and behaved as a
- * magnet for anything electrically powered — a Breville espresso machine and a
- * Knipex pliers wrench were `computing` even though `home`'s gloss names
- * "coffee and espresso machines" and "power and hand tools" and `computing`'s
- * names neither. v9 moves it last-but-one to test whether the head of the list
- * confers that advantage; see VOCABULARY_VERSION.
+ * listed in the prompt, and **whichever tag is listed first over-attracts by
+ * roughly 140 deals in 1000.** v9 tested this by moving `computing` from first
+ * to last-but-one and changing nothing else: `computing` collapsed 140 → 13
+ * and `electronics`, which inherited the head slot, rose 116 → 256 (25.8%).
+ * Laptops and monitors followed the slot rather than the gloss — they left
+ * `computing`, whose gloss names them, for `electronics`, whose gloss does not.
+ *
+ * So the order cannot be tuned to fix it, because some tag must be first. This
+ * order is v8's, kept because it was the best measured; the head-slot bias is
+ * aimed at `computing`, which is broad enough to absorb it with the least
+ * distortion. The real fix is to stop any one tag owning the slot — see the
+ * rotation note in VOCABULARY_VERSION.
  */
 export const TAG_VOCABULARY = [
+  "computing",
   "electronics",
   "gaming",
   "telecom",
@@ -35,7 +42,6 @@ export const TAG_VOCABULARY = [
   "automotive",
   "kids",
   "entertainment",
-  "computing",
   "other",
 ] as const;
 
@@ -184,14 +190,24 @@ export const CLASSIFIER_INSTRUCTIONS = [
  *    `computing` / 8 `home`, and home-gym gear 4 `gaming` / 0 `sports`. In both
  *    the winner sits earlier in the list. `computing` therefore moves from
  *    first to last-but-one.
- *    Prediction: espresso machines and power tools return to `home`. If they
- *    do, position is confirmed and the ordering is a permanent fix; if they do
- *    not, the cause is gloss dilution — `home` carries eleven heterogeneous
- *    nouns against `computing`'s ten tightly related ones — and the answer is
- *    to split `home` rather than to reorder. Watch `electronics` too: it
- *    inherits the head slot, so if position is real it should now over-attract.
+ *    It was confirmed, overwhelmingly, and dilution was ruled out.
+ * v10 restores v8's order after v9 answered the question and was worse for it.
+ *    v9's finding is the useful part and is recorded on TAG_VOCABULARY: the
+ *    first slot in the list is worth ~140 deals in 1000 to whichever tag holds
+ *    it, independent of what any gloss says. Reordering therefore cannot fix
+ *    the bias, only aim it. v9 aimed it at `electronics` (256, 25.8% — past the
+ *    share the enricher README calls disqualifying) and broke `computing` as a
+ *    category: 27 laptops and 7 monitors left it for `electronics`, and what
+ *    remained was a treadmill, a gym rack and some watercolour pens.
+ *    v9 did confirm one thing worth keeping: with `computing` demoted, power
+ *    tools reached `home` 13/24, their best across every version. The gloss was
+ *    right all along; position was overriding it.
+ *    Next single-variable experiment: rotate the category list per topic
+ *    (`topic_id % length`) so the head slot lands on each tag equally often,
+ *    spreading a systematic bias into uniform noise. Deterministic, so
+ *    temperature 0 stays reproducible.
  */
-export const VOCABULARY_VERSION = 9;
+export const VOCABULARY_VERSION = 10;
 
 /** Longest model identifier stored on an entry. */
 const MAX_MODEL_NAME_LENGTH = 64;
