@@ -22,6 +22,7 @@ export const TAG_VOCABULARY = [
   "pets",
   "travel",
   "financial",
+  "rewards",
   "automotive",
   "kids",
   "entertainment",
@@ -39,21 +40,22 @@ export type Tag = (typeof TAG_VOCABULARY)[number];
  * examples here are the observed failures, not hypotheticals.
  */
 export const TAG_GLOSSES: Record<Tag, string> = {
-  computing: "computers, laptops, PC parts, peripherals, storage, monitors — not kitchen appliances, power tools or personal-care devices",
-  electronics: "TVs, audio, cameras, phones, chargers, smart-home devices",
-  gaming: "video games, consoles, handhelds, gaming hardware",
+  computing: "computers, laptops, tablets, PC parts, peripherals, storage, monitors — not phones or smartwatches, and not kitchen appliances, power tools or personal-care devices",
+  electronics: "TVs, audio, cameras, phones of every form factor including foldables, smartwatches, smart glasses and wearables, chargers, smart-home devices",
+  gaming: "video games, consoles, handhelds, gaming hardware, board games, trading cards and tabletop games",
   telecom: "mobile, internet and TV plans, SIMs, roaming",
   grocery: "food and drink bought from a supermarket, including alcohol",
-  dining: "restaurants, fast food, cafes, food delivery",
-  home: "furniture, appliances, kitchen, cleaning, tools, garden, BBQs",
+  dining: "restaurants, fast food, cafes, bakeries and dessert shops, food delivery",
+  home: "furniture, appliances, kitchen, coffee and espresso machines, cleaning, pest control, power and hand tools, garden, BBQs",
   apparel: "clothing, footwear, accessories, bags, jewellery",
-  sports: "sporting goods and equipment, bikes, kick scooters, skateboards, camping and outdoor gear, fitness equipment",
+  sports: "sporting goods and equipment, bikes, kick scooters, skateboards, camping and outdoor gear, fitness equipment, treadmills, weights and home gyms",
   health: "pharmacy, personal care, supplements, eyewear, medical devices",
-  pets: "pet food, supplies and services — only for animals",
+  pets: "pet food, supplies and services, aquariums and fish — only for animals",
   travel: "flights, hotels, car rental, attractions, parking, points transfers",
   financial: "bank accounts, credit cards, investing, insurance",
-  automotive: "cars, motorcycles, parts, tires, fuel, oil, maintenance, car racks and carriers, electric scooters",
-  kids: "toys, baby gear, children's products",
+  rewards: "loyalty and points programs, gift cards, points or fuel discounts at gas stations, and shopping-portal promotions that are not tied to a particular product — not credit card or bank sign-up bonuses, which are financial, and not airline or hotel points transfers, which are travel",
+  automotive: "cars, motorcycles, parts, tires, fuel, oil, maintenance, car care and car cleaning products, jacks and garage equipment, car racks and carriers, electric scooters",
+  kids: "toys, baby gear, diapers, strollers and car seats, children's products",
   entertainment: "streaming, books, movies, events, tickets",
   other: "anything that genuinely fits none of the above",
 };
@@ -67,6 +69,15 @@ export const TAG_GLOSSES: Record<Tag, string> = {
  * whether the title said "(Tool-Only)", and gift-card or spend-and-get deals
  * (Cineplex, Arby's, Uber One) fell to `other` regardless of what they bought.
  * The model was categorising the offer structure instead of the product.
+ *
+ * That rule has a limit, which is what `rewards` is for: a Scene+ or PC Optimum
+ * promotion has no product to fall back on, so "categorise by the product" left
+ * it with nowhere to go. The two rules are ordered deliberately — structure is
+ * ignored *unless* the value itself is points, miles or stored value.
+ *
+ * The flyer rule is likewise measured: 19 store-wide flyers and Costco photo
+ * reports correctly reached `other`, but five more leaked into `automotive`,
+ * `travel`, `financial` and `grocery` by latching onto one item in the title.
  */
 export const CLASSIFIER_INSTRUCTIONS = [
   "You classify Canadian online shopping deals into categories.",
@@ -74,8 +85,13 @@ export const CLASSIFIER_INSTRUCTIONS = [
   "Add a second category only when the deal genuinely spans two —",
   "most deals need exactly one.",
   "Categorise by the product or service the deal is for, ignoring how the offer",
-  "is structured: a gift card, bundle, tool-only listing, cashback promotion or",
+  "is structured: a bundle, tool-only listing, cashback promotion or",
   "spend-and-get is categorised by what the buyer ends up with.",
+  "When the value of the deal is points, miles, credit or stored value rather",
+  "than a product — a loyalty promotion, a discounted gift card, a fuel-points",
+  "offer — use \"rewards\" instead.",
+  "A post covering a whole store's flyer, weekly sale or photo report spans",
+  "every category at once, so use \"other\" for it.",
   "Use \"other\" only when nothing else fits.",
 ].join(" ");
 
@@ -99,8 +115,33 @@ export const CLASSIFIER_INSTRUCTIONS = [
  *    underlying product — it sent VPN subscriptions to `financial` while
  *    identical VPN deals worded without "cashback" correctly landed in
  *    `telecom`.
+ * v7 added `rewards` and partitioned three boundaries the glosses had left open,
+ *    all measured on the same 1000 live deals:
+ *    - 29 loyalty, gift-card and fuel-points promos sat in `other` with no
+ *      product to categorise by, and near-identical Shell/Journie offers split
+ *      6 `automotive` / 7 `other` depending on whether the title said "c/L" or
+ *      "points".
+ *    - phones, tablets and smartwatches were named in neither device gloss: one
+ *      Galaxy Fold 8 pre-order was `computing` while another and a Fold 7 were
+ *      `electronics`. Tablets are named in `computing` because all nine in the
+ *      sample already landed there consistently; phones and wearables are named
+ *      in `electronics` and excluded from `computing`.
+ *    - power tools stayed split 12 `home` / 10 `computing` under v6's negative
+ *      exclusion alone — the same Fanttik drill and Knipex pliers wrench landed
+ *      in both — so `home` now names them positively. Likewise coffee machines
+ *      (4 `home`, 3 `other`, 2 `grocery`, 2 `computing`), tabletop games (6
+ *      `kids`, 5 `entertainment`, 2 `other`, 1 `gaming`) and home-gym gear
+ *      (7 `home`, 1 `sports`).
+ *    It also names eight single misses that had no cluster behind them, each
+ *    observed once in the same sample: Pampers diapers and an Evenflo stroller
+ *    (`pets` and `home`, should be `kids`), Crumbl and A&W coupons (`other`,
+ *    dining), aquarium substrate and live fish (`other`, pets), ant baits
+ *    (`health`, home), car wash kit and a floor jack (`home`, automotive), and
+ *    Rayban Meta glasses (`gaming`, electronics). One example is thin evidence
+ *    for a gloss phrase, so these are the v7 changes most likely to overfit —
+ *    watch whether the phrase pulls in deals that were previously correct.
  */
-export const VOCABULARY_VERSION = 6;
+export const VOCABULARY_VERSION = 7;
 
 /** Longest model identifier stored on an entry. */
 const MAX_MODEL_NAME_LENGTH = 64;
@@ -202,17 +243,31 @@ export function validateTagBatch(input: unknown): ValidationResult {
       rejected.push({ topic_id: topicId, reason });
       continue;
     }
-    accepted[topicId] = deduplicate(rawTags as string[]) as Tag[];
+    accepted[topicId] = normalize(rawTags as string[]) as Tag[];
   }
 
   return { accepted, rejected };
+}
+
+/**
+ * Deduplicates and drops a redundant `other`.
+ *
+ * `other` means "nothing else fits", so it cannot be true alongside a real tag,
+ * yet 11 of 1000 live entries were stored as e.g. `["grocery", "other"]` — the
+ * model filling the second schema slot. It is normalized away rather than
+ * rejected: rejecting would leave the topic untagged, so the next run would
+ * select it, get the same answer at temperature 0, and reject it again forever.
+ */
+function normalize(rawTags: unknown[]): string[] {
+  const tags = deduplicate(rawTags);
+  return tags.length > 1 ? tags.filter((tag) => tag !== "other") : tags;
 }
 
 function rejectionReason(topicId: string, rawTags: unknown): string | null {
   if (!/^\d+$/.test(topicId)) return "topic_id is not numeric";
   if (!Array.isArray(rawTags)) return "tags is not an array";
 
-  const tags = deduplicate(rawTags);
+  const tags = normalize(rawTags);
   if (tags.length === 0) return "no tags";
   if (tags.length > MAX_TAGS_PER_TOPIC) {
     return `too many tags: ${tags.length} (max ${MAX_TAGS_PER_TOPIC})`;

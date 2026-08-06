@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.0] - 2026-08-06
+
+### Added
+
+- New `rewards` tag for deals whose value is points, miles or stored value rather than a product — loyalty promotions, discounted gift cards and fuel-points offers. Measured on 1000 live deals, 29 of these had nowhere to go and sat in `other`, and near-identical Shell/Journie offers split between `automotive` and `other` depending on whether the title said "c/L" or "points".
+
+### Changed
+
+- Vocabulary version 7: the device, tool, tabletop-game and home-gym boundaries are now named explicitly in the glosses, and the prompt says where store-wide flyers belong. Each was measured splitting near-identical deals across categories — one Galaxy Fold 8 pre-order was `computing` while another was `electronics`, and the same cordless drill was both `home` and `computing`.
+- Glosses also name eight one-off misses seen on live data: diapers and strollers (`kids`), bakeries and dessert shops (`dining`), aquariums and fish (`pets`), pest control (`home`), car care and jacks (`automotive`), and smart glasses (`electronics`).
+
+### Fixed
+
+- `other` is no longer stored alongside a real tag. It means "nothing else fits", so it cannot be true beside `grocery`; 11 of 1000 entries had it filling the unused second slot. It is normalized away rather than rejected, since a rejected entry would be re-selected and re-rejected on every subsequent run.
+
 ## [0.12.0] - 2026-08-05
 
 ### Added

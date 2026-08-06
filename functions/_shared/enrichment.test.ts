@@ -87,13 +87,115 @@ describe("vocabulary", () => {
    */
   it("pairs the current tag set with a version that has been bumped for it", () => {
     expect({ version: VOCABULARY_VERSION, tags: [...TAG_VOCABULARY] }).toEqual({
-      version: 6,
+      version: 7,
       tags: [
         "computing", "electronics", "gaming", "telecom", "grocery", "dining",
         "home", "apparel", "sports", "health", "pets", "travel", "financial",
-        "automotive", "kids", "entertainment", "other",
+        "rewards", "automotive", "kids", "entertainment", "other",
       ],
     });
+  });
+
+  // Measured live: 29 of the 94 `other` deals were loyalty promos, discounted
+  // gift cards or fuel-points offers. "Categorise by the product" has no answer
+  // for a Scene+ or PC Optimum promotion, so they had nowhere to go.
+  it("covers promotions whose value is points rather than a product", () => {
+    expect(TAG_VOCABULARY).toContain("rewards");
+    expect(TAG_GLOSSES.rewards).toMatch(/loyalty|points/i);
+    expect(TAG_GLOSSES.rewards).toMatch(/gift cards?/i);
+    expect(CLASSIFIER_INSTRUCTIONS).toMatch(/"rewards"/);
+  });
+
+  /**
+   * `rewards` must not swallow deals that do have a product, which is exactly
+   * the regression v6 fixed by taking `cashback` out of the financial gloss:
+   * a cashback offer on a VPN is still a VPN deal.
+   */
+  it("does not repeat v6's cashback mistake in the rewards gloss", () => {
+    expect(TAG_GLOSSES.rewards).not.toMatch(/cashback/i);
+    expect(TAG_GLOSSES.rewards).toMatch(/not tied to a particular product/i);
+    expect(CLASSIFIER_INSTRUCTIONS).toMatch(/cashback promotion/i);
+  });
+
+  /**
+   * A new tag can cannibalise a working one. `financial` classified 51 deals
+   * correctly, many of them credit-card welcome bonuses paid in points, and
+   * `travel` already claims points transfers — both would otherwise satisfy
+   * "the value is points rather than a product".
+   */
+  it("keeps rewards out of the two categories it could cannibalise", () => {
+    expect(TAG_GLOSSES.rewards).toMatch(/not credit card or bank sign-up bonuses/i);
+    expect(TAG_GLOSSES.rewards).toMatch(/not airline or hotel points transfers/i);
+    expect(TAG_GLOSSES.travel).toMatch(/points transfers/i);
+  });
+
+  // Observed live: one Galaxy Fold 8 pre-order was tagged `computing` while a
+  // second and a Fold 7 were tagged `electronics`. Neither gloss named phones,
+  // tablets or wearables, so the boundary was never partitioned.
+  it("names each device class in exactly one gloss", () => {
+    expect(TAG_GLOSSES.electronics).toMatch(/phones/i);
+    expect(TAG_GLOSSES.electronics).toMatch(/smartwatches|wearables/i);
+    expect(TAG_GLOSSES.computing).toMatch(/tablets/i);
+    expect(TAG_GLOSSES.computing).toMatch(/not phones or smartwatches/i);
+    expect(TAG_GLOSSES.electronics).not.toMatch(/tablets/i);
+  });
+
+  /**
+   * v6 excluded power tools from `computing` but did not name them anywhere, and
+   * they stayed split 12 `home` / 10 `computing` — the same Fanttik drill and
+   * Knipex pliers wrench landed in both. A negative alone did not settle it.
+   */
+  it("names power tools and coffee machines positively, not just as exclusions", () => {
+    expect(TAG_GLOSSES.home).toMatch(/power and hand tools/i);
+    expect(TAG_GLOSSES.home).toMatch(/espresso/i);
+  });
+
+  /**
+   * Home-gym gear went 7 `home` / 1 `sports` even though `sports` already said
+   * "fitness equipment", so the broad phrase was losing to `home`'s
+   * "appliances". Name the items that lost, and keep the broad phrase.
+   */
+  it("names the home-gym items that were losing to home, without dropping the broad phrase", () => {
+    expect(TAG_GLOSSES.sports).toMatch(/fitness equipment/i);
+    expect(TAG_GLOSSES.sports).toMatch(/treadmills/i);
+    expect(TAG_GLOSSES.sports).toMatch(/weights|home gyms/i);
+  });
+
+  // Measured live: board games and trading cards split 6 `kids`, 5
+  // `entertainment`, 2 `other`, 1 `gaming` with no gloss claiming them.
+  it("gives tabletop games a single home", () => {
+    expect(TAG_GLOSSES.gaming).toMatch(/board games/i);
+    expect(TAG_GLOSSES.gaming).toMatch(/trading cards|tabletop/i);
+  });
+
+  // Measured live: 19 store-wide flyers and photo reports reached `other`
+  // correctly, but five more leaked into automotive, travel, financial and
+  // grocery by latching onto a single item named in the title.
+  it("tells the model where store-wide flyers belong", () => {
+    expect(CLASSIFIER_INSTRUCTIONS).toMatch(/flyer/i);
+  });
+
+  /**
+   * Eight single misses, each observed once rather than as a cluster. One
+   * example is thin evidence for a gloss phrase, so these are the v7 changes
+   * most likely to overfit; they are pinned so a later edit that drops one is
+   * deliberate rather than accidental.
+   */
+  it("covers the single misses v7 names, each observed once on live data", () => {
+    // Pampers diapers were `pets`; an Evenflo stroller wagon was `home`.
+    expect(TAG_GLOSSES.kids).toMatch(/diapers/i);
+    expect(TAG_GLOSSES.kids).toMatch(/strollers/i);
+    // A Crumbl dessert promo and A&W mail coupons fell to `other`.
+    expect(TAG_GLOSSES.dining).toMatch(/bakeries|dessert/i);
+    // Fluval aquarium substrate and live GlowFish fell to `other`.
+    expect(TAG_GLOSSES.pets).toMatch(/aquariums|fish/i);
+    // STEM liquid ant baits were `health`.
+    expect(TAG_GLOSSES.home).toMatch(/pest control/i);
+    // A Meguiar's car wash kit and a Torin floor jack were `home`.
+    expect(TAG_GLOSSES.automotive).toMatch(/car care/i);
+    expect(TAG_GLOSSES.automotive).toMatch(/jacks/i);
+    // Rayban Meta Gen 2 glasses were `gaming`.
+    expect(TAG_GLOSSES.electronics).toMatch(/smart glasses/i);
   });
 });
 
@@ -233,6 +335,23 @@ describe("validateTagBatch", () => {
     const result = validateTagBatch({ "42": [] });
     expect(result.accepted).toEqual({});
     expect(result.rejected[0].reason).toBe("no tags");
+  });
+
+  /**
+   * `other` means "nothing else fits", so it is never true beside a real tag.
+   * 11 of 1000 live entries were stored as `["grocery", "other"]` — the model
+   * filling the second slot. Rejecting instead of normalizing would loop: the
+   * topic stays untagged, gets selected again, and at temperature 0 the model
+   * returns the same answer forever.
+   */
+  it("drops a redundant `other` beside a real tag rather than rejecting it", () => {
+    const result = validateTagBatch({ "42": ["grocery", "other"], "43": ["other", "sports"] });
+    expect(result.accepted).toEqual({ "42": ["grocery"], "43": ["sports"] });
+    expect(result.rejected).toEqual([]);
+  });
+
+  it("keeps `other` when it is the only tag", () => {
+    expect(validateTagBatch({ "42": ["other"] }).accepted).toEqual({ "42": ["other"] });
   });
 
   it("deduplicates repeated tags rather than rejecting them", () => {
