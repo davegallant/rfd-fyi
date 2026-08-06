@@ -7,9 +7,18 @@
  * to a topic object in topics.json is stripped within one cron cycle.
  */
 
-/** Closed set of tags. The model never gets to invent categories. */
+/**
+ * Closed set of tags. The model never gets to invent categories.
+ *
+ * The order is load-bearing, not cosmetic: it is the order the categories are
+ * listed in the prompt. `computing` sat first through v8 and behaved as a
+ * magnet for anything electrically powered — a Breville espresso machine and a
+ * Knipex pliers wrench were `computing` even though `home`'s gloss names
+ * "coffee and espresso machines" and "power and hand tools" and `computing`'s
+ * names neither. v9 moves it last-but-one to test whether the head of the list
+ * confers that advantage; see VOCABULARY_VERSION.
+ */
 export const TAG_VOCABULARY = [
-  "computing",
   "electronics",
   "gaming",
   "telecom",
@@ -26,6 +35,7 @@ export const TAG_VOCABULARY = [
   "automotive",
   "kids",
   "entertainment",
+  "computing",
   "other",
 ] as const;
 
@@ -164,8 +174,24 @@ export const CLASSIFIER_INSTRUCTIONS = [
  *    v7 was not a total loss and is not reverted: phones reached `electronics`
  *    17/17 (from 16/1), `other` fell 94 → 36, and `rewards` is sound at its
  *    core — 41 of the deals it absorbed came straight from `other`.
+ * v9 changes one variable and nothing else: the order of TAG_VOCABULARY. No
+ *    gloss, instruction or tag was touched, so the re-tag is a clean test of
+ *    whether list position confers an advantage.
+ *    v8 fixed the negation defect and ranked best of the three versions
+ *    measured (largest category 15.2%, `other` 3.0%), but left `computing` at
+ *    141 against v6's 111, and two boundaries where the category that names an
+ *    item explicitly still lost to one that does not: power tools 15
+ *    `computing` / 8 `home`, and home-gym gear 4 `gaming` / 0 `sports`. In both
+ *    the winner sits earlier in the list. `computing` therefore moves from
+ *    first to last-but-one.
+ *    Prediction: espresso machines and power tools return to `home`. If they
+ *    do, position is confirmed and the ordering is a permanent fix; if they do
+ *    not, the cause is gloss dilution — `home` carries eleven heterogeneous
+ *    nouns against `computing`'s ten tightly related ones — and the answer is
+ *    to split `home` rather than to reorder. Watch `electronics` too: it
+ *    inherits the head slot, so if position is real it should now over-attract.
  */
-export const VOCABULARY_VERSION = 8;
+export const VOCABULARY_VERSION = 9;
 
 /** Longest model identifier stored on an entry. */
 const MAX_MODEL_NAME_LENGTH = 64;

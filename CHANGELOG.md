@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.2] - 2026-08-06
+
+### Changed
+
+- Vocabulary version 9 moves `computing` from the head of the tag list to last-but-one, and changes nothing else — no gloss, instruction or tag. v8 ranked best of the three versions measured live (largest category 15.2%, `other` 3.0%) but left `computing` at 141 against v6's 111, with power tools at 15 `computing` / 8 `home` and home-gym gear at 4 `gaming` / 0 `sports` — in both cases the category that names the item explicitly lost to one that does not, and in both the winner sat earlier in the list. This isolates position as the variable so the next re-tag answers it.
+
 ## [0.13.1] - 2026-08-06
 
 ### Fixed

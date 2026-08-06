@@ -104,13 +104,25 @@ describe("vocabulary", () => {
    */
   it("pairs the current tag set with a version that has been bumped for it", () => {
     expect({ version: VOCABULARY_VERSION, tags: [...TAG_VOCABULARY] }).toEqual({
-      version: 8,
+      version: 9,
       tags: [
-        "computing", "electronics", "gaming", "telecom", "grocery", "dining",
-        "home", "apparel", "sports", "health", "pets", "travel", "financial",
-        "rewards", "automotive", "kids", "entertainment", "other",
+        "electronics", "gaming", "telecom", "grocery", "dining", "home",
+        "apparel", "sports", "health", "pets", "travel", "financial",
+        "rewards", "automotive", "kids", "entertainment", "computing", "other",
       ],
     });
+  });
+
+  /**
+   * Order is part of the prompt, so it is pinned like the tag set. v9 moves
+   * `computing` off the head of the list to test whether that position is what
+   * kept pulling espresso machines and power tools into it, against glosses
+   * that name them in `home`. `other` stays last: the instructions describe it
+   * as the fallback, and it reads as one.
+   */
+  it("keeps computing off the head of the list and other at the end", () => {
+    expect(TAG_VOCABULARY[0]).not.toBe("computing");
+    expect(TAG_VOCABULARY[TAG_VOCABULARY.length - 1]).toBe("other");
   });
 
   // Measured live: 29 of the 94 `other` deals were loyalty promos, discounted
