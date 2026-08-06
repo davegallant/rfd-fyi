@@ -1,3 +1,5 @@
+import { TAG_FILTER_PREFIX } from "./enrichment.js";
+
 /** Sort keys supported by the deals list (matches App sort options). */
 export const SORT_KEYS = [
   "title",
@@ -64,10 +66,17 @@ export function filterTopicsByActiveFilters(topics, activeFilters) {
   if (activeFilters.length === 0) return topics;
   const parsed = activeFilters.map(parseFilterTerm);
   return topics.filter((row) => {
-    const searchText = `${row.title} [${row.Offer.dealer_name}]`;
+    const dealText = `${row.title} [${row.Offer.dealer_name}]`;
+    const tagText = (row.tags ?? []).map((tag) => `${TAG_FILTER_PREFIX}${tag}`).join(" ");
+
     return parsed.every(({ regex, literal }) => {
-      if (regex) return regex.test(searchText);
-      return searchText.toLowerCase().includes(literal);
+      // Regex terms search everything, so /#gam(ing|bling)/ stays possible.
+      if (regex) return regex.test(`${dealText} ${tagText}`);
+      // A #-prefixed term searches tags only; without it, tags are not searched.
+      // Otherwise a plain search for "computing" would match the "#computing"
+      // tag as a substring, silently widening every title search.
+      if (literal.startsWith(TAG_FILTER_PREFIX)) return tagText.toLowerCase().includes(literal);
+      return dealText.toLowerCase().includes(literal);
     });
   });
 }

@@ -23,6 +23,52 @@ function topic(overrides = {}) {
 }
 
 // ---------------------------------------------------------------------------
+// tag filtering
+// ---------------------------------------------------------------------------
+
+describe("filtering by tag", () => {
+  const topics = [
+    topic({ topic_id: 1, title: "RTX 5070", tags: ["computing"] }),
+    topic({ topic_id: 2, title: "Milk 2L", tags: ["grocery"] }),
+    topic({ topic_id: 3, title: "Untagged thing" }),
+  ];
+
+  it("matches topics carrying the tag", () => {
+    const filtered = filterTopicsByActiveFilters(topics, ["#computing"]);
+    expect(filtered.map((t) => t.topic_id)).toEqual([1]);
+  });
+
+  it("does not match a tag when the term lacks the prefix", () => {
+    expect(filterTopicsByActiveFilters(topics, ["computing"])).toHaveLength(0);
+  });
+
+  it("does not match untagged topics", () => {
+    expect(filterTopicsByActiveFilters(topics, ["#grocery"]).map((t) => t.topic_id)).toEqual([2]);
+  });
+
+  it("combines a tag term with a title term", () => {
+    expect(filterTopicsByActiveFilters(topics, ["#computing", "RTX"]).map((t) => t.topic_id)).toEqual([1]);
+  });
+
+  it("does not throw on topics with no tags field", () => {
+    expect(() => filterTopicsByActiveFilters([topic({ tags: undefined })], ["#grocery"])).not.toThrow();
+  });
+
+  it("still matches dealer names when tags are present", () => {
+    const filtered = filterTopicsByActiveFilters(topics, ["Amazon"]);
+    expect(filtered).toHaveLength(3);
+  });
+
+  it("treats a bare # as 'any tagged deal'", () => {
+    expect(filterTopicsByActiveFilters(topics, ["#"]).map((t) => t.topic_id)).toEqual([1, 2]);
+  });
+
+  it("matches a tag prefix, so #comp finds computing", () => {
+    expect(filterTopicsByActiveFilters(topics, ["#comp"]).map((t) => t.topic_id)).toEqual([1]);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // parseFilterTerm
 // ---------------------------------------------------------------------------
 

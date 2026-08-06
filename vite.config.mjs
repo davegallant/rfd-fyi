@@ -24,6 +24,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       "/topics.json": process.env.VITE_API_ORIGIN || "https://rfd-fyi.pages.dev",
+      "/enrichment.json": process.env.VITE_API_ORIGIN || "https://rfd-fyi.pages.dev",
       "/html": process.env.VITE_API_ORIGIN || "https://rfd-fyi.pages.dev",
     },
   },
@@ -64,7 +65,12 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    include: ["src/**/*.{test,spec}.js", "functions/**/*.{test,spec}.ts", "worker/src/**/*.{test,spec}.ts"],
+    include: [
+      "src/**/*.{test,spec}.js",
+      "functions/**/*.{test,spec}.ts",
+      "worker/src/**/*.{test,spec}.ts",
+      "tools/**/*.{test,spec}.mjs",
+    ],
     coverage: {
       provider: "v8",
       reporter: ["text", "text-summary", "html", "json-summary"],

@@ -65,6 +65,53 @@ describe("readTopics", () => {
   });
 });
 
+describe("refreshTopics enrichment isolation", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  /**
+   * Enrichment lives in its own KV key precisely because compactTopic() strips
+   * unknown fields and the refreshed copy of a topic wins deduplication. These
+   * guard that the refresh path stays unaware of enrichment entirely.
+   */
+  it("never writes to the enrichment key", async () => {
+    const put = vi.fn();
+    const get = vi.fn(async () => null);
+    vi.stubGlobal("fetch", vi.fn(async (url) => String(url).includes("redirects.json")
+      ? jsonResponse([])
+      : jsonResponse({ topics: [topic({ topic_id: 5 })] })));
+
+    await refreshTopics({ TOPICS_KV: { get, put } });
+
+    expect(put).not.toHaveBeenCalledWith("enrichment.json", expect.anything());
+  });
+
+  it("emits topics carrying only the documented API fields", async () => {
+    const put = vi.fn();
+    const get = vi.fn(async () => null);
+    vi.stubGlobal("fetch", vi.fn(async (url) => String(url).includes("redirects.json")
+      ? jsonResponse([])
+      : jsonResponse({ topics: [topic({ topic_id: 5 })] })));
+
+    const [refreshed] = await refreshTopics({ TOPICS_KV: { get, put } });
+
+    expect(Object.keys(refreshed).sort()).toEqual([
+      "Offer",
+      "Votes",
+      "forum_id",
+      "last_post_time",
+      "post_time",
+      "score",
+      "title",
+      "topic_id",
+      "total_replies",
+      "total_views",
+      "web_path",
+    ]);
+  });
+});
+
 describe("refreshTopics", () => {
   afterEach(() => {
     vi.restoreAllMocks();

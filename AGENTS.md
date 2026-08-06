@@ -4,7 +4,7 @@ Compact, actionable rules for automated agents and contributors.
 
 - Production / build notes:
   - Cloudflare Pages serves the Vite/Vue `dist/` output.
-  - Pages Functions in `functions/` serve `/topics.json`, `/html`, and `/admin/refresh` from Cloudflare KV.
+  - Pages Functions in `functions/` serve `/topics.json`, `/enrichment.json`, `/html`, `/admin/refresh`, and `/admin/enrich` from Cloudflare KV.
   - The scheduled Worker in `worker/` refreshes RedFlagDeals topics into KV every 5 minutes.
   - `wrangler.toml` configures Pages; `worker/wrangler.toml` configures the scheduled Worker.
 
@@ -19,6 +19,18 @@ Compact, actionable rules for automated agents and contributors.
   - KV can return `null`; functions should serve `[]` when topics are missing.
   - Redirect stripping uses JavaScript `RegExp` named groups and may need adjustment if redirect patterns use regexp features unsupported by JS.
   - The Worker URL is not the app UI; it intentionally returns `404` except for the protected `/refresh` endpoint.
+
+- Deal tags (enrichment):
+  - Tags live in the `enrichment.json` KV key, never on topic objects. `compactTopic()` whitelists fields and `refreshTopics()` re-compacts stored topics every run, so a `tags` field on a topic is stripped within one cron cycle. `functions/_shared/topics.test.ts` guards this.
+  - `functions/_shared/enrichment.ts` is the single source of truth for the vocabulary. The enricher reads the vocabulary from `/enrichment.json` rather than keeping a copy, so changing tags means editing that file, bumping `VOCABULARY_VERSION`, and redeploying — entries then re-tag automatically.
+  - The model provider is a pluggable adapter (`tools/enricher/providers.mjs`); only `ollama` ships. Adapters own the wire format; prompt, JSON schema, tag validation, batching, and concurrency are shared. Adding one means adding an object to `PROVIDERS` — the tests iterate it automatically.
+  - `llama3.2:3b` was measured against real RFD data and failed: it put 31% of deals in `computing` (the first category in the list) and saturated the 2-tag limit on 52 of 55. Default is `qwen2.5:7b-instruct`. Each entry records the model in `m`, so re-measure rather than assume — see "Judging tag quality" in the enricher README.
+  - The prompt (`CLASSIFIER_INSTRUCTIONS`) is published in `/enrichment.json` alongside the vocabulary and glosses, so changing it is covered by `VOCABULARY_VERSION` like any other tagging change. It previously lived in `providers.mjs`, where editing it silently changed every future tag while stored entries kept looking current. The enricher keeps a fallback copy only for the case where the server publishes none.
+  - `VOCABULARY_VERSION` versions *how tags are produced* — vocabulary, glosses and prompt — not just the tag list. The field is still called `vocabulary_version` on the wire.
+  - `TAG_GLOSSES` exists because bare tag names were read too narrowly: `automotive` fired once in fifty deals while motor oil and a bike rack fell to `other`. Change `TAG_VOCABULARY` and `TAG_GLOSSES` together, and bump `VOCABULARY_VERSION` — a test in `enrichment.test.ts` pins the tag set to the version so the pair cannot drift.
+  - Vocabulary changes are driven by measurement, not intuition. v2 added `dining`/`pets` after restaurant and pet deals landed in `other`; v3 added `sports` after golf balls and a camping tent were tagged `pets` across 1000 deals. A tag with no home does not produce `other` — it produces confident misclassification into whatever is nearest, so inspect categories, not just the `other` rate.
+  - `/admin/enrich` drops invalid entries and reports them instead of rejecting a whole batch, and returns `404` (not `401`) on bad auth, matching `/admin/refresh`.
+  - In the filter UI, `#tag` terms search tags only and unprefixed terms never search tags — otherwise a plain search for "computing" would match the `#computing` tag as a substring.
 
 - Tests & linting:
   - Frontend tests: `npm test` (runs Vitest per `vite.config.mjs`). Coverage: `npm run test:coverage`.

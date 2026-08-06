@@ -10,10 +10,16 @@ The frontend is a Vite/Vue 3 app. Cloudflare Pages serves the static output, Pag
 flowchart TD
   Browser[Browser] -->|GET /| Pages[Cloudflare Pages static assets]
   Browser -->|GET /topics.json| TopicsFn[Pages Function: /topics.json]
+  Browser -->|GET /enrichment.json| EnrichFn[Pages Function: /enrichment.json]
   Browser -->|GET /html| HtmlFn[Pages Function: /html]
 
   TopicsFn -->|read topics.json| KV[(Cloudflare KV: TOPICS_KV)]
-  HtmlFn -->|read topics.json| KV
+  EnrichFn -->|read enrichment.json| KV
+  HtmlFn -->|read topics.json + enrichment.json| KV
+
+  Enricher[Enricher<br/>tools/enricher + Ollama] -->|GET topics + enrichment| TopicsFn
+  Enricher -->|POST /admin/enrich| EnrichAdmin[Pages Function: /admin/enrich]
+  EnrichAdmin -->|write enrichment.json| KV
 
   Cron[Cloudflare Cron Trigger<br/>every 5 minutes] --> RefreshWorker[Scheduled Worker: rfd-fyi-refresh]
   RefreshWorker -->|fetch topic pages| RFD[RedFlagDeals API]
@@ -72,6 +78,12 @@ just deploy
 ```
 
 The Worker runs every 5 minutes and writes the latest topics to KV. Pages reads that cached JSON at `/topics.json` and renders a no-JavaScript view at `/html`.
+
+## Deal tags
+
+Deals can be tagged with a closed vocabulary (`computing`, `grocery`, `dining`, `telecom`, …) by a local Ollama model. Because Cloudflare Workers cannot reach a LAN, the tagger pushes results in rather than being called: see [`tools/enricher/`](tools/enricher/README.md).
+
+Tags live in their own KV key and are served from `/enrichment.json`, which the frontend joins onto topics by `topic_id`. `/topics.json` is unchanged, and the app renders normally when no tags exist. Click a tag chip — or type `#gaming` into the filter box — to filter by tag.
 
 Optional manual refresh endpoints:
 
