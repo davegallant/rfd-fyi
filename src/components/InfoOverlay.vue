@@ -84,7 +84,7 @@ export default {
   color: var(--text-primary);
   border-radius: 16px;
   padding: 20px;
-  max-width: 400px;
+  max-width: 25rem;
   width: 90%;
   box-shadow: 0 8px 28px var(--shadow-medium);
   border: 1px solid var(--border-color-light);
@@ -97,13 +97,13 @@ export default {
 
 .version {
   margin-top: 8px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text-secondary);
 }
 
 .html-alt {
   margin: 12px 0 0;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .info-panel .shortcuts-table {
@@ -135,7 +135,7 @@ export default {
   cursor: pointer;
   font-family: inherit;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 0.875rem;
   transition: background-color 0.2s ease;
 }
 

@@ -3,7 +3,7 @@
   font-family: 'Material Symbols Outlined';
   font-weight: normal;
   font-style: normal;
-  font-size: 24px;
+  font-size: 1.5rem;
   line-height: 1;
   letter-spacing: normal;
   text-transform: none;
@@ -131,6 +131,11 @@ html.light-theme {
 
 html {
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  /* Fluid root size: every size below is in rem, so this scales the whole UI.
+     Expressed in rem (not px) so the browser's own font-size preference still
+     applies — 16px at <=1000px wide, easing to 18px at >=1600px. Platforms with
+     no desktop scale factor (macOS) would otherwise render at a fixed size. */
+  font-size: clamp(1rem, 0.79rem + 0.333vw, 1.125rem);
   min-width: 100%;
   -webkit-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
@@ -161,7 +166,7 @@ a:visited {
    ============================================ */
 
 .container {
-  max-width: 1200px;
+  max-width: 75rem;
   margin: 0 auto;
   padding: 16px;
   background-color: var(--bg-primary);
@@ -228,7 +233,7 @@ a:visited {
   border: 1px solid var(--border-color-light);
   border-radius: 14px;
   box-shadow: 0 6px 20px var(--shadow-medium);
-  min-width: 180px;
+  min-width: 11.25rem;
   z-index: 100;
   overflow: hidden;
 }
@@ -241,7 +246,7 @@ a:visited {
 
 .dropdown-section-label {
   padding: 6px 14px 4px;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -258,7 +263,7 @@ a:visited {
   border: none;
   background: transparent;
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: 0.875rem;
   cursor: pointer;
   transition: background-color 0.2s ease;
   text-align: left;
@@ -289,7 +294,7 @@ a:visited {
 }
 
 .dropdown-item .material-symbols-outlined {
-  font-size: 20px;
+  font-size: 1.25rem;
   color: var(--text-secondary);
 }
 
@@ -299,9 +304,9 @@ a:visited {
 
 .search-input {
   flex: 1;
-  max-width: 500px;
+  max-width: 31.25rem;
   padding: 10px 12px;
-  font-size: 14px;
+  font-size: 0.875rem;
   border: 1px solid var(--border-color-light);
   border-radius: 10px;
   background-color: var(--bg-input);
@@ -327,7 +332,7 @@ a:visited {
 
 .filter-container {
   flex: 1;
-  max-width: 500px;
+  max-width: 31.25rem;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -364,7 +369,7 @@ a:visited {
   padding: 4px 8px 4px 10px;
   background-color: var(--border-color-light);
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   color: var(--text-primary);
   flex-shrink: 0;
@@ -374,8 +379,8 @@ a:visited {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 14px;
-  height: 14px;
+  width: 0.875rem;
+  height: 0.875rem;
   padding: 0;
   border: none;
   background-color: var(--text-secondary);
@@ -390,7 +395,7 @@ a:visited {
 }
 
 .filter-tag-clear .material-symbols-outlined {
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 
 /* ============================================
@@ -401,15 +406,15 @@ a:visited {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 2.5rem;
+  height: 2.5rem;
   border: 1px solid var(--border-color-light);
   border-radius: 10px;
   background-color: var(--bg-input);
   color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 18px;
+  font-size: 1.125rem;
   padding: 0;
   flex-shrink: 0;
 }
@@ -433,15 +438,15 @@ a:visited {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 2.5rem;
+  height: 2.5rem;
   border: 1px solid var(--border-color-light);
   border-radius: 10px;
   background-color: var(--bg-input);
   color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 18px;
+  font-size: 1.125rem;
   padding: 0;
   flex-shrink: 0;
 }
@@ -494,7 +499,7 @@ a:visited {
 
 .hot-deal-icon {
   display: inline-block;
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1;
   pointer-events: none;
   vertical-align: baseline;
@@ -515,14 +520,14 @@ a:visited {
 
 .dealer-title-gap {
   display: inline-block;
-  width: 7px;
+  width: 0.4375rem;
   vertical-align: baseline;
 }
 
 .deal-row .deal-title {
   display: inline;
   min-width: 0;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.48;
 }
@@ -532,9 +537,9 @@ a:visited {
 }
 
 .deal-row .score-bubble {
-  min-width: 36px;
-  height: 24px;
-  font-size: 10px;
+  min-width: 2.25rem;
+  height: 1.5rem;
+  font-size: 0.625rem;
   order: 4;
 }
 
@@ -545,7 +550,7 @@ a:visited {
 }
 
 .stat-compact {
-  font-size: 10px;
+  font-size: 0.625rem;
   color: var(--text-secondary);
   font-weight: 500;
   letter-spacing: 0.01em;
@@ -596,7 +601,7 @@ a:visited {
   color: var(--link-color);
   text-decoration: none;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1.48;
   flex: 1;
   transition: color 0.2s ease;
@@ -626,7 +631,7 @@ a:visited {
 }
 
 .card-link .material-symbols-outlined {
-  font-size: 18px;
+  font-size: 1.125rem;
 }
 
 /* ============================================
@@ -637,11 +642,11 @@ a:visited {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 40px;
-  height: 28px;
+  min-width: 2.5rem;
+  height: 1.75rem;
   border-radius: 999px;
   font-weight: 700;
-  font-size: 11px;
+  font-size: 0.6875rem;
   flex-shrink: 0;
   transition: all 0.2s ease;
   padding: 0 2px;
@@ -676,7 +681,7 @@ a:visited {
   flex-direction: column;
   align-items: flex-start;
   gap: 5px;
-  font-size: 12px;
+  font-size: 0.75rem;
   margin-bottom: 10px;
 }
 
@@ -688,7 +693,7 @@ a:visited {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 0.75rem;
   padding: 3px 8px;
   border-radius: 3px;
   border: 1px solid currentColor;
@@ -751,11 +756,11 @@ mark {
 
 .loading-container p {
   margin-top: 16px;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .loading-spinner {
-  font-size: 48px;
+  font-size: 3rem;
 }
 
 .icon-button:disabled {

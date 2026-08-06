@@ -782,7 +782,7 @@ export default {
   border: 1px solid var(--border-color-light);
   border-radius: 14px;
   box-shadow: 0 6px 20px var(--shadow-medium);
-  min-width: 170px;
+  min-width: 10.625rem;
   z-index: 100;
   overflow: hidden;
 }
@@ -806,7 +806,7 @@ export default {
 }
 
 .loading-overlay .loading-spinner {
-  font-size: 48px;
+  font-size: 3rem;
   color: var(--text-primary);
 }
 
@@ -825,7 +825,7 @@ export default {
 }
 
 .empty-state .material-symbols-outlined {
-  font-size: 36px;
+  font-size: 2.25rem;
 }
 
 .empty-state p {
@@ -842,7 +842,7 @@ export default {
   color: var(--text-primary);
   cursor: pointer;
   font: inherit;
-  font-size: 13px;
+  font-size: 0.8125rem;
   transition: all 0.2s ease;
 }
 
@@ -854,7 +854,7 @@ export default {
 .load-more-status {
   padding: 16px;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 0.8125rem;
   text-align: center;
 }
 
@@ -864,7 +864,7 @@ export default {
 
 .filter-wrapper {
   flex: 1;
-  max-width: 500px;
+  max-width: 31.25rem;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -887,7 +887,7 @@ export default {
   border: none;
   padding: 0;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 700;
   line-height: 1.2;
   cursor: pointer;
@@ -928,7 +928,7 @@ export default {
   color: var(--text-secondary);
   cursor: pointer;
   font: inherit;
-  font-size: 11px;
+  font-size: 0.6875rem;
   line-height: 1.5;
   letter-spacing: 0.02em;
   transition: color 0.15s ease, border-color 0.15s ease;
@@ -953,7 +953,7 @@ export default {
   border: 1px solid var(--border-color-light);
   border-radius: 14px;
   box-shadow: 0 6px 20px var(--shadow-medium);
-  min-width: 170px;
+  min-width: 10.625rem;
   z-index: 100;
   overflow: hidden;
 }
