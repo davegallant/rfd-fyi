@@ -58,16 +58,33 @@ describe("vocabulary", () => {
     expect(TAG_GLOSSES.automotive).toMatch(/scooter/i);
   });
 
-  // Observed live on rfd.davegallant.ca: an espresso machine, a hair styler,
-  // a milk frother, a trimmer and half a dozen power tools all landed in
-  // `computing`, even though `home` already covers tools/kitchen and `health`
-  // already covers personal care.
-  it("excludes kitchen appliances, power tools and personal-care devices from computing", () => {
-    expect(TAG_GLOSSES.computing).toMatch(/kitchen appliances/i);
-    expect(TAG_GLOSSES.computing).toMatch(/power tools/i);
-    expect(TAG_GLOSSES.computing).toMatch(/personal-care/i);
-    expect(TAG_GLOSSES.home).toMatch(/\btools\b/i);
+  /**
+   * v6 and v7 both tried to keep kitchen appliances, power tools and
+   * personal-care devices out of `computing` by naming them in `computing`'s
+   * own gloss as exclusions. Measured live, that did the opposite: `computing`
+   * went 112 → 197 of 1000 and took 10 kitchen appliances, 17 power tools and
+   * 3 personal-care devices with it. The nouns now live only where they belong.
+   */
+  it("names kitchen appliances, power tools and personal care only where they belong", () => {
+    expect(TAG_GLOSSES.home).toMatch(/appliances/i);
+    expect(TAG_GLOSSES.home).toMatch(/power and hand tools/i);
     expect(TAG_GLOSSES.health).toMatch(/personal care/i);
+    expect(TAG_GLOSSES.computing).not.toMatch(/appliances/i);
+    expect(TAG_GLOSSES.computing).not.toMatch(/tools/i);
+    expect(TAG_GLOSSES.computing).not.toMatch(/personal.care/i);
+  });
+
+  /**
+   * The rule the above is an instance of, pinned mechanically so no future
+   * gloss can reintroduce it. Six of the seven negated phrases in v7 pulled in
+   * the deals they excluded — 48 in total. A gloss states only what a category
+   * includes; to keep a noun out of a category, name it in the category that
+   * should win instead.
+   */
+  it("states only what each category includes, never what it excludes", () => {
+    for (const [tag, gloss] of Object.entries(TAG_GLOSSES)) {
+      expect(gloss, `"${tag}" gloss negates`).not.toMatch(/\bnot\b|\bexcept\b|\bonly for\b|\brather than\b/i);
+    }
   });
 
   // Observed live: "120% Cashback on ExpressVPN" was tagged `financial` while
@@ -87,7 +104,7 @@ describe("vocabulary", () => {
    */
   it("pairs the current tag set with a version that has been bumped for it", () => {
     expect({ version: VOCABULARY_VERSION, tags: [...TAG_VOCABULARY] }).toEqual({
-      version: 7,
+      version: 8,
       tags: [
         "computing", "electronics", "gaming", "telecom", "grocery", "dining",
         "home", "apparel", "sports", "health", "pets", "travel", "financial",
@@ -113,20 +130,20 @@ describe("vocabulary", () => {
    */
   it("does not repeat v6's cashback mistake in the rewards gloss", () => {
     expect(TAG_GLOSSES.rewards).not.toMatch(/cashback/i);
-    expect(TAG_GLOSSES.rewards).toMatch(/not tied to a particular product/i);
     expect(CLASSIFIER_INSTRUCTIONS).toMatch(/cashback promotion/i);
   });
 
   /**
-   * A new tag can cannibalise a working one. `financial` classified 51 deals
-   * correctly, many of them credit-card welcome bonuses paid in points, and
-   * `travel` already claims points transfers — both would otherwise satisfy
-   * "the value is points rather than a product".
+   * A new tag can cannibalise a working one, and v7's attempt to stop it —
+   * carve-outs inside the `rewards` gloss — did the opposite: "not credit card
+   * or bank sign-up bonuses" took 8 of them and "not airline or hotel points
+   * transfers" took 9, costing `travel` six deals. v8 states the boundary from
+   * the winning side instead, which is the only construct measured to work.
    */
-  it("keeps rewards out of the two categories it could cannibalise", () => {
-    expect(TAG_GLOSSES.rewards).toMatch(/not credit card or bank sign-up bonuses/i);
-    expect(TAG_GLOSSES.rewards).toMatch(/not airline or hotel points transfers/i);
-    expect(TAG_GLOSSES.travel).toMatch(/points transfers/i);
+  it("defends financial and travel from rewards by naming, not excluding", () => {
+    expect(TAG_GLOSSES.financial).toMatch(/welcome bonuses/i);
+    expect(TAG_GLOSSES.travel).toMatch(/airline and hotel points transfers/i);
+    expect(TAG_GLOSSES.rewards).not.toMatch(/credit card|airline|hotel/i);
   });
 
   // Observed live: one Galaxy Fold 8 pre-order was tagged `computing` while a
@@ -136,8 +153,11 @@ describe("vocabulary", () => {
     expect(TAG_GLOSSES.electronics).toMatch(/phones/i);
     expect(TAG_GLOSSES.electronics).toMatch(/smartwatches|wearables/i);
     expect(TAG_GLOSSES.computing).toMatch(/tablets/i);
-    expect(TAG_GLOSSES.computing).toMatch(/not phones or smartwatches/i);
     expect(TAG_GLOSSES.electronics).not.toMatch(/tablets/i);
+    // Naming phones in `electronics` alone is what fixed them, 16/1 → 17/17.
+    // v7 also excluded them from `computing`; v8 drops that, since the
+    // exclusion was doing nothing the positive naming was not already doing.
+    expect(TAG_GLOSSES.computing).not.toMatch(/phones|smartwatch/i);
   });
 
   /**

@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.1] - 2026-08-06
+
+### Fixed
+
+- Vocabulary version 8 removes every exclusion clause from the tag glosses. Measured on the live v7 re-tag of 1000 deals, six of the seven negated phrases pulled in the deals they excluded — 48 in total. `computing` said "not kitchen appliances, power tools or personal-care devices" and took 10, 17 and 3 of them, growing 112 → 197 (19.7%, the share the enricher README defines as disqualifying), while power tools inverted from 13 `home` / 8 `computing` to 20 `computing` / 3 `home`. Each concrete noun now appears in exactly one gloss, and the two `rewards` carve-outs are stated positively in `financial` and `travel` instead.
+
 ## [0.13.0] - 2026-08-06
 
 ### Added

@@ -38,22 +38,34 @@ export type Tag = (typeof TAG_VOCABULARY)[number];
  * `automotive` fired once in fifty deals while motor oil and a bike rack landed
  * in `other`, and BBQs and espresso machines drifted away from `home`. The
  * examples here are the observed failures, not hypotheticals.
+ *
+ * **State only what a category includes.** A gloss must never say what a
+ * category excludes. Measured across the v6→v7 deployment, six of the seven
+ * negated phrases in the vocabulary pulled in the very deals they excluded:
+ * `computing` said "not kitchen appliances, power tools or personal-care
+ * devices" and took 10, 17 and 3 of them respectively; `rewards` said "not
+ * credit card sign-up bonuses" and took 8, "not airline or hotel points
+ * transfers" and took 9. The model matches gloss text lexically and "not"
+ * contributes nothing. The one negation that held — `computing` "not phones" —
+ * held only because `electronics` names phones more specifically, which is the
+ * mechanism to use instead: put the noun in the gloss that should win, and
+ * nowhere else.
  */
 export const TAG_GLOSSES: Record<Tag, string> = {
-  computing: "computers, laptops, tablets, PC parts, peripherals, storage, monitors — not phones or smartwatches, and not kitchen appliances, power tools or personal-care devices",
+  computing: "computers, laptops, tablets, PC parts, storage, monitors, keyboards, mice, docks and networking gear",
   electronics: "TVs, audio, cameras, phones of every form factor including foldables, smartwatches, smart glasses and wearables, chargers, smart-home devices",
   gaming: "video games, consoles, handhelds, gaming hardware, board games, trading cards and tabletop games",
   telecom: "mobile, internet and TV plans, SIMs, roaming",
   grocery: "food and drink bought from a supermarket, including alcohol",
   dining: "restaurants, fast food, cafes, bakeries and dessert shops, food delivery",
-  home: "furniture, appliances, kitchen, coffee and espresso machines, cleaning, pest control, power and hand tools, garden, BBQs",
+  home: "furniture, kitchen and small appliances, coffee and espresso machines, air conditioners and fans, vacuums, cleaning, pest control, power and hand tools, lawn and garden equipment, BBQs and grills, coolers",
   apparel: "clothing, footwear, accessories, bags, jewellery",
   sports: "sporting goods and equipment, bikes, kick scooters, skateboards, camping and outdoor gear, fitness equipment, treadmills, weights and home gyms",
-  health: "pharmacy, personal care, supplements, eyewear, medical devices",
-  pets: "pet food, supplies and services, aquariums and fish — only for animals",
-  travel: "flights, hotels, car rental, attractions, parking, points transfers",
-  financial: "bank accounts, credit cards, investing, insurance",
-  rewards: "loyalty and points programs, gift cards, points or fuel discounts at gas stations, and shopping-portal promotions that are not tied to a particular product — not credit card or bank sign-up bonuses, which are financial, and not airline or hotel points transfers, which are travel",
+  health: "pharmacy, personal care, hair dryers, shavers and trimmers, supplements, eyewear, medical devices",
+  pets: "food, supplies and services for cats, dogs, fish and other animals, aquariums",
+  travel: "flights, hotels, car rental, attractions, parking, airline and hotel points transfers",
+  financial: "bank accounts, credit cards and their welcome bonuses, investing, insurance",
+  rewards: "loyalty and points programs such as Scene+, PC Optimum, Air Miles and Aeroplan, gift cards, and points or cents-per-litre discounts earned at gas stations",
   automotive: "cars, motorcycles, parts, tires, fuel, oil, maintenance, car care and car cleaning products, jacks and garage equipment, car racks and carriers, electric scooters",
   kids: "toys, baby gear, diapers, strollers and car seats, children's products",
   entertainment: "streaming, books, movies, events, tickets",
@@ -87,9 +99,9 @@ export const CLASSIFIER_INSTRUCTIONS = [
   "Categorise by the product or service the deal is for, ignoring how the offer",
   "is structured: a bundle, tool-only listing, cashback promotion or",
   "spend-and-get is categorised by what the buyer ends up with.",
-  "When the value of the deal is points, miles, credit or stored value rather",
-  "than a product — a loyalty promotion, a discounted gift card, a fuel-points",
-  "offer — use \"rewards\" instead.",
+  "When the value of the deal is points, miles or stored value rather than a",
+  "product — a loyalty promotion, a discounted gift card, a fuel-points offer —",
+  "use \"rewards\".",
   "A post covering a whole store's flyer, weekly sale or photo report spans",
   "every category at once, so use \"other\" for it.",
   "Use \"other\" only when nothing else fits.",
@@ -140,8 +152,20 @@ export const CLASSIFIER_INSTRUCTIONS = [
  *    Rayban Meta glasses (`gaming`, electronics). One example is thin evidence
  *    for a gloss phrase, so these are the v7 changes most likely to overfit —
  *    watch whether the phrase pulls in deals that were previously correct.
+ * v8 removed every exclusion clause after v7 was measured live and was a net
+ *    regression: `computing` went 112 → 197 of 1000 (19.7%, the share the
+ *    enricher README defines as disqualifying), power tools inverted from
+ *    13 `home` / 8 `computing` to 20 `computing` / 3 `home`, and kitchen
+ *    appliances, BBQs and home-gym gear all followed. Six of seven negated
+ *    phrases leaked into the gloss that negated them, 48 deals in total. Each
+ *    concrete noun now appears in exactly one gloss — the ones `computing` used
+ *    to exclude live in `home` and `health`, and the two `rewards` carve-outs
+ *    are stated positively in `financial` and `travel` instead.
+ *    v7 was not a total loss and is not reverted: phones reached `electronics`
+ *    17/17 (from 16/1), `other` fell 94 → 36, and `rewards` is sound at its
+ *    core — 41 of the deals it absorbed came straight from `other`.
  */
-export const VOCABULARY_VERSION = 7;
+export const VOCABULARY_VERSION = 8;
 
 /** Longest model identifier stored on an entry. */
 const MAX_MODEL_NAME_LENGTH = 64;
