@@ -21,8 +21,17 @@
  * So the order cannot be tuned to fix it, because some tag must be first. This
  * order is v8's, kept because it was the best measured; the head-slot bias is
  * aimed at `computing`, which is broad enough to absorb it with the least
- * distortion. The real fix is to stop any one tag owning the slot — see the
- * rotation note in VOCABULARY_VERSION.
+ * distortion. Rotating the list to stop any one tag owning the slot was tried
+ * in v11 and made things worse — the bias moves to `electronics` rather than
+ * spreading.
+ *
+ * **Position matters all the way down the list, not only at the head.** v13
+ * moved `entertainment` from seventeenth to seventh and changed nothing else:
+ * event and cinema tickets went 2/5 to 5/5 and books 3/5 to 4/5, both of which
+ * had been losing to `dining` and `computing` — categories that sat earlier and
+ * whose glosses never mentioned tickets or books. It cost 2 elsewhere, so
+ * ordering is close to zero-sum: moving a tag up takes from whatever it passes.
+ * Spend the early slots on categories that are losing deals they should win.
  */
 export const TAG_VOCABULARY = [
   "computing",
@@ -31,6 +40,7 @@ export const TAG_VOCABULARY = [
   "telecom",
   "grocery",
   "dining",
+  "entertainment",
   "home",
   "tools",
   "apparel",
@@ -42,7 +52,6 @@ export const TAG_VOCABULARY = [
   "rewards",
   "automotive",
   "kids",
-  "entertainment",
   "other",
 ] as const;
 
@@ -69,7 +78,7 @@ export type Tag = (typeof TAG_VOCABULARY)[number];
  * nowhere else.
  */
 export const TAG_GLOSSES: Record<Tag, string> = {
-  computing: "computers, laptops, tablets, PC parts, storage, computer monitors and portable displays, keyboards, mice, docks and networking gear",
+  computing: "computers, laptops, tablets, PC parts, storage, computer monitors and portable displays, keyboards, mice, docks and networking gear, VPN and antivirus subscriptions",
   electronics: "TVs, audio, cameras, phones of every form factor including foldables, smartwatches, smart glasses and wearables, chargers, smart-home devices",
   gaming: "video games, consoles, handhelds, gaming hardware, board games, trading cards and tabletop games",
   telecom: "mobile, internet and TV plans, SIMs, roaming",
@@ -86,7 +95,7 @@ export const TAG_GLOSSES: Record<Tag, string> = {
   rewards: "loyalty and points programs such as Scene+, PC Optimum, Air Miles and Aeroplan, gift cards, and points or cents-per-litre discounts earned at gas stations",
   automotive: "cars, motorcycles, parts, tires, fuel, oil, maintenance, car care and car cleaning products, jump starters, battery chargers and tire inflators, jacks and garage equipment, car racks and carriers, electric scooters",
   kids: "toys, LEGO and building sets, baby gear, diapers, strollers and car seats, children's products",
-  entertainment: "streaming, books, movies, events, tickets",
+  entertainment: "streaming, books and ebooks, movies and cinema, live sport and theatre tickets, concerts and events, news and magazine subscriptions",
   other: "anything that genuinely fits none of the above",
 };
 
@@ -251,8 +260,33 @@ export const CLASSIFIER_INSTRUCTIONS = [
  *    - three monitors went to `electronics` — a monitor reads as a screen like
  *      a TV. "monitors" became "computer monitors and portable displays", +2.
  *    Net 108 -> 115 of 122 (94.3%).
+ * v13 came from the v12 corpus re-tag rather than from the benchmark, which
+ *    could not see any of it: the 134 cases had no `entertainment` class at
+ *    all. On the live corpus `entertainment` had fallen 24 -> 10, and the
+ *    `other` rate had risen 30 -> 54, so the benchmark's 115/122 was measuring
+ *    a taxonomy with a hole in it.
+ *    - `entertainment` now names ebooks, cinema, live sport and theatre
+ *      tickets, and news subscriptions. The New York Times and the Globe and
+ *      Mail were in `other`, Kindle deals were in `computing`, and Cineplex
+ *      tickets were in `dining`. +5.
+ *    - `entertainment` moved from seventeenth in the list to seventh. +2 net,
+ *      +4 on its own classes; see the note on TAG_VOCABULARY.
+ *    119 -> 126 of 134 (94.0%), on a benchmark grown by the twelve cases these
+ *    failures produced. Real misclassifications are worth more than invented
+ *    cases: `dining`, `pets`, `sports` and `rewards` were all found this way.
+ * v14 named VPN and antivirus subscriptions in `computing`, 1/5 -> 5/5 on the
+ *    six VPN deals in the corpus. Four sat in `financial` and one in `rewards`,
+ *    all of them worded as cashback — the dealer is often literally called
+ *    TopCashback, which outweighs the instruction to categorise a cashback
+ *    promotion by what the buyer ends up with. The sixth, worded without
+ *    cashback, sat in `telecom`.
+ *    This supersedes the v6 note below, which recorded `telecom` as the correct
+ *    home for a VPN. It is not: VPNs belong in `computing`, and that is a
+ *    taxonomy decision, not a measurement. v6 fixed half the problem by taking
+ *    "cashback" out of the `financial` gloss and assumed the remainder was
+ *    right; naming VPNs somewhere was what actually settled it.
  */
-export const VOCABULARY_VERSION = 12;
+export const VOCABULARY_VERSION = 14;
 
 /** Longest model identifier stored on an entry. */
 const MAX_MODEL_NAME_LENGTH = 64;

@@ -98,6 +98,20 @@ describe("vocabulary", () => {
   });
 
   /**
+   * v6 removed "cashback" from the `financial` gloss and assumed that settled
+   * VPN deals, recording `telecom` as where they correctly landed. It did not,
+   * and it is not: measured on the corpus, four of six VPN deals were still
+   * `financial` and one `rewards`, because they are advertised as cashback and
+   * the dealer is often literally called TopCashback. Naming VPNs in
+   * `computing` took the class 1/5 to 5/5. VPNs belong in `computing` — a
+   * taxonomy decision, not a measurement.
+   */
+  it("gives VPN subscriptions a named home, which cashback wording kept overriding", () => {
+    expect(TAG_GLOSSES.computing).toMatch(/VPN/);
+    expect(TAG_GLOSSES.telecom).not.toMatch(/VPN/i);
+  });
+
+  /**
    * Tripwire in both directions: changing the tag set, the glosses or the
    * instructions without bumping VOCABULARY_VERSION would leave every stored
    * entry tagged the old way forever, since re-tagging is driven entirely by
@@ -105,13 +119,38 @@ describe("vocabulary", () => {
    */
   it("pairs the current tag set with a version that has been bumped for it", () => {
     expect({ version: VOCABULARY_VERSION, tags: [...TAG_VOCABULARY] }).toEqual({
-      version: 12,
+      version: 14,
       tags: [
         "computing", "electronics", "gaming", "telecom", "grocery", "dining",
-        "home", "tools", "apparel", "sports", "health", "pets", "travel",
-        "financial", "rewards", "automotive", "kids", "entertainment", "other",
+        "entertainment", "home", "tools", "apparel", "sports", "health", "pets",
+        "travel", "financial", "rewards", "automotive", "kids", "other",
       ],
     });
+  });
+
+  /**
+   * Position matters all the way down the list, not only at the head. v13 moved
+   * `entertainment` from seventeenth to seventh and changed nothing else: event
+   * and cinema tickets went 2/5 to 5/5, books 3/5 to 4/5. They had been losing
+   * to `dining` and `computing`, which sat earlier and whose glosses mention
+   * neither tickets nor books.
+   */
+  it("puts entertainment ahead of the categories that were taking its deals", () => {
+    const at = (tag: string) => TAG_VOCABULARY.indexOf(tag as never);
+    expect(at("entertainment")).toBeLessThan(at("home"));
+    expect(at("entertainment")).toBeGreaterThan(at("dining"));
+  });
+
+  /**
+   * Found on the live corpus, not on the benchmark, which had no
+   * `entertainment` class at all: the New York Times and the Globe and Mail sat
+   * in `other`, Kindle deals in `computing`, Cineplex tickets in `dining`.
+   */
+  it("covers ebooks, cinema, live tickets and news subscriptions", () => {
+    expect(TAG_GLOSSES.entertainment).toMatch(/ebooks/i);
+    expect(TAG_GLOSSES.entertainment).toMatch(/cinema/i);
+    expect(TAG_GLOSSES.entertainment).toMatch(/tickets/i);
+    expect(TAG_GLOSSES.entertainment).toMatch(/news and magazine subscriptions/i);
   });
 
   /**

@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.7] - 2026-08-06
+
+### Fixed
+
+- Vocabulary version 14 names VPN and antivirus subscriptions in `computing`, taking VPN deals from 1/5 to 5/5. Four of the six in the corpus were tagged `financial` and one `rewards`, because VPNs are almost always advertised as cashback and the dealer is often literally called TopCashback, which outweighed the instruction to categorise a cashback promotion by what the buyer ends up with. This supersedes a note from v6 that recorded `telecom` as the right home for a VPN.
+
+## [0.13.6] - 2026-08-06
+
+### Changed
+
+- Vocabulary version 13 covers what the v12 re-tag exposed. `entertainment` had fallen from 24 deals to 10 on the live corpus while `other` rose from 30 to 54, and the benchmark could not see any of it — it had no `entertainment` cases at all. The gloss now names ebooks, cinema, live sport and theatre tickets, and news subscriptions: the New York Times and the Globe and Mail were sitting in `other`, Kindle deals in `computing`, Cineplex tickets in `dining`.
+- `entertainment` also moved from seventeenth in the tag list to seventh. Position matters all the way down the list, not only at the head: its own classes gained 4 and the move cost 2 elsewhere, so ordering is close to zero-sum.
+- Together 119 → 126 of 134 (94.0%), on a benchmark grown by the twelve cases these live failures produced.
+
 ## [0.13.5] - 2026-08-06
 
 ### Added

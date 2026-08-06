@@ -732,6 +732,108 @@
       "expect": "grocery",
       "title": "Save over 80% with PC Express Pass $18.00 for first year regular price $99.00",
       "dealer": "President’s Choice"
+    },
+    {
+      "class": "events and tickets",
+      "expect": "entertainment",
+      "title": "Aug 6th Opener Game - Toronto Argonauts vs. Calgary Stampeders - $40 + fees (ALL YOU CAN EAT TICKET)",
+      "dealer": "Toronto Argonauts"
+    },
+    {
+      "class": "events and tickets",
+      "expect": "entertainment",
+      "title": "Canadian Premier League - CPL Soccer - Bring Your +1, On Us",
+      "dealer": "CPL Canadian Premier League"
+    },
+    {
+      "class": "events and tickets",
+      "expect": "entertainment",
+      "title": "Toronto -July theatre discount codes via Reddit",
+      "dealer": ""
+    },
+    {
+      "class": "events and tickets",
+      "expect": "entertainment",
+      "title": "$4.99 family movies across Canada at selected Cineplex locations. Next one Aug 1",
+      "dealer": "Cineplex"
+    },
+    {
+      "class": "events and tickets",
+      "expect": "entertainment",
+      "title": "Nationwide- - $8.99 Monday surprise premiere movies @ Cineplex. Next one July 27",
+      "dealer": "Cineplex"
+    },
+    {
+      "class": "books",
+      "expect": "entertainment",
+      "title": "The Penguin History of the World: 6th Edition (Kindle eBook)",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "books",
+      "expect": "entertainment",
+      "title": "Game of Thrones - Rise of the Dragon Vol 1 Illustrated History (Hardcover)",
+      "dealer": "Dollarama"
+    },
+    {
+      "class": "books",
+      "expect": "entertainment",
+      "title": "[Book] Sonny Boy: A Memoir ~ by Al Pacino $9.09 reg $48.00",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "books",
+      "expect": "entertainment",
+      "title": "Agentic AI for Leaders: Build AI Fluency (Kindle eBook) $0.99 (96% off)",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "books",
+      "expect": "entertainment",
+      "title": "Kindle Deal: Conscious Human at the Speed of Change by Dr. Lawrence-Ortega - $0.99 (80% Off)",
+      "dealer": "Amazon.ca"
+    },
+    {
+      "class": "media subscriptions",
+      "expect": "entertainment",
+      "title": "New York Times ALL ACCESS Digital Subscription C$20/Yr",
+      "dealer": "nytimes.com"
+    },
+    {
+      "class": "media subscriptions",
+      "expect": "entertainment",
+      "title": "$0.49/week Digital Globe and Mail for 24 weeks is back",
+      "dealer": "The Globe and Mail"
+    },
+    {
+      "class": "VPN and software",
+      "expect": "computing",
+      "title": "Private Internet Access VPN - 120% Cashback - Today Only",
+      "dealer": "TopCashback"
+    },
+    {
+      "class": "VPN and software",
+      "expect": "computing",
+      "title": "120% Cashback on ExpressVPN.",
+      "dealer": "ExpressVPN"
+    },
+    {
+      "class": "VPN and software",
+      "expect": "computing",
+      "title": "FREE 100% Cashback for Nord VPN Rakuten ($114)",
+      "dealer": "Rakuten"
+    },
+    {
+      "class": "VPN and software",
+      "expect": "computing",
+      "title": "Lifetime Subscription for FastestVPN - $24.95 USD / $35.17 CAD",
+      "dealer": ""
+    },
+    {
+      "class": "VPN and software",
+      "expect": "computing",
+      "title": "ExpressVPN 120% Cash Back - Free $30.60 USD",
+      "dealer": "TopCashBack"
     }
   ]
 }
