@@ -285,8 +285,19 @@ export const CLASSIFIER_INSTRUCTIONS = [
  *    taxonomy decision, not a measurement. v6 fixed half the problem by taking
  *    "cashback" out of the `financial` gloss and assumed the remainder was
  *    right; naming VPNs somewhere was what actually settled it.
+ * v15 changes no tag, gloss or instruction — it is a model change, which this
+ *    number also versions. The enricher moved from `qwen2.5:7b-instruct` on
+ *    Ollama to `minimax-m3` behind the LiteLLM proxy, measured at 137-138 of
+ *    139 labelled cases against qwen's ~105 of 121, with 24 of 25 classes
+ *    perfect. The bump exists solely to re-tag the 1000 stored entries, which
+ *    were all produced by the old model; without it `selectTopicsNeedingTags`
+ *    would leave them alone and only new deals would get the new model.
+ *    Note the head-slot bias that drove v9 and v13 is much weaker here:
+ *    `--rotate` costs `minimax-m3` 3 points against qwen's 8. The ordering
+ *    decisions recorded above were tuned for a model that no longer produces
+ *    the tags, so re-measure before trusting their magnitude.
  */
-export const VOCABULARY_VERSION = 14;
+export const VOCABULARY_VERSION = 15;
 
 /** Longest model identifier stored on an entry. */
 const MAX_MODEL_NAME_LENGTH = 64;

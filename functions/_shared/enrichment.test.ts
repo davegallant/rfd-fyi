@@ -119,7 +119,7 @@ describe("vocabulary", () => {
    */
   it("pairs the current tag set with a version that has been bumped for it", () => {
     expect({ version: VOCABULARY_VERSION, tags: [...TAG_VOCABULARY] }).toEqual({
-      version: 14,
+      version: 15,
       tags: [
         "computing", "electronics", "gaming", "telecom", "grocery", "dining",
         "entertainment", "home", "tools", "apparel", "sports", "health", "pets",

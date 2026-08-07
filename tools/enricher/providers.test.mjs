@@ -132,3 +132,70 @@ describe("ollama provider", () => {
     expect(resolveProvider("ollama").extractContent({})).toBeNull();
   });
 });
+
+describe("litellm provider", () => {
+  it("posts to the OpenAI-compatible chat endpoint", () => {
+    expect(build("litellm").url).toBe("http://hephaestus:4000/v1/chat/completions");
+  });
+
+  it("asks for the JSON envelope in prose, since the proxy will not enforce it", () => {
+    expect(build("litellm").body.messages[0].content).toMatch(/JSON only/i);
+  });
+
+  it("states the tag ceiling in the directive", () => {
+    expect(build("litellm").body.messages[0].content).toContain("at most 2 entries");
+  });
+
+  // Measured across 23 models: rejected by some with a 400, silently ignored by
+  // the rest. parseTags is the real enforcement. Do not re-add on principle.
+  it("sends no response_format", () => {
+    expect(build("litellm").body.response_format).toBeUndefined();
+  });
+
+  it("keeps the directive out of the shared prompt, so ollama is unaffected", () => {
+    expect(build("ollama").body.messages[0].content).not.toMatch(/JSON only/i);
+  });
+
+  it("asks for a deterministic answer", () => {
+    expect(build("litellm").body.temperature).toBe(0);
+  });
+
+  it("sends the api key as a bearer token when one is configured", () => {
+    expect(build("litellm", { apiKey: "sk-secret" }).headers.authorization)
+      .toBe("Bearer sk-secret");
+  });
+
+  it("omits the header entirely for a proxy with no key", () => {
+    expect(build("litellm").headers.authorization).toBeUndefined();
+  });
+
+  it("defaults to a model measured against the labelled cases", () => {
+    const { body } = resolveProvider("litellm").buildRequest({
+      topic: TOPIC, vocabulary: VOCABULARY, glosses: GLOSSES, maxTags: 2, config: {},
+    });
+    expect(body.model).toBe("minimax-m3");
+  });
+
+  it("reads content from the first choice", () => {
+    expect(resolveProvider("litellm").extractContent({
+      choices: [{ message: { content: '{"tags":["gaming"]}' } }],
+    })).toBe('{"tags":["gaming"]}');
+  });
+
+  // LiteLLM emulates response_format with tool calling for backends without
+  // native structured output, which leaves content null.
+  it("falls back to the tool call arguments when content is empty", () => {
+    expect(resolveProvider("litellm").extractContent({
+      choices: [{
+        message: {
+          content: null,
+          tool_calls: [{ function: { arguments: '{"tags":["computing"]}' } }],
+        },
+      }],
+    })).toBe('{"tags":["computing"]}');
+  });
+
+  it("returns null when the response carries no choices", () => {
+    expect(resolveProvider("litellm").extractContent({ choices: [] })).toBeNull();
+  });
+});

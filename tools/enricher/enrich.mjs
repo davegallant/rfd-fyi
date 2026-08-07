@@ -22,10 +22,11 @@ const limit = Number(process.env.ENRICH_LIMIT || 0);
 
 /** Resolved inside main() so a bad provider name reports cleanly instead of throwing at import. */
 function loadProvider() {
-  const provider = resolveProvider(process.env.ENRICH_PROVIDER || "ollama");
+  const provider = resolveProvider(process.env.ENRICH_PROVIDER || "litellm");
   const config = {
     model: process.env.ENRICH_MODEL || provider.defaultModel,
     baseUrl: process.env.ENRICH_BASE_URL || provider.defaultBaseUrl,
+    apiKey: process.env.ENRICH_API_KEY,
   };
 
   if (!origin) {

@@ -100,3 +100,61 @@ describe("classifyBatch end to end", () => {
     expect(tags["1"]).toEqual(["dining"]);
   });
 });
+
+/**
+ * The two shapes a proxy can answer in. Which one you get depends on whether
+ * the backend has native structured output or LiteLLM emulated it with tool
+ * calling, and the enricher must not care.
+ */
+describe("classifyBatch through an OpenAI-compatible proxy", () => {
+  function fakeProxy(toMessage) {
+    return vi.fn(async (url, init) => {
+      const body = JSON.parse(init.body);
+      const prompt = JSON.stringify(body);
+      const key = Object.keys(ANSWERS).find((k) => prompt.includes(k));
+      return Response.json({ choices: [{ message: toMessage(ANSWERS[key] ?? ["other"]) }] });
+    });
+  }
+
+  function runProxy(fetchImpl, config = {}) {
+    return run(TOPICS, fetchImpl, { provider: resolveProvider("litellm"), config });
+  }
+
+  it("tags a batch when the model answers in content", async () => {
+    const { tags } = await runProxy(fakeProxy((tags) => ({ content: JSON.stringify({ tags }) })));
+    expect(tags).toEqual({ 1: ["computing"], 2: ["dining"], 3: ["telecom"] });
+  });
+
+  it("tags a batch when response_format was emulated with a tool call", async () => {
+    const { tags } = await runProxy(fakeProxy((tags) => ({
+      content: null,
+      tool_calls: [{ function: { arguments: JSON.stringify({ tags }) } }],
+    })));
+    expect(tags).toEqual({ 1: ["computing"], 2: ["dining"], 3: ["telecom"] });
+  });
+
+  it("constrains the answer to the vocabulary and authenticates when given a key", async () => {
+    const seen = [];
+    const fetchImpl = vi.fn(async (url, init) => {
+      seen.push({ url, headers: init.headers, body: JSON.parse(init.body) });
+      return Response.json({ choices: [{ message: { content: '{"tags":["computing"]}' } }] });
+    });
+
+    await run(TOPICS.slice(0, 1), fetchImpl, {
+      provider: resolveProvider("litellm"),
+      config: { apiKey: "sk-secret" },
+    });
+
+    const [{ url, headers, body }] = seen;
+    expect(url).toBe("http://hephaestus:4000/v1/chat/completions");
+    expect(headers.authorization).toBe("Bearer sk-secret");
+    for (const tag of VOCABULARY) expect(body.messages[0].content).toContain(tag);
+    expect(body.messages[0].content).toMatch(/JSON only/i);
+    expect(body.messages[1].content).toContain("Lian Li Vector V100");
+  });
+
+  it("propagates a rate limit rather than writing partial tags", async () => {
+    const fetchImpl = vi.fn(async () => new Response("rate limit exceeded", { status: 429 }));
+    await expect(runProxy(fetchImpl)).rejects.toThrow(/429/);
+  });
+});

@@ -120,10 +120,11 @@ async function classify(topics, options) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const provider = resolveProvider(process.env.ENRICH_PROVIDER || "ollama");
+  const provider = resolveProvider(process.env.ENRICH_PROVIDER || "litellm");
   const config = {
     baseUrl: process.env.ENRICH_BASE_URL || provider.defaultBaseUrl,
     model: process.env.ENRICH_MODEL || provider.defaultModel,
+    apiKey: process.env.ENRICH_API_KEY,
   };
 
   const options = {

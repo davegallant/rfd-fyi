@@ -17,7 +17,7 @@ flowchart TD
   EnrichFn -->|read enrichment.json| KV
   HtmlFn -->|read topics.json + enrichment.json| KV
 
-  Enricher[Enricher<br/>tools/enricher + Ollama] -->|GET topics + enrichment| TopicsFn
+  Enricher[Enricher<br/>tools/enricher + LiteLLM] -->|GET topics + enrichment| TopicsFn
   Enricher -->|POST /admin/enrich| EnrichAdmin[Pages Function: /admin/enrich]
   EnrichAdmin -->|write enrichment.json| KV
 
@@ -81,7 +81,7 @@ The Worker runs every 5 minutes and writes the latest topics to KV. Pages reads 
 
 ## Deal tags
 
-Deals can be tagged with a closed vocabulary (`computing`, `grocery`, `dining`, `telecom`, …) by a local Ollama model. Because Cloudflare Workers cannot reach a LAN, the tagger pushes results in rather than being called: see [`tools/enricher/`](tools/enricher/README.md).
+Deals can be tagged with a closed vocabulary (`computing`, `grocery`, `dining`, `telecom`, …) by an LLM — `minimax-m3` through a LiteLLM proxy by default, or a local Ollama. Because Cloudflare Workers cannot reach a LAN, the tagger pushes results in rather than being called: see [`tools/enricher/`](tools/enricher/README.md).
 
 Tags live in their own KV key and are served from `/enrichment.json`, which the frontend joins onto topics by `topic_id`. `/topics.json` is unchanged, and the app renders normally when no tags exist. Click a tag chip — or type `#gaming` into the filter box — to filter by tag.
 
