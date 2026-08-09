@@ -380,6 +380,24 @@
       "dealer": "eBay.ca"
     },
     {
+      "class": "clothing and shoes",
+      "expect": "apparel",
+      "title": "Adizero EVO SL Woven Running Shoes ($90)",
+      "dealer": "adidas"
+    },
+    {
+      "class": "clothing and shoes",
+      "expect": "apparel",
+      "title": "Nike Alphafly 3 Carbon-Plated Marathon Racing Shoes - Size 9 Men's",
+      "dealer": "Nike"
+    },
+    {
+      "class": "clothing and shoes",
+      "expect": "apparel",
+      "title": "Under Armour Women's Charged Assert 11 Running Shoes",
+      "dealer": "Under Armour"
+    },
+    {
       "class": "groceries",
       "expect": "grocery",
       "title": "ON: Metro Lactancia 4 litre Purfiltre Milk net $4.49, after $1 Moi points",

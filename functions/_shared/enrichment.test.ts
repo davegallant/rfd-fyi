@@ -119,7 +119,7 @@ describe("vocabulary", () => {
    */
   it("pairs the current tag set with a version that has been bumped for it", () => {
     expect({ version: VOCABULARY_VERSION, tags: [...TAG_VOCABULARY] }).toEqual({
-      version: 15,
+      version: 16,
       tags: [
         "computing", "electronics", "gaming", "telecom", "grocery", "dining",
         "entertainment", "home", "tools", "apparel", "sports", "health", "pets",
@@ -188,6 +188,25 @@ describe("vocabulary", () => {
   // Three monitors read as screens like TVs and went to `electronics`.
   it("says computer monitors, not bare monitors", () => {
     expect(TAG_GLOSSES.computing).toMatch(/computer monitors/i);
+  });
+
+  /**
+   * On the live v15 corpus, 18 footwear deals split 11 `apparel` / 5 `sports` /
+   * 2 both, and two adidas running shoes landed on opposite sides in the same
+   * run at temperature 0. `apparel` said only "footwear", which loses an ASICS
+   * Novablast to `sports`' "sporting goods and equipment". Named in `apparel`
+   * alone: `sports` mentions no footwear, so there is nothing to exclude there
+   * and an exclusion would attract what it excludes anyway.
+   *
+   * The `sports` assertion is deliberately narrow. Climbing shoes and a golf
+   * shoe were left out of `eval-cases.json` as arguably genuine sporting
+   * equipment, so this pins only the class that was measured splitting, not
+   * every shoe.
+   */
+  it("claims athletic footwear for apparel, which sports was splitting", () => {
+    expect(TAG_GLOSSES.apparel).toMatch(/running shoes/i);
+    expect(TAG_GLOSSES.apparel).toMatch(/athletic footwear/i);
+    expect(TAG_GLOSSES.sports).not.toMatch(/running shoes|athletic footwear/i);
   });
 
   /**

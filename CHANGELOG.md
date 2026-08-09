@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.8] - 2026-08-08
+
+### Fixed
+
+- Vocabulary version 16 names running shoes and athletic footwear in `apparel`. Found by grading the live v15 corpus: 18 footwear deals split 11 `apparel` / 5 `sports` / 2 both, with two adidas running shoes landing on opposite sides in the same run at temperature 0 — the signature of a boundary the glosses do not partition. `apparel` said only "footwear", generic enough to lose an ASICS Novablast to `sports`' "sporting goods and equipment", while `sports` names no footwear at all. Named in `apparel` only, with no exclusion added to `sports`.
+- Three of the live misses join `eval-cases.json` (139 → 142 cases, `clothing and shoes` 8 → 11), which could previously see only one of them. Climbing shoes and a golf shoe were left out: those are arguably sporting equipment, and scoring arguable cases measures the labeller.
+
+### Notes
+
+- The v16 gloss change has **not** been measured yet — `evaluate.mjs` needs the model, which was unreachable when the change was written. Measure it before deploying: `git stash push -- functions/_shared/enrichment.ts`, `evaluate.mjs --out base.json`, `git stash pop`, `evaluate.mjs --compare base.json`. Stash only the gloss, so both arms score the same 142 cases. Read the `clothing and shoes` class line rather than the total, since three cases sit inside `minimax-m3`'s ±3 noise band on the aggregate, and expect the 142-case baseline to score below the historical 135–138/139 — three of the added cases are known live failures, so the benchmark got harder.
+
 ## [0.13.7] - 2026-08-06
 
 ### Fixed

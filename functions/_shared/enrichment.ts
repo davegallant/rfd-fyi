@@ -86,7 +86,7 @@ export const TAG_GLOSSES: Record<Tag, string> = {
   dining: "restaurants, fast food, cafes, bakeries and dessert shops, food delivery",
   home: "furniture, kitchen and small appliances, coffee and espresso machines, air conditioners and fans, vacuums, cleaning, pest control, lawn and garden equipment, BBQs and grills, coolers",
   tools: "power tools, cordless drills, drivers, saws, sanders, wrenches, pliers, screwdrivers and tool storage",
-  apparel: "clothing, footwear, accessories, bags, jewellery",
+  apparel: "clothing, footwear including running shoes and other athletic footwear, accessories, bags, jewellery",
   sports: "sporting goods and equipment, bikes, kick scooters, skateboards, camping and outdoor gear, fitness equipment, treadmills, weights and home gyms",
   health: "pharmacy, personal care, hair dryers, shavers and trimmers, supplements, eyewear, medical devices",
   pets: "food, supplies and services for cats, dogs, fish and other animals, aquariums",
@@ -296,8 +296,34 @@ export const CLASSIFIER_INSTRUCTIONS = [
  *    `--rotate` costs `minimax-m3` 3 points against qwen's 8. The ordering
  *    decisions recorded above were tuned for a model that no longer produces
  *    the tags, so re-measure before trusting their magnitude.
+ * v16 names running shoes and athletic footwear in `apparel`. Found on the live
+ *    v15 corpus: 18 footwear deals split 11 `apparel` / 5 `sports` / 2 both,
+ *    with two adidas running shoes landing on opposite sides in the same run at
+ *    temperature 0 — the signature of a boundary the glosses do not partition.
+ *    `apparel` said only "footwear", which is generic enough to lose an ASICS
+ *    Novablast to `sports`' "sporting goods and equipment"; `sports` names no
+ *    footwear at all, so the pull was contextual rather than lexical. Named in
+ *    `apparel` only, with no exclusion added to `sports`, per the v8 rule.
+ *    The direction was already settled rather than chosen here: eval-cases has
+ *    labelled shoes `apparel` since the set existed, and the enricher README
+ *    records running shoes as `minimax-m3`'s most common benchmark miss. Three
+ *    of the live misses join the benchmark, which could previously see only
+ *    one of them (ASICS Novablast 5, already a case and failing live).
+ *    NOT YET MEASURED — measure before deploying and record the result here.
+ *    Stash **only the gloss** so both arms score the same 142 cases; stashing
+ *    the whole change would run the baseline on 139 and make the one class line
+ *    worth reading incomparable:
+ *      git stash push -- functions/_shared/enrichment.ts
+ *      node tools/enricher/evaluate.mjs --out base.json    # 142 cases, v15
+ *      git stash pop
+ *      node tools/enricher/evaluate.mjs --compare base.json
+ *    Read the `clothing and shoes` line, not the total: three cases sit inside
+ *    this model's ±3 noise band on the aggregate. Expect the 142-case baseline
+ *    to land below the historical 135-138/139 — three of the added cases are
+ *    known live failures, so that drop is the benchmark getting harder, not a
+ *    regression.
  */
-export const VOCABULARY_VERSION = 15;
+export const VOCABULARY_VERSION = 16;
 
 /** Longest model identifier stored on an entry. */
 const MAX_MODEL_NAME_LENGTH = 64;
