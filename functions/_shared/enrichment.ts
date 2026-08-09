@@ -330,12 +330,18 @@ export const CLASSIFIER_INSTRUCTIONS = [
  *    failing the same way — so the cause was never the missing word. It is the
  *    word "grocery" in the title outranking the rule, the same mechanism v11
  *    found with "PC Express Pass". The clarifier addresses that directly.
- *    Three runs per arm on the same 155 cases in one session:
- *      v16 wording   153, 154, 153   flyer class 11/13, 12/13, 11/13
- *      v17 wording   155, 155, 155   flyer class 13/13 every time
- *    The aggregate delta is +2, inside this model's ±3 band, so the aggregate
- *    is not the evidence — the non-overlapping distributions are, and so is a
- *    variant that reproduces exactly where the baseline does not.
+ *    Eight runs per arm on the same 155 cases in one session:
+ *      v16 wording   mean 153.0 (151-155)   flyer class mean 11.1/13 (9-13)
+ *      v17 wording   mean 154.6 (153-155)   flyer class mean 12.9/13 (12-13)
+ *    **Read the class line, not the total.** The aggregate delta is +1.6,
+ *    inside this model's ±3 band and therefore not evidence of anything. The
+ *    class effect is +1.75 of 13 with a pooled t of about 3.8, and the spread
+ *    collapses from 9-13 to 12-13 — the rule stops being a coin flip.
+ *    Three runs per arm looked like non-overlapping distributions (155/155/155
+ *    against 153/154/153) and that was an artefact of under-sampling: at eight
+ *    runs the baseline reaches 13/13 once and the variant drops to 12/13 once.
+ *    On a model that does not reproduce, three runs is not enough to claim a
+ *    separation, only enough to justify measuring more.
  */
 export const VOCABULARY_VERSION = 17;
 
