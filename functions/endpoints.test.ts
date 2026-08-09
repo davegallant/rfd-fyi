@@ -171,7 +171,7 @@ function envWithStore(entries = {}, extra = {}) {
 }
 
 function enrichRequest(body, secret = "s3cret") {
-  return new Request("https://rfd.fyi/admin/enrich", {
+  return new Request("https://rfd.davegallant.ca/admin/enrich", {
     method: "POST",
     headers: { authorization: `Bearer ${secret}`, "content-type": "application/json" },
     body: JSON.stringify(body),
@@ -302,7 +302,7 @@ describe("admin/enrich function", () => {
 
   it("returns 400 on a malformed request body without writing", async () => {
     const { env, store } = envWithStore({ "topics.json": topicsJson }, { REFRESH_SECRET: "s3cret" });
-    const request = new Request("https://rfd.fyi/admin/enrich", {
+    const request = new Request("https://rfd.davegallant.ca/admin/enrich", {
       method: "POST",
       headers: { authorization: "Bearer s3cret" },
       body: "{not json",
