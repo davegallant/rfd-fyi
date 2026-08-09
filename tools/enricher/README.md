@@ -289,6 +289,42 @@ git stash && node tools/enricher/evaluate.mjs --out base.json && git stash pop
 node tools/enricher/evaluate.mjs --compare base.json
 ```
 
+## Is it reproducible, or did it just roll well?
+
+`evaluate.mjs` scores one run against hand labels. `stability.mjs` asks the
+different question: classify the same deals several times and see how often the
+answer agrees with itself.
+
+```sh
+# labelled cases — agreement measured against `expect`
+node tools/enricher/stability.mjs --cases tools/enricher/eval-cases.json
+
+# unlabelled live deals — agreement measured against the deal's modal answer
+curl -o topics.json https://rfd.davegallant.ca/topics.json
+node tools/enricher/stability.mjs --corpus topics.json --sample 40
+```
+
+The two questions diverge, and the gap is where real bugs hide. A deal can be
+stably wrong, or right most of the time and wrong on the run that reached
+production — and because `selectTopicsNeedingTags` filters on `vv`, a bad roll
+sticks until the next `VOCABULARY_VERSION` bump. v18 was found this way: CAA
+basic membership was stored as `financial` while the model answered
+`automotive` on three runs of four.
+
+Measured against v19 when this was written:
+
+| Set | Fully stable | Note |
+| --- | --- | --- |
+| 44 benchmark cases from the previously-unstable classes | 43/44 over 7 runs | the wobble those classes showed *was* the gloss gaps v16–v19 closed |
+| 40 random live deals | 38/40 | the other two sit at p≈0.71 |
+
+**This is what rejected majority-of-3 self-consistency.** Voting lifts a p=0.71
+deal to 0.80 rather than fixing it — worth about +0.4pp overall for 3× the model
+calls. The `maj3` column is an upper bound: it assumes the three samples are
+independent, and they share a prompt and a temperature. Re-run this before
+revisiting that call on a different model; one that reproduces exactly makes the
+question moot, one that wobbles more changes the arithmetic.
+
 ## Judging tag quality
 
 Each entry records the model that produced it, so a model change is measurable
