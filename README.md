@@ -2,7 +2,7 @@
 
 This repository provides a simple, less-distracting frontend for Hot Deals posted on https://forums.redflagdeals.com.
 
-The frontend is a Vite/Vue 3 app. Cloudflare Pages serves the static output, Pages Functions serve `/topics.json`, `/html`, and `/admin/refresh` from Cloudflare KV, and a scheduled Cloudflare Worker refreshes cached topics to avoid excessive requests to RedFlagDeals itself.
+The frontend is a Vite/Vue 3 app. Cloudflare Pages serves the static output, Pages Functions serve `/topics.json`, `/enrichment.json`, `/html`, `/health.json`, `/admin/refresh`, and `/admin/enrich` from Cloudflare KV, and a scheduled Cloudflare Worker refreshes cached topics to avoid excessive requests to RedFlagDeals itself.
 
 ## Architecture
 
@@ -12,16 +12,18 @@ flowchart TD
   Browser -->|GET /topics.json| TopicsFn[Pages Function: /topics.json]
   Browser -->|GET /enrichment.json| EnrichFn[Pages Function: /enrichment.json]
   Browser -->|GET /html| HtmlFn[Pages Function: /html]
+  Browser -->|GET /health.json| HealthFn[Pages Function: /health.json]
 
   TopicsFn -->|read topics.json| KV[(Cloudflare KV: TOPICS_KV)]
   EnrichFn -->|read enrichment.json| KV
   HtmlFn -->|read topics.json + enrichment.json| KV
+  HealthFn -->|read refresh-status.json| KV
 
   Enricher[Enricher<br/>tools/enricher + LiteLLM] -->|GET topics + enrichment| TopicsFn
   Enricher -->|POST /admin/enrich| EnrichAdmin[Pages Function: /admin/enrich]
   EnrichAdmin -->|write enrichment.json| KV
 
-  Cron[Cloudflare Cron Trigger<br/>every 5 minutes] --> RefreshWorker[Scheduled Worker: rfd-fyi-refresh]
+  Cron[Cloudflare Cron Trigger<br/>every 10 minutes] --> RefreshWorker[Scheduled Worker: rfd-fyi-refresh]
   RefreshWorker -->|fetch topic pages| RFD[RedFlagDeals API]
   RefreshWorker -->|fetch redirect rules| Redirects[Redirect rules JSON]
   RefreshWorker -->|write topics.json| KV
@@ -77,7 +79,7 @@ Deploy both:
 just deploy
 ```
 
-The Worker runs every 5 minutes and writes the latest topics to KV. Pages reads that cached JSON at `/topics.json` and renders a no-JavaScript view at `/html`.
+The Worker runs every 10 minutes and writes the latest topics to KV. Pages reads that cached JSON at `/topics.json` and renders a no-JavaScript view at `/html`. `/health.json` reports the status of the last refresh.
 
 ## Deal tags
 
@@ -153,6 +155,7 @@ After that, these local endpoints should return populated data:
 ```text
 http://localhost:8788/topics.json
 http://localhost:8788/html
+http://localhost:8788/health.json
 ```
 
 ### Refresh Worker local dev
@@ -171,7 +174,7 @@ For frontend-only Vite development:
 npm run serve
 ```
 
-The Vite dev server proxies `/topics.json` and `/html` to the configured production Pages origin by default, so it should show live deals without seeding local KV. Override with `VITE_API_ORIGIN` if needed:
+The Vite dev server proxies `/topics.json`, `/enrichment.json`, and `/html` to the configured production Pages origin by default, so it should show live deals without seeding local KV. Override with `VITE_API_ORIGIN` if needed:
 
 ```sh
 VITE_API_ORIGIN=http://localhost:8788 npm run serve

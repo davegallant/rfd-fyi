@@ -4,8 +4,8 @@ Compact, actionable rules for automated agents and contributors.
 
 - Production / build notes:
   - Cloudflare Pages serves the Vite/Vue `dist/` output.
-  - Pages Functions in `functions/` serve `/topics.json`, `/enrichment.json`, `/html`, `/admin/refresh`, and `/admin/enrich` from Cloudflare KV.
-  - The scheduled Worker in `worker/` refreshes RedFlagDeals topics into KV every 5 minutes.
+  - Pages Functions in `functions/` serve `/topics.json`, `/enrichment.json`, `/html`, `/health.json`, `/admin/refresh`, and `/admin/enrich` from Cloudflare KV.
+  - The scheduled Worker in `worker/` refreshes RedFlagDeals topics into KV every 10 minutes.
   - `wrangler.toml` configures Pages; `worker/wrangler.toml` configures the scheduled Worker.
 
 - Important env vars, bindings, and files:
@@ -45,7 +45,7 @@ Compact, actionable rules for automated agents and contributors.
 
 - Tests & linting:
   - Frontend tests: `npm test` (runs Vitest per `vite.config.mjs`). Coverage: `npm run test:coverage`.
-  - Lint: `npm run lint` (eslint configured in package.json).
+  - Lint: `npm run lint` (runs `oxlint`; see `package.json`).
   - Build: `npm run build`.
   - Worker dry run: `npx wrangler deploy --dry-run --config worker/wrangler.toml`.
   - Pages Functions build: `npx wrangler pages functions build functions --outdir /tmp/rfd-fyi-pages-functions`.
