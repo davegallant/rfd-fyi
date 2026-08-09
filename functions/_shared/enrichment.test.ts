@@ -119,7 +119,7 @@ describe("vocabulary", () => {
    */
   it("pairs the current tag set with a version that has been bumped for it", () => {
     expect({ version: VOCABULARY_VERSION, tags: [...TAG_VOCABULARY] }).toEqual({
-      version: 18,
+      version: 19,
       tags: [
         "computing", "electronics", "gaming", "telecom", "grocery", "dining",
         "entertainment", "home", "tools", "apparel", "sports", "health", "pets",
@@ -263,10 +263,23 @@ describe("vocabulary", () => {
    * transfers" took 9, costing `travel` six deals. v8 states the boundary from
    * the winning side instead, which is the only construct measured to work.
    */
-  it("defends financial and travel from rewards by naming, not excluding", () => {
+  it("defends financial from rewards by naming, not excluding", () => {
     expect(TAG_GLOSSES.financial).toMatch(/welcome bonuses/i);
-    expect(TAG_GLOSSES.travel).toMatch(/airline and hotel points transfers/i);
     expect(TAG_GLOSSES.rewards).not.toMatch(/credit card|airline|hotel/i);
+  });
+
+  /**
+   * v19. The instruction said points-valued deals are `rewards` while the
+   * `travel` gloss claimed "airline and hotel points transfers" — two published
+   * rules giving opposite answers, and live tags split accordingly. The clause
+   * is relocated rather than deleted: v6 excluded power tools from `computing`
+   * without naming them anywhere and they stayed split. `rewards` therefore
+   * names transfer bonuses positively, worded to avoid "airline", "hotel" and
+   * "credit card" so the v7 leak into `financial` and `travel` cannot recur.
+   */
+  it("puts points transfers in rewards, matching the points-value rule", () => {
+    expect(TAG_GLOSSES.rewards).toMatch(/transfer bonuses/i);
+    expect(TAG_GLOSSES.travel).not.toMatch(/points transfers/i);
   });
 
   // Observed live: one Galaxy Fold 8 pre-order was tagged `computing` while a

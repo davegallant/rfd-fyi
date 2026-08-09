@@ -936,6 +936,24 @@
       "expect": "automotive",
       "title": "CAA basic membership for 2, save $46...",
       "dealer": "CAA"
+    },
+    {
+      "class": "points transfers",
+      "expect": "rewards",
+      "title": "Amex Membership Rewards to Marriott Bonvoy: 30% Transfer Bonus Aug 4 to Sept 3, 2026",
+      "dealer": "American Express"
+    },
+    {
+      "class": "points transfers",
+      "expect": "rewards",
+      "title": "Avion to Asia miles 15% bonus",
+      "dealer": "RBC"
+    },
+    {
+      "class": "points transfers",
+      "expect": "rewards",
+      "title": "10% transfer bonus to CX Asia miles, no QC",
+      "dealer": "Cathay Pacific"
     }
   ]
 }

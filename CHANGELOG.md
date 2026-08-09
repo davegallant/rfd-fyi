@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.11] - 2026-08-09
+
+### Fixed
+
+- Vocabulary version 19 moves points transfers from `travel` to `rewards`, resolving a contradiction between two published rules rather than a misclassification. The instructions said points-valued deals are `rewards`; the `travel` gloss claimed "airline and hotel points transfers". Both shipped, and live tags split exactly as that predicts — Amex→Bonvoy and Avion→Asia miles were `rewards`, Cathay Asia miles was `travel`.
+- The clause is relocated, not deleted. v6 excluded power tools from `computing` without naming them anywhere and they stayed split; v12 fixed the mirror case by naming jump starters in `automotive` while dropping them from `tools`. So `rewards` now names transfer bonuses positively, worded to avoid "airline", "hotel" and "credit card" so it cannot re-trigger the v7 leak into `financial` and `travel`.
+
+### Notes
+
+- Evidence is thin. The instruction was already winning 8 times in 9 before the change, so this was another coin flip rather than a systematic error, and transfers went 8/9 → 9/9 over three runs per arm — n=3, not significant. The measurable part was the risk: v8 put the clause in `travel` deliberately to stop `rewards` swallowing it, so the question was whether `travel` would lose deals. It did not — `flights and hotels` held 5/5 in every variant run and totals were identical at mean 158.67 per arm.
+
 ## [0.13.10] - 2026-08-09
 
 ### Fixed

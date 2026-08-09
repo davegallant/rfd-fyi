@@ -90,9 +90,9 @@ export const TAG_GLOSSES: Record<Tag, string> = {
   sports: "sporting goods and equipment, bikes, kick scooters, skateboards, camping and outdoor gear, fitness equipment, treadmills, weights and home gyms",
   health: "pharmacy, personal care, hair dryers, shavers and trimmers, supplements, eyewear, medical devices",
   pets: "food, supplies and services for cats, dogs, fish and other animals, aquariums",
-  travel: "flights, hotels, car rental, attractions, parking, airline and hotel points transfers",
+  travel: "flights, hotels, car rental, attractions, parking",
   financial: "bank accounts, credit cards and their welcome bonuses, investing, insurance",
-  rewards: "loyalty and points programs such as Scene+, PC Optimum, Air Miles and Aeroplan, gift cards, and points or cents-per-litre discounts earned at gas stations",
+  rewards: "loyalty and points programs such as Scene+, PC Optimum, Air Miles and Aeroplan, transfer bonuses between points and miles programs, gift cards, and points or cents-per-litre discounts earned at gas stations",
   automotive: "cars, motorcycles, parts, tires, fuel, oil, maintenance, roadside assistance and auto club memberships, car care and car cleaning products, jump starters, battery chargers and tire inflators, jacks and garage equipment, car racks and carriers, electric scooters",
   kids: "toys, LEGO and building sets, baby gear, diapers, strollers and car seats, children's products",
   entertainment: "streaming, books and ebooks, movies and cinema, live sport and theatre tickets, concerts and events, news and magazine subscriptions",
@@ -363,7 +363,7 @@ export const CLASSIFIER_INSTRUCTIONS = [
  *    i.e. no regression. Re-check the CAA case on the next live corpus rather
  *    than trusting 5/5.
  */
-export const VOCABULARY_VERSION = 18;
+export const VOCABULARY_VERSION = 19;
 
 /** Longest model identifier stored on an entry. */
 const MAX_MODEL_NAME_LENGTH = 64;
