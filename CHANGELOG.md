@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.9] - 2026-08-09
+
+### Fixed
+
+- Vocabulary version 17 settles the flyer rule. The benchmark had no `other` class at all, so the one rule the prompt states outright — a whole store's flyer, weekly sale or photo report goes to `other` — was never tested. Thirteen real flyer, round-up and photo-report posts joined `eval-cases.json`, taking it to 155 cases.
+- The failure is recurring rather than one-off: the "Week of ... grocery round up (QUEBEC)" post publishes weekly, and went `other`, `other`, `grocery` across three consecutive weeks of live data.
+- The obvious fix was measured and rejected first. Naming "round-up" in the rule was worth +1, inside noise, and both arms went on failing identically — so the missing word was never the cause. It is the word "grocery" in the title outranking the rule, the same mechanism v11 found with "PC Express Pass". The rule now says `other` applies "even when its title names one category or one product".
+- Three runs per arm on the same 155 cases in one session: v16 wording scored 153/154/153 with the flyer class at 11-12/13; v17 scored 155/155/155 with the class at 13/13 every time. The +2 aggregate sits inside the ±3 noise band, so the evidence is the non-overlapping distributions and a variant that reproduces exactly where the baseline does not.
+
 ## [0.13.8] - 2026-08-08
 
 ### Fixed
@@ -13,7 +22,7 @@ All notable changes to this project will be documented in this file.
 
 ### Notes
 
-- The benchmark is now saturated at 142/142, which blocks the next vocabulary change rather than endorsing this one: every candidate v17 will score 142 whether it helps or harms. It needs to be grown from live misclassifications before it can measure anything again.
+- v16 saturated the benchmark at 142/142, which is what v17 had to fix before it could measure anything.
 
 ## [0.13.7] - 2026-08-06
 

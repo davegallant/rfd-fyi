@@ -132,8 +132,9 @@ export const CLASSIFIER_INSTRUCTIONS = [
   "Running on electricity or having a battery does not decide the category:",
   "an appliance, a power tool, a car accessory or a games console is",
   "categorised by what it is for.",
-  "A post covering a whole store's flyer, weekly sale or photo report spans",
-  "every category at once, so use \"other\" for it.",
+  "A post covering a whole store's flyer, weekly sale, round-up or photo",
+  "report spans every category at once, so use \"other\" for it even when its",
+  "title names one category or one product.",
   "Use \"other\" only when nothing else fits.",
 ].join(" ");
 
@@ -315,13 +316,28 @@ export const CLASSIFIER_INSTRUCTIONS = [
  *    shoes to `sports` — Clifton 10 twice, Adizero EVO SL, UA Charged Assert
  *    11 — and v16 recovers all four. +5 is outside this model's ±3 band.
  *
- *    **The benchmark is now saturated at 142/142, and that is a problem, not
- *    a victory.** No further gloss change can be measured against it: every
- *    candidate scores 142 whether it helps or harms. Grow it from live
- *    misclassifications before attempting v17 — see the disagreement scan and
- *    the open findings recorded in `tools/enricher/README.md`.
+ *    It also saturated the benchmark at 142/142, which is what v17 had to fix
+ *    before it could measure anything.
+ * v17 settles the flyer rule, which the benchmark could not see: it had no
+ *    `other` class at all, so the one rule the prompt states outright was never
+ *    tested. Thirteen real flyer, weekly-sale, round-up and photo-report posts
+ *    were added from the live corpus, taking it to 155 cases.
+ *    The failure it fixes is a recurring one rather than a one-off: the
+ *    "Week of ... grocery round up (QUEBEC)" post publishes weekly and went
+ *    `other`, `other`, `grocery` on three consecutive weeks of live data.
+ *    Diagnosed by measuring the obvious fix first and rejecting it. Naming
+ *    "round-up" in the rule was worth +1, inside noise, and both arms went on
+ *    failing the same way — so the cause was never the missing word. It is the
+ *    word "grocery" in the title outranking the rule, the same mechanism v11
+ *    found with "PC Express Pass". The clarifier addresses that directly.
+ *    Three runs per arm on the same 155 cases in one session:
+ *      v16 wording   153, 154, 153   flyer class 11/13, 12/13, 11/13
+ *      v17 wording   155, 155, 155   flyer class 13/13 every time
+ *    The aggregate delta is +2, inside this model's ±3 band, so the aggregate
+ *    is not the evidence — the non-overlapping distributions are, and so is a
+ *    variant that reproduces exactly where the baseline does not.
  */
-export const VOCABULARY_VERSION = 16;
+export const VOCABULARY_VERSION = 17;
 
 /** Longest model identifier stored on an entry. */
 const MAX_MODEL_NAME_LENGTH = 64;

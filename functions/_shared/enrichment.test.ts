@@ -119,7 +119,7 @@ describe("vocabulary", () => {
    */
   it("pairs the current tag set with a version that has been bumped for it", () => {
     expect({ version: VOCABULARY_VERSION, tags: [...TAG_VOCABULARY] }).toEqual({
-      version: 16,
+      version: 17,
       tags: [
         "computing", "electronics", "gaming", "telecom", "grocery", "dining",
         "entertainment", "home", "tools", "apparel", "sports", "health", "pets",
@@ -303,6 +303,11 @@ describe("vocabulary", () => {
   // grocery by latching onto a single item named in the title.
   it("tells the model where store-wide flyers belong", () => {
     expect(CLASSIFIER_INSTRUCTIONS).toMatch(/flyer/i);
+    // v17: the rule failed on "... grocery round up (QUEBEC)", a weekly post,
+    // because the category word in the title outranked it. Naming "round-up"
+    // alone was measured at +1 (noise); the clarifier is what fixed the class.
+    expect(CLASSIFIER_INSTRUCTIONS).toMatch(/round-up/i);
+    expect(CLASSIFIER_INSTRUCTIONS).toMatch(/names one category or one product/i);
   });
 
   /**
