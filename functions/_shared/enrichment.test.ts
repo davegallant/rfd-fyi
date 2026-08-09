@@ -119,7 +119,7 @@ describe("vocabulary", () => {
    */
   it("pairs the current tag set with a version that has been bumped for it", () => {
     expect({ version: VOCABULARY_VERSION, tags: [...TAG_VOCABULARY] }).toEqual({
-      version: 17,
+      version: 18,
       tags: [
         "computing", "electronics", "gaming", "telecom", "grocery", "dining",
         "entertainment", "home", "tools", "apparel", "sports", "health", "pets",
@@ -188,6 +188,19 @@ describe("vocabulary", () => {
   // Three monitors read as screens like TVs and went to `electronics`.
   it("says computer monitors, not bare monitors", () => {
     expect(TAG_GLOSSES.computing).toMatch(/computer monitors/i);
+  });
+
+  /**
+   * "CAA basic membership for 2" was stored as `financial`, whose gloss names
+   * insurance — CAA is a large Canadian insurance brand, so the dealer name
+   * outranked the product, the same way TopCashback outranked it for VPNs in
+   * v14. The model was unstable rather than wrong: 3 of 4 runs said
+   * `automotive`. A bad roll then freezes, since re-tagging filters on `vv`.
+   */
+  it("names roadside assistance in automotive, against financial's insurance", () => {
+    expect(TAG_GLOSSES.automotive).toMatch(/roadside assistance/i);
+    expect(TAG_GLOSSES.automotive).toMatch(/auto club memberships/i);
+    expect(TAG_GLOSSES.financial).not.toMatch(/roadside|auto club/i);
   });
 
   /**

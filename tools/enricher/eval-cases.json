@@ -930,6 +930,12 @@
       "expect": "other",
       "title": "Dollarama Deals (Jul 27, 2026)",
       "dealer": "Dollarama"
+    },
+    {
+      "class": "auto club membership",
+      "expect": "automotive",
+      "title": "CAA basic membership for 2, save $46...",
+      "dealer": "CAA"
     }
   ]
 }

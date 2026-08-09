@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.10] - 2026-08-09
+
+### Fixed
+
+- Vocabulary version 18 names roadside assistance and auto club memberships in `automotive`. "CAA basic membership for 2" was stored as `financial`, whose gloss names insurance — CAA is a large Canadian insurance brand, so the dealer name outranked the product. Same mechanism as v14, where a dealer literally called TopCashback outranked the instruction to categorise by what the buyer ends up with.
+- The model was not confidently wrong here, it was unstable: under v17 the case returned `automotive` on three runs of four and `financial` on the fourth. Production sampled the losing side. Because `selectTopicsNeedingTags` filters on `vv`, a bad roll is frozen until the next version bump — so this release also unfreezes every other deal currently stuck on the wrong side of a coin flip.
+
+### Notes
+
+- This version is justified by mechanism rather than by measurement, and the numbers cannot carry it: there is exactly one such deal in the corpus, so the benefit is n=1 (5/5 with the clause against 3/4 without, nowhere near significant). What was measurable is the risk — `automotive` is the longest gloss in the vocabulary, and v11 measured lengthening the then-longest gloss at −3. That did not repeat: totals held at mean 155.6 over 5 runs against 155.5 over 4. Re-check the CAA case on the next live corpus rather than trusting 5/5.
+
 ## [0.13.9] - 2026-08-09
 
 ### Fixed
