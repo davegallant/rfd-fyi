@@ -309,19 +309,17 @@ export const CLASSIFIER_INSTRUCTIONS = [
  *    records running shoes as `minimax-m3`'s most common benchmark miss. Three
  *    of the live misses join the benchmark, which could previously see only
  *    one of them (ASICS Novablast 5, already a case and failing live).
- *    NOT YET MEASURED — measure before deploying and record the result here.
- *    Stash **only the gloss** so both arms score the same 142 cases; stashing
- *    the whole change would run the baseline on 139 and make the one class line
- *    worth reading incomparable:
- *      git stash push -- functions/_shared/enrichment.ts
- *      node tools/enricher/evaluate.mjs --out base.json    # 142 cases, v15
- *      git stash pop
- *      node tools/enricher/evaluate.mjs --compare base.json
- *    Read the `clothing and shoes` line, not the total: three cases sit inside
- *    this model's ±3 noise band on the aggregate. Expect the 142-case baseline
- *    to land below the historical 135-138/139 — three of the added cases are
- *    known live failures, so that drop is the benchmark getting harder, not a
- *    regression.
+ *    Measured, both arms on the same 142 cases in one session: 137 -> 142,
+ *    +4 of it on `clothing and shoes` (7/11 -> 11/11) and +1 on `phones`,
+ *    which is unrelated and within noise. The v15 arm missed four running
+ *    shoes to `sports` — Clifton 10 twice, Adizero EVO SL, UA Charged Assert
+ *    11 — and v16 recovers all four. +5 is outside this model's ±3 band.
+ *
+ *    **The benchmark is now saturated at 142/142, and that is a problem, not
+ *    a victory.** No further gloss change can be measured against it: every
+ *    candidate scores 142 whether it helps or harms. Grow it from live
+ *    misclassifications before attempting v17 — see the disagreement scan and
+ *    the open findings recorded in `tools/enricher/README.md`.
  */
 export const VOCABULARY_VERSION = 16;
 
