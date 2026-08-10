@@ -111,7 +111,9 @@ than classifying. 7b assigned `computing` as a primary tag zero times in 50
 deals, used single tags correctly, and got `health`, `gaming` and `dining` right.
 
 Whichever model you try, re-measure rather than assuming — `evaluate.mjs` scores
-a model change against 139 labelled deals without touching production. See
+a model change against every case in `eval-cases.json` without touching
+production — 166 at v20, against the 139 the model table above was measured on.
+See
 **Iterating without deploying** below, and **Judging tag quality** for reading
 what a change did to live tags.
 
@@ -193,7 +195,7 @@ anywhere near Cloudflare. It reads the vocabulary from
 the model.
 
 ```sh
-# Score the current glosses against 139 hand-labelled deals.
+# Score the current glosses against the hand-labelled deals in eval-cases.json.
 node tools/enricher/evaluate.mjs
 
 # Save a baseline, change a gloss, then measure what moved.

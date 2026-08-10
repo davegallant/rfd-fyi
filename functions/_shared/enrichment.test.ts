@@ -119,7 +119,7 @@ describe("vocabulary", () => {
    */
   it("pairs the current tag set with a version that has been bumped for it", () => {
     expect({ version: VOCABULARY_VERSION, tags: [...TAG_VOCABULARY] }).toEqual({
-      version: 19,
+      version: 20,
       tags: [
         "computing", "electronics", "gaming", "telecom", "grocery", "dining",
         "entertainment", "home", "tools", "apparel", "sports", "health", "pets",
@@ -315,6 +315,23 @@ describe("vocabulary", () => {
     expect(TAG_GLOSSES.sports).toMatch(/fitness equipment/i);
     expect(TAG_GLOSSES.sports).toMatch(/treadmills/i);
     expect(TAG_GLOSSES.sports).toMatch(/weights|home gyms/i);
+  });
+
+  /**
+   * v19 named cleaning but not the paper aisle, and household paper split three
+   * ways on the live corpus: Charmin toilet paper landed in both `grocery` and
+   * `home`, Cottonelle and SpongeTowels in `grocery`, Royale in `other`. The
+   * partition it broke was already there — laundry detergent, surface cleaner
+   * and dish degreaser were unanimously `home` off the word "cleaning", which
+   * paper goods are not. Naming them took the class 3/6 to 6/6 with nothing
+   * else on the benchmark moving. `grocery` stays food and drink and says
+   * nothing about paper, since an exclusion there would attract them back.
+   */
+  it("names household paper goods in home, where the rest of the aisle already sits", () => {
+    expect(TAG_GLOSSES.home).toMatch(/toilet paper/i);
+    expect(TAG_GLOSSES.home).toMatch(/paper towels/i);
+    expect(TAG_GLOSSES.home).toMatch(/laundry detergent/i);
+    expect(TAG_GLOSSES.grocery).not.toMatch(/paper|tissue/i);
   });
 
   // Measured live: board games and trading cards split 6 `kids`, 5

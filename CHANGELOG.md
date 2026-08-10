@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.12] - 2026-08-10
+
+### Fixed
+
+- Vocabulary version 20 names household paper goods in `home`. On the live corpus the aisle split three ways at `temperature: 0`: Charmin toilet paper was stored as both `grocery` and `home`, Cottonelle and SpongeTowels as `grocery`, Royale as `other`. The same deal classified two ways is the signal the glosses do not partition a boundary, and here they plainly did not — nothing in the vocabulary mentioned paper.
+- The partition it restores was already in place. Tide detergent, Nature Clean surface spray and Dawn degreaser were unanimously `home`, all off the single word "cleaning", which paper goods are not. So the fix names them where the rest of the aisle already sits rather than moving anything: `home` now says "cleaning supplies and laundry detergent, toilet paper, paper towels and tissues" where it said "cleaning".
+- `grocery` is left alone deliberately. It stays food and drink and says nothing about paper — six of seven negated phrases measured in v7 pulled in the very deals they excluded, so an exclusion there would attract paper goods back.
+
+### Notes
+
+- Measured with six new `household consumables` benchmark cases, which the 159-case set had no equivalent of. The class went 3/6 → 6/6 and the total 162/165 → 165/165, with every other class identical across two variant runs. The +3 headline is the noise floor for `minimax-m3`, so read the class rather than the total: the three misses were the three toilet-paper cases and only those, and the paper towel, detergent and cleaner cases passed before and after.
+- A seventh case guards the word "tissues" against the false friend it creates. The corpus holds a "Deep Tissue Fascia Massager", and the model is documented to match gloss text lexically, so the massager is now a `pharmacy` case — `health` held 7/7 over two runs, but the wording is a lexical hazard and the benchmark had nothing that would have caught it.
+- The version bump re-tags all 1000 stored entries, not the four paper deals. As in v18, that also re-rolls every deal frozen on the losing side of a coin flip, so expect the live diff to be wider than this entry describes.
+
 ## [0.13.11] - 2026-08-09
 
 ### Fixed

@@ -704,6 +704,12 @@
       "dealer": "Jamieson"
     },
     {
+      "class": "pharmacy",
+      "expect": "health",
+      "title": "OmyGuard 16-Head Deep Tissue Fascia Massager - $84.26",
+      "dealer": "OmyGuard"
+    },
+    {
       "class": "phone plans",
       "expect": "telecom",
       "title": "150gb @2gb speed in Italy also 9gb euro/uk roaming",
@@ -954,6 +960,42 @@
       "expect": "rewards",
       "title": "10% transfer bonus to CX Asia miles, no QC",
       "dealer": "Cathay Pacific"
+    },
+    {
+      "class": "household consumables",
+      "expect": "home",
+      "title": "Charmin Toilet Paper Ultra Soft, 4 Mega Rolls = 16 Regular Rolls, 2-ply Bath Tissue - $1.98 YMMV?",
+      "dealer": "Home Depot"
+    },
+    {
+      "class": "household consumables",
+      "expect": "home",
+      "title": "Charmin Toilet Paper Ultra Soft, 18 Mega Rolls = 72 Regular Rolls, 2-ply Bath Tissue YMMV $7.5",
+      "dealer": "Home Depot"
+    },
+    {
+      "class": "household consumables",
+      "expect": "home",
+      "title": "Cottonelle Ultra Soft Mega Toilet Paper - 24 x 244's - $19.99",
+      "dealer": "London Drugs"
+    },
+    {
+      "class": "household consumables",
+      "expect": "home",
+      "title": "SpongeTowels UltraPRO Absorbent Paper Towel $15.28 (8 Rolls - 147 Sheets Per Roll) (With S&S)",
+      "dealer": "Walmart"
+    },
+    {
+      "class": "household consumables",
+      "expect": "home",
+      "title": "$7.97 Tide Simply All-In-One Liquid Laundry Detergent, Refreshing Breeze Scent,  2.72 L, 70 Loads",
+      "dealer": "Walmart"
+    },
+    {
+      "class": "household consumables",
+      "expect": "home",
+      "title": "Nature Clean Multi-Surface Cleaner Spray  Lavender Tea Tree or Lemon Verbena 740ml $2.00 (reg. $4.87)",
+      "dealer": "Walmart"
     }
   ]
 }

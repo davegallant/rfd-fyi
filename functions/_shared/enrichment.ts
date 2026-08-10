@@ -84,7 +84,7 @@ export const TAG_GLOSSES: Record<Tag, string> = {
   telecom: "mobile, internet and TV plans, SIMs, roaming",
   grocery: "food and drink bought from a supermarket, including alcohol, and supermarket delivery or pickup passes such as PC Express and Voilà",
   dining: "restaurants, fast food, cafes, bakeries and dessert shops, food delivery",
-  home: "furniture, kitchen and small appliances, coffee and espresso machines, air conditioners and fans, vacuums, cleaning, pest control, lawn and garden equipment, BBQs and grills, coolers",
+  home: "furniture, kitchen and small appliances, coffee and espresso machines, air conditioners and fans, vacuums, cleaning supplies and laundry detergent, toilet paper, paper towels and tissues, pest control, lawn and garden equipment, BBQs and grills, coolers",
   tools: "power tools, cordless drills, drivers, saws, sanders, wrenches, pliers, screwdrivers and tool storage",
   apparel: "clothing, footwear including running shoes and other athletic footwear, accessories, bags, jewellery",
   sports: "sporting goods and equipment, bikes, kick scooters, skateboards, camping and outdoor gear, fitness equipment, treadmills, weights and home gyms",
@@ -363,7 +363,7 @@ export const CLASSIFIER_INSTRUCTIONS = [
  *    i.e. no regression. Re-check the CAA case on the next live corpus rather
  *    than trusting 5/5.
  */
-export const VOCABULARY_VERSION = 19;
+export const VOCABULARY_VERSION = 20;
 
 /** Longest model identifier stored on an entry. */
 const MAX_MODEL_NAME_LENGTH = 64;
