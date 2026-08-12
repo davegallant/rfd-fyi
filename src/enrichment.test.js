@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { TAG_FILTER_PREFIX, attachTags, tagFilterTerm, visibleTags } from "./enrichment.js";
+import { TAG_FILTER_PREFIX, attachTags, tagFilterTerm, tagSuggestions, visibleTags } from "./enrichment.js";
 
 function topic(overrides = {}) {
   return { topic_id: 1, title: "Sample Deal", Offer: { dealer_name: "Amazon" }, ...overrides };
@@ -58,6 +58,44 @@ describe("attachTags", () => {
 describe("tagFilterTerm", () => {
   it("prefixes a tag so it cannot collide with a plain title search", () => {
     expect(tagFilterTerm("computing")).toBe(`${TAG_FILTER_PREFIX}computing`);
+  });
+});
+
+describe("tagSuggestions", () => {
+  const tags = ["computing", "electronics", "gaming", "grocery", "home"];
+
+  it("suggests nothing without the tag prefix", () => {
+    expect(tagSuggestions("gam", tags)).toEqual([]);
+    expect(tagSuggestions("", tags)).toEqual([]);
+    expect(tagSuggestions(null, tags)).toEqual([]);
+  });
+
+  it("lists every tag for a bare prefix, prefixed and alphabetical", () => {
+    expect(tagSuggestions("#", tags)).toEqual(["#computing", "#electronics", "#gaming", "#grocery", "#home"]);
+  });
+
+  it("ranks prefix matches ahead of substring matches", () => {
+    // "computing" merely contains a "g"; the other two start with one.
+    expect(tagSuggestions("#g", tags)).toEqual(["#gaming", "#grocery", "#computing"]);
+  });
+
+  it("matches case-insensitively", () => {
+    expect(tagSuggestions("#GAM", tags)).toEqual(["#gaming"]);
+  });
+
+  it("returns nothing for an exact match so Enter applies the filter", () => {
+    expect(tagSuggestions("#gaming", tags)).toEqual([]);
+    expect(tagSuggestions("#Gaming", tags)).toEqual([]);
+  });
+
+  it("returns nothing when no tag matches", () => {
+    expect(tagSuggestions("#xyz", tags)).toEqual([]);
+    expect(tagSuggestions("#gam", null)).toEqual([]);
+    expect(tagSuggestions("#gam", undefined)).toEqual([]);
+  });
+
+  it("dedupes tags and skips non-strings", () => {
+    expect(tagSuggestions("#", ["gaming", "gaming", null, ""])).toEqual(["#gaming"]);
   });
 });
 

@@ -3,7 +3,7 @@ import axios from "axios";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 
-import { attachTags, tagFilterTerm, visibleTags } from "./enrichment.js";
+import { attachTags, tagFilterTerm, tagSuggestions as suggestTagTerms, visibleTags } from "./enrichment.js";
 import { getFilteredSortedTopics, parseFilterTerm } from "./filterTopics.js";
 import { loadUiPreferences, persistUiPreferences, SORT_METHOD_KEYS } from "./preferences.js";
 import { seen, markSeen, markUnseen, isSeen, markAllSeen, clearSeen } from "./composables/useSeenDeals.js";
@@ -72,6 +72,11 @@ export default {
   data() {
     return {
       filterInput: "",
+      // Canonical tag list published by /enrichment.json, used for # completion.
+      tagVocabulary: [],
+      // -1 = no suggestion highlighted, so Enter applies the filter as typed.
+      tagSuggestionIndex: -1,
+      tagCompletionDismissed: false,
       activeFilters: this.parseFiltersFromUrl(),
       sortMethod: "score",
       sortBySetByUser: false,
@@ -119,6 +124,11 @@ export default {
   },
 
   watch: {
+    filterInput() {
+      this.tagSuggestionIndex = -1;
+      this.tagCompletionDismissed = false;
+    },
+
     activeFilters: {
       deep: true,
       handler() {
@@ -155,6 +165,11 @@ export default {
 
     isRegexError() {
       return parseFilterTerm(this.filterInput).isRegexError;
+    },
+
+    tagSuggestions() {
+      if (this.tagCompletionDismissed) return [];
+      return suggestTagTerms(this.filterInput, this.tagVocabulary);
     },
 
     themeIcon() {
@@ -386,6 +401,64 @@ export default {
       this.$router.replace({ path: "/", query });
     },
 
+    // Enter accepts the highlighted suggestion when there is one; otherwise it
+    // applies the filter exactly as typed, preserving the pre-completion behavior.
+    onFilterEnter(event) {
+      if (event.isComposing) return;
+      const highlighted = this.tagSuggestions[this.tagSuggestionIndex];
+      if (highlighted) {
+        this.acceptTagSuggestion(highlighted);
+      } else {
+        this.applyFilter();
+      }
+    },
+
+    // Tab completes the top suggestion even when nothing is highlighted.
+    onFilterTab(event) {
+      const term = this.tagSuggestions[this.tagSuggestionIndex] ?? this.tagSuggestions[0];
+      if (!term) return;
+      event.preventDefault();
+      this.acceptTagSuggestion(term);
+    },
+
+    onFilterEscape(event) {
+      if (this.tagSuggestions.length) {
+        // Consumed by the dropdown; don't let the window handler see it too.
+        event.stopPropagation();
+        this.tagCompletionDismissed = true;
+      } else {
+        this.$refs.filterInput.blur();
+      }
+    },
+
+    moveTagSuggestion(delta, event) {
+      const count = this.tagSuggestions.length;
+      if (!count) return;
+      event.preventDefault();
+      this.tagSuggestionIndex = (this.tagSuggestionIndex + delta + count) % count;
+      this.$nextTick(() => {
+        this.$el.querySelector(".tag-suggestion--highlighted")?.scrollIntoView({ block: "nearest" });
+      });
+    },
+
+    acceptTagSuggestion(term) {
+      this.filterInput = term;
+      this.$nextTick(() => {
+        const input = this.$refs.filterInput;
+        if (!input) return;
+        input.focus();
+        input.setSelectionRange(term.length, term.length);
+      });
+    },
+
+    onFilterBlur() {
+      this.tagCompletionDismissed = true;
+    },
+
+    onFilterFocus() {
+      this.tagCompletionDismissed = false;
+    },
+
     applyFilter() {
       const trimmed = this.filterInput.trim();
       if (trimmed && !this.activeFilters.includes(trimmed)) {
@@ -449,6 +522,7 @@ export default {
       ])
         .then(([response, enrichment]) => {
           this.topics = attachTags(response.data, enrichment.data);
+          this.tagVocabulary = Array.isArray(enrichment.data?.vocabulary) ? enrichment.data.vocabulary : [];
           this.resetVisibleTopics();
         })
         .catch((err) => {
@@ -579,10 +653,33 @@ export default {
                 class="search-input"
                 :class="{ 'search-input--regex-error': isRegexError }"
                 :title="isRegexError ? 'Invalid regex' : ''"
-              @keyup.enter="applyFilter"
-              @keyup.esc="$refs.filterInput.blur()"
+              @keydown.enter="onFilterEnter"
+              @keydown.tab="onFilterTab"
+              @keydown.esc="onFilterEscape"
+              @keydown.down="moveTagSuggestion(1, $event)"
+              @keydown.up="moveTagSuggestion(-1, $event)"
+              @blur="onFilterBlur"
+              @focus="onFilterFocus"
             />
             </div>
+            <!-- mousedown.prevent keeps the input focused so the click lands -->
+            <ul
+              v-if="tagSuggestions.length"
+              class="tag-suggestions"
+              role="listbox"
+              @mousedown.prevent
+            >
+              <li v-for="(suggestion, i) in tagSuggestions" :key="suggestion" role="option" :aria-selected="i === tagSuggestionIndex">
+                <button
+                  type="button"
+                  tabindex="-1"
+                  class="tag-suggestion"
+                  :class="{ 'tag-suggestion--highlighted': i === tagSuggestionIndex }"
+                  @mouseenter="tagSuggestionIndex = i"
+                  @click="acceptTagSuggestion(suggestion)"
+                >{{ suggestion }}</button>
+              </li>
+            </ul>
           </div>
           <!-- Desktop buttons -->
           <button class="icon-button desktop-only" title="Refresh deals" @click="fetchDeals" :disabled="isLoading">
@@ -868,6 +965,43 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  /* Anchors the tag-completion dropdown */
+  position: relative;
+}
+
+.tag-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color-light);
+  border-radius: 14px;
+  box-shadow: 0 6px 20px var(--shadow-medium);
+  max-height: 16rem;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.tag-suggestion {
+  display: block;
+  width: 100%;
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tag-suggestion--highlighted {
+  background-color: var(--accent-subtle);
+  color: var(--accent);
 }
 
 /* Override filter-container's own flex sizing since wrapper owns the width */

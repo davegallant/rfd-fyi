@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.14.0] - 2026-08-12
+
+### Added
+
+- Tag completion in the filter input. Typing `#` opens a dropdown of every tag in the published vocabulary, narrowing as you type; arrows navigate, Enter or Tab inserts the highlighted tag, and a second Enter applies the filter. Typing a tag out in full closes the dropdown, so Enter applies it directly as before. Completion is a filtering affordance rather than rendering, so `#other` is suggested too — it remains the audit path for the quarantine bucket.
+
 ## [0.13.12] - 2026-08-10
 
 ### Fixed
