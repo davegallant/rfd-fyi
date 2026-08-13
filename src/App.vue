@@ -91,6 +91,7 @@ export default {
       menuOpen: false,
       infoOverlayVisible: false,
       hideSeen: loadUiPreferences().hideSeen,
+      hideBadDeals: loadUiPreferences().hideBadDeals,
       seenDropdownOpen: false,
       visibleTopicCount: TOPICS_BATCH_SIZE,
       refreshIntervalId: null,
@@ -144,15 +145,24 @@ export default {
       persistUiPreferences({ ...loadUiPreferences(), hideSeen: val });
       this.resetVisibleTopics();
     },
+
+    hideBadDeals(val) {
+      persistUiPreferences({ ...loadUiPreferences(), hideBadDeals: val });
+      this.resetVisibleTopics();
+    },
   },
 
   computed: {
     filteredTopics() {
       const base = getFilteredSortedTopics(this.topics, this.activeFilters, this.sortMethod);
-      if (!this.hideSeen) return base;
+      if (!this.hideSeen && !this.hideBadDeals) return base;
       // Access seen.value so Vue tracks reactivity
       const seenMap = this.seen;
-      return base.filter(t => !seenMap.has(String(t.topic_id)));
+      return base.filter(t => {
+        if (this.hideSeen && seenMap.has(String(t.topic_id))) return false;
+        if (this.hideBadDeals && Number(t.score) < -5) return false;
+        return true;
+      });
     },
 
     displayedTopics() {
@@ -686,13 +696,17 @@ export default {
             <span class="material-symbols-outlined" :class="{ 'spinning': isLoading }">refresh</span>
           </button>
           <div class="seen-dropdown-wrapper desktop-only">
-            <button class="icon-button" :class="{ active: hideSeen }" title="Seen deals" @click="toggleSeenDropdown">
-              <span class="material-symbols-outlined">{{ hideSeen ? 'visibility_off' : 'visibility' }}</span>
+            <button class="icon-button" :class="{ active: hideSeen || hideBadDeals }" title="Visibility" @click="toggleSeenDropdown">
+              <span class="material-symbols-outlined">{{ (hideSeen || hideBadDeals) ? 'visibility_off' : 'visibility' }}</span>
             </button>
             <div class="seen-dropdown" v-if="seenDropdownOpen" @click.stop>
               <button class="dropdown-item" :class="{ active: hideSeen }" @click="hideSeen = !hideSeen; seenDropdownOpen = false">
                 <span class="material-symbols-outlined">{{ hideSeen ? 'visibility' : 'visibility_off' }}</span>
                 <span>{{ hideSeen ? 'Show seen' : 'Hide seen' }}</span>
+              </button>
+              <button class="dropdown-item" :class="{ active: hideBadDeals }" @click="hideBadDeals = !hideBadDeals; seenDropdownOpen = false">
+                <span class="material-symbols-outlined">thumb_down</span>
+                <span>{{ hideBadDeals ? 'Show bad deals' : 'Hide bad deals' }}</span>
               </button>
               <button class="dropdown-item" @click="handleMarkAllSeen(); seenDropdownOpen = false">
                 <span class="material-symbols-outlined">done_all</span>
@@ -749,10 +763,14 @@ export default {
                 <span>{{ opt.label }}</span>
               </button>
               <div class="dropdown-divider"></div>
-              <div class="dropdown-section-label">Seen deals</div>
+              <div class="dropdown-section-label">Visibility</div>
               <button class="dropdown-item" :class="{ active: hideSeen }" @click="handleMenuAction(() => { hideSeen = !hideSeen })">
                 <span class="material-symbols-outlined">{{ hideSeen ? 'visibility' : 'visibility_off' }}</span>
                 <span>{{ hideSeen ? 'Show seen' : 'Hide seen' }}</span>
+              </button>
+              <button class="dropdown-item" :class="{ active: hideBadDeals }" @click="handleMenuAction(() => { hideBadDeals = !hideBadDeals })">
+                <span class="material-symbols-outlined">thumb_down</span>
+                <span>{{ hideBadDeals ? 'Show bad deals' : 'Hide bad deals' }}</span>
               </button>
               <button class="dropdown-item" @click="handleMenuAction(handleMarkAllSeen)">
                 <span class="material-symbols-outlined">done_all</span>

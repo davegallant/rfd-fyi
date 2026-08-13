@@ -5,6 +5,7 @@ export const DEFAULT_UI_PREFERENCES = {
   sortMethod: "score",
   theme: "auto",
   hideSeen: false,
+  hideBadDeals: false,
 };
 
 export const SORT_METHOD_KEYS = [
@@ -27,7 +28,10 @@ function normalizeFromPartial(partial) {
   const hideSeen = typeof p.hideSeen === "boolean"
     ? p.hideSeen
     : DEFAULT_UI_PREFERENCES.hideSeen;
-  return { sortMethod, theme, hideSeen };
+  const hideBadDeals = typeof p.hideBadDeals === "boolean"
+    ? p.hideBadDeals
+    : DEFAULT_UI_PREFERENCES.hideBadDeals;
+  return { sortMethod, theme, hideSeen, hideBadDeals };
 }
 
 function readLegacy(storage) {

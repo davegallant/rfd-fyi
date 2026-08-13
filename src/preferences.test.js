@@ -47,6 +47,7 @@ describe("loadUiPreferences / persistUiPreferences", () => {
       sortMethod: "title",
       theme: "dark",
       hideSeen: false,
+      hideBadDeals: false,
     });
   });
 
@@ -60,6 +61,7 @@ describe("loadUiPreferences / persistUiPreferences", () => {
       sortMethod: "replies",
       theme: "light",
       hideSeen: false,
+      hideBadDeals: false,
     });
   });
 
@@ -76,6 +78,7 @@ describe("loadUiPreferences / persistUiPreferences", () => {
       sortMethod: "views",
       theme: "dark",
       hideSeen: false,
+      hideBadDeals: false,
     });
   });
 
@@ -99,5 +102,15 @@ describe("loadUiPreferences / persistUiPreferences", () => {
   it("treats non-boolean hideSeen in storage as false", () => {
     memory.setItem(UI_PREFS_STORAGE_KEY, JSON.stringify({ sortMethod: "score", theme: "auto", hideSeen: "yes" }));
     expect(loadUiPreferences().hideSeen).toBe(false);
+  });
+
+  it("persists and restores hideBadDeals: true", () => {
+    persistUiPreferences({ sortMethod: "score", theme: "auto", hideBadDeals: true });
+    expect(loadUiPreferences().hideBadDeals).toBe(true);
+  });
+
+  it("treats non-boolean hideBadDeals in storage as false", () => {
+    memory.setItem(UI_PREFS_STORAGE_KEY, JSON.stringify({ sortMethod: "score", theme: "auto", hideBadDeals: "yes" }));
+    expect(loadUiPreferences().hideBadDeals).toBe(false);
   });
 });
