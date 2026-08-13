@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.15.0] - 2026-08-13
+
+### Added
+
+- A "Hide bad deals" toggle, in the visibility dropdown below "Hide seen" and in the mobile menu. When on, deals with a score below -5 are filtered out of the list. It defaults to off so bad deals show by default, and persists alongside the other UI preferences.
+
+### Changed
+
+- Renamed the visibility icon's tooltip from "Seen deals" to "Visibility". The icon now switches to `visibility_off` whenever either hide-seen or hide-bad-deals is active, rather than only tracking hide-seen.
+
 ## [0.14.0] - 2026-08-12
 
 ### Added
