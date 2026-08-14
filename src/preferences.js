@@ -6,6 +6,7 @@ export const DEFAULT_UI_PREFERENCES = {
   theme: "auto",
   hideSeen: false,
   hideBadDeals: false,
+  hiddenMerchants: [],
 };
 
 export const SORT_METHOD_KEYS = [
@@ -31,7 +32,20 @@ function normalizeFromPartial(partial) {
   const hideBadDeals = typeof p.hideBadDeals === "boolean"
     ? p.hideBadDeals
     : DEFAULT_UI_PREFERENCES.hideBadDeals;
-  return { sortMethod, theme, hideSeen, hideBadDeals };
+  const hiddenMerchants = [];
+  const merchantKeys = new Set();
+  if (Array.isArray(p.hiddenMerchants)) {
+    for (const merchant of p.hiddenMerchants) {
+      if (typeof merchant !== "string") continue;
+      const name = merchant.trim();
+      const key = name.toLowerCase();
+      if (name && !merchantKeys.has(key)) {
+        merchantKeys.add(key);
+        hiddenMerchants.push(name);
+      }
+    }
+  }
+  return { sortMethod, theme, hideSeen, hideBadDeals, hiddenMerchants };
 }
 
 function readLegacy(storage) {

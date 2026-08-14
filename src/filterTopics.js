@@ -89,7 +89,35 @@ export function sortTopics(topics, sortMethod) {
   return [...topics].sort(fn);
 }
 
-export function getFilteredSortedTopics(topics, activeFilters, sortMethod) {
-  const filtered = filterTopicsByActiveFilters(topics, activeFilters);
+function merchantKey(merchantName) {
+  return typeof merchantName === "string" ? merchantName.trim().toLowerCase() : "";
+}
+
+/**
+ * Returns unique, alphabetized merchants represented in a deal list.
+ * Names that differ only by case or surrounding whitespace share one entry.
+ */
+export function getMerchantOptions(topics) {
+  const merchants = new Map();
+  for (const topic of topics) {
+    const name = topic?.Offer?.dealer_name?.trim();
+    const key = merchantKey(name);
+    if (!key) continue;
+    const existing = merchants.get(key);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      merchants.set(key, { key, name, count: 1 });
+    }
+  }
+  return [...merchants.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function getFilteredSortedTopics(topics, activeFilters, sortMethod, hiddenMerchants = []) {
+  const hiddenMerchantKeys = new Set(hiddenMerchants.map(merchantKey).filter(Boolean));
+  const visibleTopics = hiddenMerchantKeys.size === 0
+    ? topics
+    : topics.filter((topic) => !hiddenMerchantKeys.has(merchantKey(topic?.Offer?.dealer_name)));
+  const filtered = filterTopicsByActiveFilters(visibleTopics, activeFilters);
   return sortTopics(filtered, sortMethod);
 }

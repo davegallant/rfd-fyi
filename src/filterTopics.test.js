@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import * as topicFilters from "./filterTopics.js";
 import {
   filterTopicsByActiveFilters,
   getFilteredSortedTopics,
@@ -164,6 +165,25 @@ describe("filterTopicsByActiveFilters", () => {
   it("returns every deal when no filter is active", () => {
     const out = filterTopicsByActiveFilters(deals, []);
     expect(out.map((d) => d.topic_id).sort()).toEqual([1, 2, 3]);
+  });
+
+  it("excludes merchants in the persistent hide list regardless of case or whitespace", () => {
+    const out = getFilteredSortedTopics(deals, [], "score", [" amazon ", "NEWEGG"]);
+    expect(out.map((d) => d.topic_id)).toEqual([1]);
+  });
+
+  it("lists each merchant once with a count, excluding blank names", () => {
+    const merchantOptions = topicFilters.getMerchantOptions?.([
+      topic({ topic_id: 1, Offer: { dealer_name: "Amazon" } }),
+      topic({ topic_id: 2, Offer: { dealer_name: " amazon " } }),
+      topic({ topic_id: 3, Offer: { dealer_name: "Best Buy" } }),
+      topic({ topic_id: 4, Offer: { dealer_name: "  " } }),
+    ]);
+
+    expect(merchantOptions).toEqual([
+      { key: "amazon", name: "Amazon", count: 2 },
+      { key: "best buy", name: "Best Buy", count: 1 },
+    ]);
   });
 
   it("returns only deals whose combined title and dealer text match all filter terms", () => {

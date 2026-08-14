@@ -48,6 +48,7 @@ describe("loadUiPreferences / persistUiPreferences", () => {
       theme: "dark",
       hideSeen: false,
       hideBadDeals: false,
+      hiddenMerchants: [],
     });
   });
 
@@ -62,6 +63,7 @@ describe("loadUiPreferences / persistUiPreferences", () => {
       theme: "light",
       hideSeen: false,
       hideBadDeals: false,
+      hiddenMerchants: [],
     });
   });
 
@@ -79,6 +81,7 @@ describe("loadUiPreferences / persistUiPreferences", () => {
       theme: "dark",
       hideSeen: false,
       hideBadDeals: false,
+      hiddenMerchants: [],
     });
   });
 
@@ -99,6 +102,22 @@ describe("loadUiPreferences / persistUiPreferences", () => {
     expect(loadUiPreferences().hideSeen).toBe(true);
   });
 
+  it("persists a unique, trimmed merchant hide list", () => {
+    persistUiPreferences({
+      sortMethod: "score",
+      theme: "auto",
+      hideSeen: false,
+      hiddenMerchants: [" Amazon ", "amazon", "Best Buy", ""],
+    });
+
+    expect(loadUiPreferences().hiddenMerchants).toEqual(["Amazon", "Best Buy"]);
+  });
+
+  it("ignores a malformed merchant hide list", () => {
+    memory.setItem(UI_PREFS_STORAGE_KEY, JSON.stringify({ hiddenMerchants: "Amazon" }));
+    expect(loadUiPreferences().hiddenMerchants).toEqual([]);
+  });
+
   it("treats non-boolean hideSeen in storage as false", () => {
     memory.setItem(UI_PREFS_STORAGE_KEY, JSON.stringify({ sortMethod: "score", theme: "auto", hideSeen: "yes" }));
     expect(loadUiPreferences().hideSeen).toBe(false);
@@ -107,6 +126,24 @@ describe("loadUiPreferences / persistUiPreferences", () => {
   it("persists and restores hideBadDeals: true", () => {
     persistUiPreferences({ sortMethod: "score", theme: "auto", hideBadDeals: true });
     expect(loadUiPreferences().hideBadDeals).toBe(true);
+  });
+
+  it("restores every preference when bad-deal and merchant filters are both enabled", () => {
+    persistUiPreferences({
+      sortMethod: "views",
+      theme: "dark",
+      hideSeen: true,
+      hideBadDeals: true,
+      hiddenMerchants: ["Amazon"],
+    });
+
+    expect(loadUiPreferences()).toEqual({
+      sortMethod: "views",
+      theme: "dark",
+      hideSeen: true,
+      hideBadDeals: true,
+      hiddenMerchants: ["Amazon"],
+    });
   });
 
   it("treats non-boolean hideBadDeals in storage as false", () => {

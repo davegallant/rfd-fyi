@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.0] - 2026-08-14
+
+### Added
+
+- Persistent merchant filters. Open the new Merchants control to search the merchants in the current feed and uncheck those you do not want to see. Hidden merchants apply before seen-deal filtering and pagination, remain hidden after refreshes and reloads, and can be restored individually or all at once.
+
 ## [0.15.0] - 2026-08-13
 
 ### Added

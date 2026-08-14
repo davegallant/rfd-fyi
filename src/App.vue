@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 
 import { attachTags, tagFilterTerm, tagSuggestions as suggestTagTerms, visibleTags } from "./enrichment.js";
-import { getFilteredSortedTopics, parseFilterTerm } from "./filterTopics.js";
+import { getFilteredSortedTopics, getMerchantOptions, parseFilterTerm } from "./filterTopics.js";
 import { loadUiPreferences, persistUiPreferences, SORT_METHOD_KEYS } from "./preferences.js";
 import { seen, markSeen, markUnseen, isSeen, markAllSeen, clearSeen } from "./composables/useSeenDeals.js";
 import InfoOverlay from "./components/InfoOverlay.vue";
@@ -92,6 +92,9 @@ export default {
       infoOverlayVisible: false,
       hideSeen: loadUiPreferences().hideSeen,
       hideBadDeals: loadUiPreferences().hideBadDeals,
+      hiddenMerchants: loadUiPreferences().hiddenMerchants,
+      merchantFilterInput: "",
+      merchantDropdownOpen: false,
       seenDropdownOpen: false,
       visibleTopicCount: TOPICS_BATCH_SIZE,
       refreshIntervalId: null,
@@ -150,11 +153,16 @@ export default {
       persistUiPreferences({ ...loadUiPreferences(), hideBadDeals: val });
       this.resetVisibleTopics();
     },
+
+    hiddenMerchants(val) {
+      persistUiPreferences({ ...loadUiPreferences(), hiddenMerchants: val });
+      this.resetVisibleTopics();
+    },
   },
 
   computed: {
     filteredTopics() {
-      const base = getFilteredSortedTopics(this.topics, this.activeFilters, this.sortMethod);
+      const base = getFilteredSortedTopics(this.topics, this.activeFilters, this.sortMethod, this.hiddenMerchants);
       if (!this.hideSeen && !this.hideBadDeals) return base;
       // Access seen.value so Vue tracks reactivity
       const seenMap = this.seen;
@@ -163,6 +171,21 @@ export default {
         if (this.hideBadDeals && Number(t.score) < -5) return false;
         return true;
       });
+    },
+
+    merchantOptions() {
+      return getMerchantOptions(this.topics);
+    },
+
+    filteredMerchantOptions() {
+      const query = this.merchantFilterInput.trim().toLowerCase();
+      if (!query) return this.merchantOptions;
+      return this.merchantOptions.filter(({ name }) => name.toLowerCase().includes(query));
+    },
+
+    hiddenMerchantsNotInFeed() {
+      const availableKeys = new Set(this.merchantOptions.map(({ key }) => key));
+      return this.hiddenMerchants.filter((name) => !availableKeys.has(name.trim().toLowerCase()));
     },
 
     displayedTopics() {
@@ -565,6 +588,32 @@ export default {
       this.seenDropdownOpen = !this.seenDropdownOpen;
     },
 
+    toggleMerchantDropdown() {
+      this.merchantDropdownOpen = !this.merchantDropdownOpen;
+    },
+
+    isMerchantHidden(merchantName) {
+      const key = merchantName.trim().toLowerCase();
+      return this.hiddenMerchants.some((name) => name.trim().toLowerCase() === key);
+    },
+
+    setMerchantHidden(merchantName, hidden) {
+      const name = merchantName.trim();
+      const key = name.toLowerCase();
+      if (!name) return;
+      if (hidden) {
+        if (!this.hiddenMerchants.some((existing) => existing.trim().toLowerCase() === key)) {
+          this.hiddenMerchants = [...this.hiddenMerchants, name];
+        }
+      } else {
+        this.hiddenMerchants = this.hiddenMerchants.filter((existing) => existing.trim().toLowerCase() !== key);
+      }
+    },
+
+    clearHiddenMerchants() {
+      this.hiddenMerchants = [];
+    },
+
     toggleSortDropdown() {
       this.sortDropdownOpen = !this.sortDropdownOpen;
     },
@@ -591,6 +640,9 @@ export default {
       }
       if (this.seenDropdownOpen && !event.target.closest('.seen-dropdown-wrapper')) {
         this.seenDropdownOpen = false;
+      }
+      if (this.merchantDropdownOpen && !event.target.closest('.merchant-dropdown-wrapper')) {
+        this.merchantDropdownOpen = false;
       }
     },
 
@@ -648,10 +700,21 @@ export default {
       <div class="header">
         <div class="header-controls">
           <div class="filter-wrapper">
-            <div class="filter-container" :class="{ 'has-active-filters': activeFilters.length > 0 }">
-              <span v-for="(filter, index) in activeFilters" :key="index" class="filter-tag">
+            <div
+              class="filter-container"
+              :class="{ 'has-active-filters': activeFilters.length > 0 }"
+            >
+              <span
+                v-for="(filter, index) in activeFilters"
+                :key="index"
+                class="filter-tag"
+              >
                 {{ filter }}
-                <button class="filter-tag-clear" @click="clearFilter(index)" title="Clear filter">
+                <button
+                  class="filter-tag-clear"
+                  @click="clearFilter(index)"
+                  title="Clear filter"
+                >
                   <span class="material-symbols-outlined">close</span>
                 </button>
               </span>
@@ -663,14 +726,14 @@ export default {
                 class="search-input"
                 :class="{ 'search-input--regex-error': isRegexError }"
                 :title="isRegexError ? 'Invalid regex' : ''"
-              @keydown.enter="onFilterEnter"
-              @keydown.tab="onFilterTab"
-              @keydown.esc="onFilterEscape"
-              @keydown.down="moveTagSuggestion(1, $event)"
-              @keydown.up="moveTagSuggestion(-1, $event)"
-              @blur="onFilterBlur"
-              @focus="onFilterFocus"
-            />
+                @keydown.enter="onFilterEnter"
+                @keydown.tab="onFilterTab"
+                @keydown.esc="onFilterEscape"
+                @keydown.down="moveTagSuggestion(1, $event)"
+                @keydown.up="moveTagSuggestion(-1, $event)"
+                @blur="onFilterBlur"
+                @focus="onFilterFocus"
+              />
             </div>
             <!-- mousedown.prevent keeps the input focused so the click lands -->
             <ul
@@ -679,47 +742,177 @@ export default {
               role="listbox"
               @mousedown.prevent
             >
-              <li v-for="(suggestion, i) in tagSuggestions" :key="suggestion" role="option" :aria-selected="i === tagSuggestionIndex">
+              <li
+                v-for="(suggestion, i) in tagSuggestions"
+                :key="suggestion"
+                role="option"
+                :aria-selected="i === tagSuggestionIndex"
+              >
                 <button
                   type="button"
                   tabindex="-1"
                   class="tag-suggestion"
-                  :class="{ 'tag-suggestion--highlighted': i === tagSuggestionIndex }"
+                  :class="{
+                    'tag-suggestion--highlighted': i === tagSuggestionIndex,
+                  }"
                   @mouseenter="tagSuggestionIndex = i"
                   @click="acceptTagSuggestion(suggestion)"
-                >{{ suggestion }}</button>
+                >
+                  {{ suggestion }}
+                </button>
               </li>
             </ul>
           </div>
           <!-- Desktop buttons -->
-          <button class="icon-button desktop-only" title="Refresh deals" @click="fetchDeals" :disabled="isLoading">
-            <span class="material-symbols-outlined" :class="{ 'spinning': isLoading }">refresh</span>
+          <button
+            class="icon-button desktop-only"
+            title="Refresh deals"
+            @click="fetchDeals"
+            :disabled="isLoading"
+          >
+            <span
+              class="material-symbols-outlined"
+              :class="{ spinning: isLoading }"
+              >refresh</span
+            >
           </button>
           <div class="seen-dropdown-wrapper desktop-only">
-            <button class="icon-button" :class="{ active: hideSeen || hideBadDeals }" title="Visibility" @click="toggleSeenDropdown">
-              <span class="material-symbols-outlined">{{ (hideSeen || hideBadDeals) ? 'visibility_off' : 'visibility' }}</span>
+            <button
+              class="icon-button"
+              :class="{ active: hideSeen || hideBadDeals }"
+              title="Visibility"
+              @click="toggleSeenDropdown"
+            >
+              <span class="material-symbols-outlined">{{
+                hideSeen || hideBadDeals ? "visibility_off" : "visibility"
+              }}</span>
             </button>
             <div class="seen-dropdown" v-if="seenDropdownOpen" @click.stop>
-              <button class="dropdown-item" :class="{ active: hideSeen }" @click="hideSeen = !hideSeen; seenDropdownOpen = false">
-                <span class="material-symbols-outlined">{{ hideSeen ? 'visibility' : 'visibility_off' }}</span>
-                <span>{{ hideSeen ? 'Show seen' : 'Hide seen' }}</span>
+              <button
+                class="dropdown-item"
+                :class="{ active: hideSeen }"
+                @click="
+                  hideSeen = !hideSeen;
+                  seenDropdownOpen = false;
+                "
+              >
+                <span class="material-symbols-outlined">{{
+                  hideSeen ? "visibility" : "visibility_off"
+                }}</span>
+                <span>{{ hideSeen ? "Show seen" : "Hide seen" }}</span>
               </button>
-              <button class="dropdown-item" :class="{ active: hideBadDeals }" @click="hideBadDeals = !hideBadDeals; seenDropdownOpen = false">
+              <button
+                class="dropdown-item"
+                :class="{ active: hideBadDeals }"
+                @click="
+                  hideBadDeals = !hideBadDeals;
+                  seenDropdownOpen = false;
+                "
+              >
                 <span class="material-symbols-outlined">thumb_down</span>
-                <span>{{ hideBadDeals ? 'Show bad deals' : 'Hide bad deals' }}</span>
+                <span>{{
+                  hideBadDeals ? "Show bad deals" : "Hide bad deals"
+                }}</span>
               </button>
-              <button class="dropdown-item" @click="handleMarkAllSeen(); seenDropdownOpen = false">
+              <button
+                class="dropdown-item"
+                @click="
+                  handleMarkAllSeen();
+                  seenDropdownOpen = false;
+                "
+              >
                 <span class="material-symbols-outlined">done_all</span>
                 <span>Mark all seen</span>
               </button>
-              <button class="dropdown-item" @click="handleClearSeen(); seenDropdownOpen = false" :disabled="seen.size === 0">
+              <button
+                class="dropdown-item"
+                @click="
+                  handleClearSeen();
+                  seenDropdownOpen = false;
+                "
+                :disabled="seen.size === 0"
+              >
                 <span class="material-symbols-outlined">ink_eraser</span>
                 <span>Clear seen</span>
               </button>
             </div>
           </div>
+          <div class="merchant-dropdown-wrapper desktop-only">
+            <button
+              class="icon-button"
+              :class="{ active: hiddenMerchants.length > 0 }"
+              :title="`Merchants${hiddenMerchants.length ? ` (${hiddenMerchants.length} hidden)` : ''}`"
+              :aria-expanded="merchantDropdownOpen"
+              @click="toggleMerchantDropdown"
+            >
+              <span class="material-symbols-outlined">storefront</span>
+            </button>
+            <div
+              v-if="merchantDropdownOpen"
+              class="merchant-dropdown"
+              @click.stop
+            >
+              <div class="merchant-dropdown-header">
+                <strong>Merchants</strong>
+                <button
+                  class="merchant-reset"
+                  :disabled="hiddenMerchants.length === 0"
+                  @click="clearHiddenMerchants"
+                >
+                  Show all
+                </button>
+              </div>
+              <input
+                v-model="merchantFilterInput"
+                class="merchant-search"
+                type="search"
+                placeholder="Search merchants"
+                aria-label="Search merchants"
+              />
+              <div class="merchant-options">
+                <label
+                  v-for="merchant in filteredMerchantOptions"
+                  :key="merchant.key"
+                  class="merchant-option"
+                >
+                  <input
+                    type="checkbox"
+                    :checked="!isMerchantHidden(merchant.name)"
+                    @change="
+                      setMerchantHidden(merchant.name, !$event.target.checked)
+                    "
+                  />
+                  <span>{{ merchant.name }}</span>
+                  <small>{{ merchant.count }}</small>
+                </label>
+                <p
+                  v-if="filteredMerchantOptions.length === 0"
+                  class="merchant-empty"
+                >
+                  No merchants match.
+                </p>
+              </div>
+              <div
+                v-if="hiddenMerchantsNotInFeed.length"
+                class="merchant-missing"
+              >
+                <span>Hidden outside this feed</span>
+                <button
+                  v-for="merchant in hiddenMerchantsNotInFeed"
+                  :key="merchant"
+                  @click="setMerchantHidden(merchant, false)"
+                >
+                  {{ merchant }} <span aria-hidden="true">×</span>
+                </button>
+              </div>
+            </div>
+          </div>
           <div class="sort-dropdown-wrapper desktop-only">
-            <button class="icon-button" :title="'Sort: ' + currentSortOption.label" @click="toggleSortDropdown">
+            <button
+              class="icon-button"
+              :title="'Sort: ' + currentSortOption.label"
+              @click="toggleSortDropdown"
+            >
               <span class="material-symbols-outlined">sort</span>
             </button>
             <div class="sort-dropdown" v-if="sortDropdownOpen" @click.stop>
@@ -735,19 +928,37 @@ export default {
               </button>
             </div>
           </div>
-          <button class="icon-button desktop-only" :title="themeTitle" @click="toggleTheme">
+          <button
+            class="icon-button desktop-only"
+            :title="themeTitle"
+            @click="toggleTheme"
+          >
             <span class="material-symbols-outlined">{{ themeIcon }}</span>
           </button>
-          <button class="icon-button desktop-only" title="Info" @click="toggleInfoOverlay">
+          <button
+            class="icon-button desktop-only"
+            title="Info"
+            @click="toggleInfoOverlay"
+          >
             <span class="material-symbols-outlined">info</span>
           </button>
           <div class="mobile-menu-wrapper mobile-only">
             <button class="icon-button" title="Menu" @click="toggleMenu">
-              <span class="material-symbols-outlined">{{ menuOpen ? 'close' : 'menu' }}</span>
+              <span class="material-symbols-outlined">{{
+                menuOpen ? "close" : "menu"
+              }}</span>
             </button>
             <div class="mobile-dropdown" v-if="menuOpen" @click.stop>
-              <button class="dropdown-item" @click="handleMenuAction(fetchDeals)" :disabled="isLoading">
-                <span class="material-symbols-outlined" :class="{ 'spinning': isLoading }">refresh</span>
+              <button
+                class="dropdown-item"
+                @click="handleMenuAction(fetchDeals)"
+                :disabled="isLoading"
+              >
+                <span
+                  class="material-symbols-outlined"
+                  :class="{ spinning: isLoading }"
+                  >refresh</span
+                >
                 <span>Refresh</span>
               </button>
               <div class="dropdown-divider"></div>
@@ -764,125 +975,255 @@ export default {
               </button>
               <div class="dropdown-divider"></div>
               <div class="dropdown-section-label">Visibility</div>
-              <button class="dropdown-item" :class="{ active: hideSeen }" @click="handleMenuAction(() => { hideSeen = !hideSeen })">
-                <span class="material-symbols-outlined">{{ hideSeen ? 'visibility' : 'visibility_off' }}</span>
-                <span>{{ hideSeen ? 'Show seen' : 'Hide seen' }}</span>
+              <button
+                class="dropdown-item"
+                :class="{ active: hideSeen }"
+                @click="
+                  handleMenuAction(() => {
+                    hideSeen = !hideSeen;
+                  })
+                "
+              >
+                <span class="material-symbols-outlined">{{
+                  hideSeen ? "visibility" : "visibility_off"
+                }}</span>
+                <span>{{ hideSeen ? "Show seen" : "Hide seen" }}</span>
               </button>
-              <button class="dropdown-item" :class="{ active: hideBadDeals }" @click="handleMenuAction(() => { hideBadDeals = !hideBadDeals })">
+              <button
+                class="dropdown-item"
+                :class="{ active: hideBadDeals }"
+                @click="
+                  handleMenuAction(() => {
+                    hideBadDeals = !hideBadDeals;
+                  })
+                "
+              >
                 <span class="material-symbols-outlined">thumb_down</span>
-                <span>{{ hideBadDeals ? 'Show bad deals' : 'Hide bad deals' }}</span>
+                <span>{{
+                  hideBadDeals ? "Show bad deals" : "Hide bad deals"
+                }}</span>
               </button>
-              <button class="dropdown-item" @click="handleMenuAction(handleMarkAllSeen)">
+              <button
+                class="dropdown-item"
+                @click="handleMenuAction(handleMarkAllSeen)"
+              >
                 <span class="material-symbols-outlined">done_all</span>
                 <span>Mark all seen</span>
               </button>
-              <button class="dropdown-item" @click="handleMenuAction(handleClearSeen)" :disabled="seen.size === 0">
+              <button
+                class="dropdown-item"
+                @click="handleMenuAction(handleClearSeen)"
+                :disabled="seen.size === 0"
+              >
                 <span class="material-symbols-outlined">ink_eraser</span>
                 <span>Clear seen</span>
               </button>
               <div class="dropdown-divider"></div>
-              <button class="dropdown-item" @click="handleMenuAction(toggleInfoOverlay)">
+              <details class="mobile-merchant-filters">
+                <summary>
+                  <span class="material-symbols-outlined">storefront</span>
+                  Merchants
+                  <em v-if="hiddenMerchants.length"
+                    >({{ hiddenMerchants.length }} hidden)</em
+                  >
+                </summary>
+                <div class="merchant-dropdown" @click.stop>
+                  <div class="merchant-dropdown-header">
+                    <strong>Merchants</strong>
+                    <button
+                      class="merchant-reset"
+                      :disabled="hiddenMerchants.length === 0"
+                      @click="clearHiddenMerchants"
+                    >
+                      Show all
+                    </button>
+                  </div>
+                  <input
+                    v-model="merchantFilterInput"
+                    class="merchant-search"
+                    type="search"
+                    placeholder="Search merchants"
+                    aria-label="Search merchants"
+                  />
+                  <div class="merchant-options">
+                    <label
+                      v-for="merchant in filteredMerchantOptions"
+                      :key="merchant.key"
+                      class="merchant-option"
+                    >
+                      <input
+                        type="checkbox"
+                        :checked="!isMerchantHidden(merchant.name)"
+                        @change="
+                          setMerchantHidden(
+                            merchant.name,
+                            !$event.target.checked,
+                          )
+                        "
+                      />
+                      <span>{{ merchant.name }}</span>
+                      <small>{{ merchant.count }}</small>
+                    </label>
+                    <p
+                      v-if="filteredMerchantOptions.length === 0"
+                      class="merchant-empty"
+                    >
+                      No merchants match.
+                    </p>
+                  </div>
+                  <div
+                    v-if="hiddenMerchantsNotInFeed.length"
+                    class="merchant-missing"
+                  >
+                    <span>Hidden outside this feed</span>
+                    <button
+                      v-for="merchant in hiddenMerchantsNotInFeed"
+                      :key="merchant"
+                      @click="setMerchantHidden(merchant, false)"
+                    >
+                      {{ merchant }} <span aria-hidden="true">×</span>
+                    </button>
+                  </div>
+                </div>
+              </details>
+              <div class="dropdown-divider"></div>
+              <button
+                class="dropdown-item"
+                @click="handleMenuAction(toggleInfoOverlay)"
+              >
                 <span class="material-symbols-outlined">info</span>
                 <span>Info</span>
               </button>
-              <button class="dropdown-item" @click="handleMenuAction(toggleTheme)">
+              <button
+                class="dropdown-item"
+                @click="handleMenuAction(toggleTheme)"
+              >
                 <span class="material-symbols-outlined">{{ themeIcon }}</span>
-                <span>{{ themeTitle.split('(')[0].trim() }}</span>
+                <span>{{ themeTitle.split("(")[0].trim() }}</span>
               </button>
             </div>
           </div>
         </div>
       </div>
       <div v-if="isLoading && topics.length === 0" class="loading-container">
-        <span class="material-symbols-outlined spinning loading-spinner">refresh</span>
+        <span class="material-symbols-outlined spinning loading-spinner"
+          >refresh</span
+        >
         <p>Loading deals...</p>
       </div>
       <div class="cards-wrapper" v-else>
         <div v-if="isLoading" class="loading-overlay">
-          <span class="material-symbols-outlined spinning loading-spinner">refresh</span>
+          <span class="material-symbols-outlined spinning loading-spinner"
+            >refresh</span
+          >
         </div>
         <div class="list-view">
-        <div v-if="filteredTopics.length === 0" class="empty-state">
-          <span class="material-symbols-outlined">search_off</span>
-          <p>No deals match your filters.</p>
-          <button v-if="activeFilters.length > 0" class="empty-state-button" @click="clearAllFilters">
-            Clear filters
-          </button>
-        </div>
-        <template v-else>
-        <div
-          v-for="topic in displayedTopics"
-          :key="topic.topic_id"
-          class="deal-row"
-          :class="{
-            'deal-row--seen': seen.has(String(topic.topic_id)),
-            'deal-row--hot': isHotDeal(topic),
-          }"
-          @click.capture="onDealClick(topic)"
-        >
-          <div class="card-header">
-            <div class="title-with-link">
-              <span class="deal-text">
-                <span v-if="isHotDeal(topic)" class="hot-deal-icon" title="Hot deal" aria-label="Hot deal">🔥</span>
-                <button
-                  v-if="topic.Offer.dealer_name"
-                  class="dealer-name dealer-label dealer-label--clickable"
-                  :style="getDealerStyle(topic.Offer.dealer_name)"
-                  :title="`Filter by ${topic.Offer.dealer_name}`"
-                  @click="filterByDealer(topic.Offer.dealer_name)"
-                  v-html="highlightText(topic.Offer.dealer_name)"
-                ></button><span v-if="topic.Offer.dealer_name" class="dealer-title-gap" aria-hidden="true"></span>
-                <a
-                  :href="`https://forums.redflagdeals.com${topic.web_path}`"
-                  target="_blank"
-                  class="deal-title"
-                  v-html="highlightText(topic.title)"
-                ></a><span v-if="visibleTags(topic.tags).length" class="tag-chips">
-                  <button
-                    v-for="tag in visibleTags(topic.tags)"
-                    :key="tag"
-                    class="tag-chip"
-                    :title="`Filter by ${tag}`"
-                    @click.stop="filterByTag(tag)"
-                  >{{ tag }}</button>
-                </span>
-              </span>
-              <a
-                v-if="topic.Offer.url"
-                :href="topic.Offer.url"
-                target="_blank"
-                class="card-link"
-                title="Open direct link to deal"
-              >
-                <span class="material-symbols-outlined">open_in_new</span>
-              </a>
-            </div>
-            <div
-              class="score-bubble"
-              :class="{
-                positive: topic.score > 0,
-                negative: topic.score < 0,
-                neutral: topic.score === 0,
-              }"
+          <div v-if="filteredTopics.length === 0" class="empty-state">
+            <span class="material-symbols-outlined">search_off</span>
+            <p>No deals match your filters.</p>
+            <button
+              v-if="activeFilters.length > 0"
+              class="empty-state-button"
+              @click="clearAllFilters"
             >
-              <span v-if="topic.score > 0">+{{ topic.score }}</span>
-              <span v-else>{{ topic.score }}</span>
+              Clear filters
+            </button>
+          </div>
+          <template v-else>
+            <div
+              v-for="topic in displayedTopics"
+              :key="topic.topic_id"
+              class="deal-row"
+              :class="{
+                'deal-row--seen': seen.has(String(topic.topic_id)),
+                'deal-row--hot': isHotDeal(topic),
+              }"
+              @click.capture="onDealClick(topic)"
+            >
+              <div class="card-header">
+                <div class="title-with-link">
+                  <span class="deal-text">
+                    <span
+                      v-if="isHotDeal(topic)"
+                      class="hot-deal-icon"
+                      title="Hot deal"
+                      aria-label="Hot deal"
+                      >🔥</span
+                    >
+                    <button
+                      v-if="topic.Offer.dealer_name"
+                      class="dealer-name dealer-label dealer-label--clickable"
+                      :style="getDealerStyle(topic.Offer.dealer_name)"
+                      :title="`Filter by ${topic.Offer.dealer_name}`"
+                      @click="filterByDealer(topic.Offer.dealer_name)"
+                      v-html="highlightText(topic.Offer.dealer_name)"
+                    ></button
+                    ><span
+                      v-if="topic.Offer.dealer_name"
+                      class="dealer-title-gap"
+                      aria-hidden="true"
+                    ></span>
+                    <a
+                      :href="`https://forums.redflagdeals.com${topic.web_path}`"
+                      target="_blank"
+                      class="deal-title"
+                      v-html="highlightText(topic.title)"
+                    ></a
+                    ><span
+                      v-if="visibleTags(topic.tags).length"
+                      class="tag-chips"
+                    >
+                      <button
+                        v-for="tag in visibleTags(topic.tags)"
+                        :key="tag"
+                        class="tag-chip"
+                        :title="`Filter by ${tag}`"
+                        @click.stop="filterByTag(tag)"
+                      >
+                        {{ tag }}
+                      </button>
+                    </span>
+                  </span>
+                  <a
+                    v-if="topic.Offer.url"
+                    :href="topic.Offer.url"
+                    target="_blank"
+                    class="card-link"
+                    title="Open direct link to deal"
+                  >
+                    <span class="material-symbols-outlined">open_in_new</span>
+                  </a>
+                </div>
+                <div
+                  class="score-bubble"
+                  :class="{
+                    positive: topic.score > 0,
+                    negative: topic.score < 0,
+                    neutral: topic.score === 0,
+                  }"
+                >
+                  <span v-if="topic.score > 0">+{{ topic.score }}</span>
+                  <span v-else>{{ topic.score }}</span>
+                </div>
+              </div>
+              <div class="row-stats">
+                <span class="stat-compact"
+                  >{{ formatDate(topic.post_time) }} -
+                  {{ formatDate(topic.last_post_time) }}</span
+                >
+              </div>
             </div>
-          </div>
-          <div class="row-stats">
-            <span class="stat-compact">{{ formatDate(topic.post_time) }} - {{ formatDate(topic.last_post_time) }}</span>
-          </div>
-        </div>
-        <div v-if="hasMoreDisplayedTopics" class="load-more-status">
-          Showing {{ displayedTopics.length }} of {{ filteredTopics.length }} deals. Scroll for more.
-        </div>
-        </template>
+            <div v-if="hasMoreDisplayedTopics" class="load-more-status">
+              Showing {{ displayedTopics.length }} of
+              {{ filteredTopics.length }} deals. Scroll for more.
+            </div>
+          </template>
         </div>
       </div>
     </div>
     <InfoOverlay :visible="infoOverlayVisible" @close="toggleInfoOverlay" />
   </div>
-  </template>
+</template>
 
 <style scoped>
 .sort-dropdown-wrapper {
@@ -962,7 +1303,11 @@ export default {
 }
 
 .empty-state-button:hover {
-  border-color: color-mix(in srgb, var(--accent) 32%, var(--border-color-hover));
+  border-color: color-mix(
+    in srgb,
+    var(--accent) 32%,
+    var(--border-color-hover)
+  );
   color: var(--accent);
 }
 
@@ -1047,7 +1392,9 @@ export default {
   text-decoration: underline;
   text-decoration-style: dotted;
   text-underline-offset: 2px;
-  transition: opacity 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .dealer-label--clickable:hover,
@@ -1083,18 +1430,158 @@ export default {
   font-size: 0.6875rem;
   line-height: 1.5;
   letter-spacing: 0.02em;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .tag-chip:hover,
 .tag-chip:focus-visible {
-  border-color: color-mix(in srgb, var(--accent) 40%, var(--border-color-hover));
+  border-color: color-mix(
+    in srgb,
+    var(--accent) 40%,
+    var(--border-color-hover)
+  );
   color: var(--accent);
   outline: none;
 }
 
+.merchant-dropdown-wrapper,
 .seen-dropdown-wrapper {
   position: relative;
+}
+
+.merchant-dropdown {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color-light);
+  border-radius: 14px;
+  box-shadow: 0 6px 20px var(--shadow-medium);
+  color: var(--text-primary);
+  min-width: 17rem;
+  overflow: hidden;
+}
+
+.merchant-dropdown-wrapper .merchant-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 100;
+}
+
+.merchant-dropdown-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px 6px;
+}
+
+.merchant-reset {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  padding: 2px 4px;
+}
+
+.merchant-reset:disabled {
+  color: var(--text-secondary);
+  cursor: default;
+}
+
+.merchant-search {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color-light);
+  border-radius: 8px;
+  box-sizing: border-box;
+  color: var(--text-primary);
+  font: inherit;
+  margin: 4px 12px 8px;
+  padding: 7px 8px;
+  width: calc(100% - 24px);
+}
+
+.merchant-options {
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+.merchant-option {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+  padding: 7px 12px;
+}
+
+.merchant-option:hover {
+  background: var(--accent-subtle);
+}
+
+.merchant-option span {
+  flex: 1;
+}
+
+.merchant-option small {
+  color: var(--text-secondary);
+}
+
+.merchant-empty {
+  color: var(--text-secondary);
+  margin: 0;
+  padding: 10px 12px;
+}
+
+.merchant-missing {
+  border-top: 1px solid var(--border-color-light);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+}
+
+.merchant-missing > span {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.merchant-missing button {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+  padding: 2px 0;
+  text-align: left;
+}
+
+.mobile-merchant-filters {
+  padding: 4px 12px;
+}
+
+.mobile-merchant-filters summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+  list-style: none;
+  padding: 8px 0;
+}
+
+.mobile-merchant-filters summary::-webkit-details-marker {
+  display: none;
+}
+
+.mobile-merchant-filters em {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-style: normal;
+}
+
+.mobile-merchant-filters .merchant-dropdown {
+  margin: 4px 0;
+  min-width: 0;
 }
 
 .seen-dropdown {
@@ -1124,5 +1611,4 @@ export default {
 .deal-row--seen:focus-within {
   opacity: 1;
 }
-
 </style>
