@@ -38,6 +38,13 @@
       <p class="html-alt">
         Click <a href="/html">here</a> for an HTML-only site
       </p>
+      <div class="settings-transfer">
+        <button type="button" @click="$emit('export-settings')">Export settings</button>
+        <label>
+          Import settings
+          <input type="file" accept="application/json,.json" @change="importSettings" />
+        </label>
+      </div>
       <button class="close-button" @click="closeOverlay">Close</button>
     </div>
   </div>
@@ -60,6 +67,11 @@ export default {
   methods: {
     closeOverlay() {
       this.$emit("close");
+    },
+    importSettings(event) {
+      const file = event.target.files?.[0];
+      if (file) this.$emit("import-settings", file);
+      event.target.value = "";
     },
   },
 };
@@ -123,6 +135,29 @@ export default {
   vertical-align: middle;
   padding-left: 40px;
   padding-right: 20px;
+}
+
+.settings-transfer {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.settings-transfer button,
+.settings-transfer label {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color-light);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8125rem;
+}
+
+.settings-transfer input {
+  display: none;
 }
 
 .close-button {

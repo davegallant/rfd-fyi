@@ -126,6 +126,11 @@ export function clearSeen() {
   }
 }
 
+/** Reloads the reactive seen-deals state after localStorage is restored. */
+export function reloadSeenDeals() {
+  seen.value = load();
+}
+
 // ---------------------------------------------------------------------------
 // Composable entry point (for use in setup() or <script setup>)
 // ---------------------------------------------------------------------------

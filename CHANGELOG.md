@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.17.0] - 2026-08-15
+
+### Added
+
+- Settings can now be exported from the Info panel and imported on another browser. The JSON backup includes display preferences, hidden merchants, and seen deals.
+
 ## [0.16.1] - 2026-08-14
 
 ### Fixed

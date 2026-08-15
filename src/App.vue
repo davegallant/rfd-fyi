@@ -6,7 +6,8 @@ import utc from "dayjs/plugin/utc";
 import { attachTags, tagFilterTerm, tagSuggestions as suggestTagTerms, visibleTags } from "./enrichment.js";
 import { getFilteredSortedTopics, getMerchantOptions, parseFilterTerm } from "./filterTopics.js";
 import { loadUiPreferences, persistUiPreferences, SORT_METHOD_KEYS } from "./preferences.js";
-import { seen, markSeen, markUnseen, isSeen, markAllSeen, clearSeen } from "./composables/useSeenDeals.js";
+import { exportLocalStorageSettings, importLocalStorageSettings } from "./settingsTransfer.js";
+import { seen, markSeen, markUnseen, isSeen, markAllSeen, clearSeen, reloadSeenDeals } from "./composables/useSeenDeals.js";
 import InfoOverlay from "./components/InfoOverlay.vue";
 
 import "./theme.css";
@@ -66,7 +67,7 @@ export default {
   },
 
   setup() {
-    return { seen, markSeen, markUnseen, markAllSeen, clearSeen };
+    return { seen, markSeen, markUnseen, markAllSeen, clearSeen, reloadSeenDeals };
   },
 
   data() {
@@ -765,6 +766,31 @@ export default {
     handleClearSeen() {
       this.clearSeen();
     },
+
+    exportSettings() {
+      const blob = new Blob([exportLocalStorageSettings()], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "rfd-fyi-settings.json";
+      link.click();
+      URL.revokeObjectURL(url);
+    },
+
+    async importSettings(file) {
+      if (!importLocalStorageSettings(await file.text())) {
+        window.alert("That file is not a valid rfd-fyi settings export.");
+        return;
+      }
+
+      const preferences = loadUiPreferences();
+      this.sortMethod = preferences.sortMethod;
+      this.hideSeen = preferences.hideSeen;
+      this.hideBadDeals = preferences.hideBadDeals;
+      this.hiddenMerchants = preferences.hiddenMerchants;
+      this.applyTheme(preferences.theme, true);
+      this.reloadSeenDeals();
+    },
   },
 };
 </script>
@@ -1234,7 +1260,12 @@ export default {
         </div>
       </div>
     </div>
-    <InfoOverlay :visible="infoOverlayVisible" @close="toggleInfoOverlay" />
+    <InfoOverlay
+      :visible="infoOverlayVisible"
+      @close="toggleInfoOverlay"
+      @export-settings="exportSettings"
+      @import-settings="importSettings"
+    />
     <div
       v-if="mobileMerchantSheetOpen"
       class="mobile-merchant-sheet"
