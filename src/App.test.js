@@ -250,3 +250,45 @@ describe("merchant filters", () => {
     expect(container.querySelectorAll(".deal-row")).toHaveLength(2);
   });
 });
+
+describe("settings panel", () => {
+  it("opens from the gear button and the g key, shows backup controls, and closes on Escape", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("matchMedia", () => ({
+      matches: false,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+    axios.get
+      .mockResolvedValueOnce({ data: [deal(1, "Amazon")] })
+      .mockResolvedValueOnce({ data: {} });
+
+    container = document.createElement("div");
+    document.body.append(container);
+    app = createApp(App);
+    app.config.globalProperties.$router = { replace: () => {} };
+    const vm = app.mount(container);
+    mounted = true;
+    await vi.advanceTimersByTimeAsync(500);
+    await nextTick();
+
+    expect(container.querySelector(".settings-panel")).toBeNull();
+    container.querySelector('button[title="Settings"]').click();
+    await nextTick();
+    expect(vm.settingsPanelVisible).toBe(true);
+    let panel = container.querySelector(".settings-panel");
+    expect(panel).toBeTruthy();
+    expect(panel.textContent).toContain("Export settings");
+    expect(panel.querySelector('input[type="file"]')).toBeTruthy();
+    panel.querySelector(".close-button").click();
+    await nextTick();
+    expect(vm.settingsPanelVisible).toBe(false);
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "g" }));
+    await nextTick();
+    expect(vm.settingsPanelVisible).toBe(true);
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    await nextTick();
+    expect(vm.settingsPanelVisible).toBe(false);
+  });
+});

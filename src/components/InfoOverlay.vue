@@ -33,6 +33,14 @@
             <td><strong>/</strong></td>
             <td>Filter deals</td>
           </tr>
+          <tr>
+            <td><strong>i</strong></td>
+            <td>This panel</td>
+          </tr>
+          <tr>
+            <td><strong>g</strong></td>
+            <td>Settings</td>
+          </tr>
         </tbody>
       </table>
       <p class="html-alt">
