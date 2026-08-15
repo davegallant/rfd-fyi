@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.1] - 2026-08-14
+
+### Fixed
+
+- Replaced the cramped mobile merchant checklist with a full-screen sheet. Hidden merchants stay at the top for quick restoration, search covers both hidden and visible merchants, and rows have touch-friendly controls.
+
 ## [0.16.0] - 2026-08-14
 
 ### Added

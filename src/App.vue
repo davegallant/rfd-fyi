@@ -95,6 +95,9 @@ export default {
       hiddenMerchants: loadUiPreferences().hiddenMerchants,
       merchantFilterInput: "",
       merchantDropdownOpen: false,
+      mobileMerchantSheetOpen: false,
+      mobileMerchantSearch: "",
+      mobileMerchantBodyOverflow: null,
       seenDropdownOpen: false,
       visibleTopicCount: TOPICS_BATCH_SIZE,
       refreshIntervalId: null,
@@ -125,6 +128,7 @@ export default {
     if (this.darkModeQuery && this.themeChangeHandler) {
       this.darkModeQuery.removeEventListener("change", this.themeChangeHandler);
     }
+    this.restoreMobileMerchantScroll();
   },
 
   watch: {
@@ -186,6 +190,24 @@ export default {
     hiddenMerchantsNotInFeed() {
       const availableKeys = new Set(this.merchantOptions.map(({ key }) => key));
       return this.hiddenMerchants.filter((name) => !availableKeys.has(name.trim().toLowerCase()));
+    },
+
+    mobileHiddenMerchantOptions() {
+      const optionsByKey = new Map(this.merchantOptions.map((option) => [option.key, option]));
+      const query = this.mobileMerchantSearch.trim().toLowerCase();
+      return this.hiddenMerchants
+        .map((name) => {
+          const key = name.trim().toLowerCase();
+          return optionsByKey.get(key) ?? { key, name, count: null };
+        })
+        .filter(({ name }) => !query || name.toLowerCase().includes(query));
+    },
+
+    mobileVisibleMerchantOptions() {
+      const query = this.mobileMerchantSearch.trim().toLowerCase();
+      return this.merchantOptions.filter(({ name }) => (
+        !this.isMerchantHidden(name) && (!query || name.toLowerCase().includes(query))
+      ));
     },
 
     displayedTopics() {
@@ -349,6 +371,11 @@ export default {
     },
 
     handleKeyDown(event) {
+      if (event.key === "Tab" && this.mobileMerchantSheetOpen) {
+        this.trapMobileMerchantFocus(event);
+        return;
+      }
+
       const isInput = ["INPUT", "TEXTAREA"].includes(document.activeElement.tagName);
 
       if (event.key === "/" && !isInput) {
@@ -364,6 +391,12 @@ export default {
       if (event.key === "i" && !isInput) {
         event.preventDefault();
         this.toggleInfoOverlay();
+      }
+
+      if (event.key === "Escape" && this.mobileMerchantSheetOpen) {
+        event.preventDefault();
+        this.closeMobileMerchantSheet();
+        return;
       }
 
       if (event.key === "Escape" && this.infoOverlayVisible) {
@@ -603,7 +636,14 @@ export default {
       if (!name) return;
       if (hidden) {
         if (!this.hiddenMerchants.some((existing) => existing.trim().toLowerCase() === key)) {
-          this.hiddenMerchants = [...this.hiddenMerchants, name];
+          this.hiddenMerchants = [name, ...this.hiddenMerchants];
+          this.$nextTick(() => {
+            if (this.mobileMerchantSheetOpen) {
+              this.$refs.mobileMerchantSheetPanel
+                ?.querySelector(".mobile-merchant-option--hidden")
+                ?.focus();
+            }
+          });
         }
       } else {
         this.hiddenMerchants = this.hiddenMerchants.filter((existing) => existing.trim().toLowerCase() !== key);
@@ -612,6 +652,41 @@ export default {
 
     clearHiddenMerchants() {
       this.hiddenMerchants = [];
+    },
+
+    openMobileMerchantSheet() {
+      this.closeMenu();
+      this.mobileMerchantBodyOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      this.mobileMerchantSheetOpen = true;
+      this.$nextTick(() => this.$refs.mobileMerchantSearch?.focus());
+    },
+
+    closeMobileMerchantSheet() {
+      this.mobileMerchantSheetOpen = false;
+      this.mobileMerchantSearch = "";
+      this.restoreMobileMerchantScroll();
+      this.$nextTick(() => this.$refs.mobileMenuButton?.focus());
+    },
+
+    restoreMobileMerchantScroll() {
+      if (this.mobileMerchantBodyOverflow === null) return;
+      document.body.style.overflow = this.mobileMerchantBodyOverflow;
+      this.mobileMerchantBodyOverflow = null;
+    },
+
+    trapMobileMerchantFocus(event) {
+      const focusable = [...this.$refs.mobileMerchantSheetPanel.querySelectorAll("button:not(:disabled), input:not(:disabled)")];
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (!first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     },
 
     toggleSortDropdown() {
@@ -943,7 +1018,7 @@ export default {
             <span class="material-symbols-outlined">info</span>
           </button>
           <div class="mobile-menu-wrapper mobile-only">
-            <button class="icon-button" title="Menu" @click="toggleMenu">
+            <button ref="mobileMenuButton" class="icon-button" title="Menu" @click="toggleMenu">
               <span class="material-symbols-outlined">{{
                 menuOpen ? "close" : "menu"
               }}</span>
@@ -1019,73 +1094,11 @@ export default {
                 <span>Clear seen</span>
               </button>
               <div class="dropdown-divider"></div>
-              <details class="mobile-merchant-filters">
-                <summary>
-                  <span class="material-symbols-outlined">storefront</span>
-                  Merchants
-                  <em v-if="hiddenMerchants.length"
-                    >({{ hiddenMerchants.length }} hidden)</em
-                  >
-                </summary>
-                <div class="merchant-dropdown" @click.stop>
-                  <div class="merchant-dropdown-header">
-                    <strong>Merchants</strong>
-                    <button
-                      class="merchant-reset"
-                      :disabled="hiddenMerchants.length === 0"
-                      @click="clearHiddenMerchants"
-                    >
-                      Show all
-                    </button>
-                  </div>
-                  <input
-                    v-model="merchantFilterInput"
-                    class="merchant-search"
-                    type="search"
-                    placeholder="Search merchants"
-                    aria-label="Search merchants"
-                  />
-                  <div class="merchant-options">
-                    <label
-                      v-for="merchant in filteredMerchantOptions"
-                      :key="merchant.key"
-                      class="merchant-option"
-                    >
-                      <input
-                        type="checkbox"
-                        :checked="!isMerchantHidden(merchant.name)"
-                        @change="
-                          setMerchantHidden(
-                            merchant.name,
-                            !$event.target.checked,
-                          )
-                        "
-                      />
-                      <span>{{ merchant.name }}</span>
-                      <small>{{ merchant.count }}</small>
-                    </label>
-                    <p
-                      v-if="filteredMerchantOptions.length === 0"
-                      class="merchant-empty"
-                    >
-                      No merchants match.
-                    </p>
-                  </div>
-                  <div
-                    v-if="hiddenMerchantsNotInFeed.length"
-                    class="merchant-missing"
-                  >
-                    <span>Hidden outside this feed</span>
-                    <button
-                      v-for="merchant in hiddenMerchantsNotInFeed"
-                      :key="merchant"
-                      @click="setMerchantHidden(merchant, false)"
-                    >
-                      {{ merchant }} <span aria-hidden="true">×</span>
-                    </button>
-                  </div>
-                </div>
-              </details>
+              <button class="dropdown-item" @click="openMobileMerchantSheet">
+                <span class="material-symbols-outlined">storefront</span>
+                <span>Merchants</span>
+                <span v-if="hiddenMerchants.length">({{ hiddenMerchants.length }} hidden)</span>
+              </button>
               <div class="dropdown-divider"></div>
               <button
                 class="dropdown-item"
@@ -1222,6 +1235,63 @@ export default {
       </div>
     </div>
     <InfoOverlay :visible="infoOverlayVisible" @close="toggleInfoOverlay" />
+    <div
+      v-if="mobileMerchantSheetOpen"
+      class="mobile-merchant-sheet"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="mobile-merchant-sheet-title"
+      @click.self="closeMobileMerchantSheet"
+    >
+      <section ref="mobileMerchantSheetPanel" class="mobile-merchant-sheet-panel">
+        <header class="mobile-merchant-sheet-header">
+          <h2 id="mobile-merchant-sheet-title">Merchants</h2>
+          <button class="mobile-merchant-sheet-close" aria-label="Close merchants" @click="closeMobileMerchantSheet">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </header>
+        <div class="mobile-merchant-sheet-controls">
+          <input
+            ref="mobileMerchantSearch"
+            v-model="mobileMerchantSearch"
+            class="merchant-search"
+            type="search"
+            placeholder="Search merchants"
+            aria-label="Search merchants"
+          />
+          <button class="merchant-reset" :disabled="hiddenMerchants.length === 0" @click="clearHiddenMerchants">Show all</button>
+        </div>
+        <div class="mobile-merchant-sheet-results">
+          <section v-if="mobileHiddenMerchantOptions.length" aria-labelledby="hidden-merchants-title">
+            <h3 id="hidden-merchants-title">Hidden</h3>
+            <button
+              v-for="merchant in mobileHiddenMerchantOptions"
+              :key="merchant.key"
+              class="mobile-merchant-option mobile-merchant-option--hidden"
+              @click="setMerchantHidden(merchant.name, false)"
+            >
+              <span>{{ merchant.name }}</span>
+              <small>{{ merchant.count ?? "Not in feed" }}</small>
+              <strong>Restore</strong>
+            </button>
+          </section>
+          <section v-if="mobileVisibleMerchantOptions.length" aria-labelledby="visible-merchants-title">
+            <h3 id="visible-merchants-title">Visible</h3>
+            <button
+              v-for="merchant in mobileVisibleMerchantOptions"
+              :key="merchant.key"
+              class="mobile-merchant-option"
+              @click="setMerchantHidden(merchant.name, true)"
+            >
+              <span>{{ merchant.name }}</span>
+              <small>{{ merchant.count }}</small>
+              <strong>Hide</strong>
+            </button>
+          </section>
+          <p v-if="!mobileHiddenMerchantOptions.length && !mobileVisibleMerchantOptions.length" class="merchant-empty">No merchants match.</p>
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -1556,32 +1626,137 @@ export default {
   text-align: left;
 }
 
-.mobile-merchant-filters {
-  padding: 4px 12px;
+.mobile-merchant-sheet {
+  align-items: stretch;
+  background: var(--bg-primary);
+  display: flex;
+  inset: 0;
+  min-height: 100dvh;
+  position: fixed;
+  z-index: 1000;
 }
 
-.mobile-merchant-filters summary {
+.mobile-merchant-sheet-panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+.mobile-merchant-sheet-header,
+.mobile-merchant-sheet-controls {
   align-items: center;
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+.mobile-merchant-sheet-header {
+  border-bottom: 1px solid var(--border-color-light);
+  justify-content: space-between;
+}
+
+.mobile-merchant-sheet-header h2,
+.mobile-merchant-sheet-results h3 {
+  margin: 0;
+}
+
+.mobile-merchant-sheet-header h2 {
+  font-size: 1.125rem;
+}
+
+.mobile-merchant-sheet-close {
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--text-primary);
   cursor: pointer;
   display: flex;
-  gap: 8px;
-  list-style: none;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0;
+}
+
+.mobile-merchant-sheet-controls {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color-light);
+}
+
+.mobile-merchant-sheet-controls .merchant-search {
+  flex: 1;
+  margin: 0;
+  min-height: 44px;
+  width: auto;
+}
+
+.mobile-merchant-sheet-controls .merchant-reset {
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.mobile-merchant-sheet-results {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 8px 0;
 }
 
-.mobile-merchant-filters summary::-webkit-details-marker {
-  display: none;
+.mobile-merchant-sheet-results section + section {
+  border-top: 1px solid var(--border-color-light);
+  margin-top: 8px;
+  padding-top: 8px;
 }
 
-.mobile-merchant-filters em {
+.mobile-merchant-sheet-results h3 {
   color: var(--text-secondary);
   font-size: 0.75rem;
-  font-style: normal;
+  letter-spacing: 0.04em;
+  padding: 8px 16px;
+  text-transform: uppercase;
 }
 
-.mobile-merchant-filters .merchant-dropdown {
-  margin: 4px 0;
-  min-width: 0;
+.mobile-merchant-option {
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: grid;
+  font: inherit;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  min-height: 52px;
+  padding: 8px 16px;
+  text-align: left;
+  width: 100%;
+}
+
+.mobile-merchant-option:active {
+  background: var(--accent-subtle);
+}
+
+.mobile-merchant-option span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-merchant-option small {
+  color: var(--text-secondary);
+}
+
+.mobile-merchant-option strong {
+  color: var(--accent);
+  font-size: 0.8125rem;
+}
+
+.mobile-merchant-option--hidden {
+  background: var(--accent-subtle);
 }
 
 .seen-dropdown {
