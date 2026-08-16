@@ -1656,6 +1656,10 @@ export default {
   background: var(--accent-subtle);
 }
 
+.merchant-option input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
 .merchant-option span {
   flex: 1;
 }
