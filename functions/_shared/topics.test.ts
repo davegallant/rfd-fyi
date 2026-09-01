@@ -114,7 +114,45 @@ describe("refreshTopics enrichment isolation", () => {
 
 describe("refreshTopics", () => {
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
+  });
+
+  it("removes past-dated offers while retaining current and unknown expiry dates", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-31T15:00:00Z"));
+    const existingTopics = [
+      topic({ topic_id: 20, offer: undefined, Offer: { dealer_name: "Expired cached", url: "", expires_at: "2026-08-29" } }),
+      topic({ topic_id: 21, offer: undefined, Offer: { dealer_name: "Current cached", url: "", expires_at: "2026-08-31" } }),
+      topic({ topic_id: 22, offer: undefined, Offer: { dealer_name: "Legacy cached", url: "" } }),
+    ];
+    const get = vi.fn(async (key) => key === "topics.json" ? JSON.stringify(existingTopics) : null);
+    vi.stubGlobal("fetch", vi.fn(async (url) => {
+      const requestUrl = String(url);
+      if (requestUrl.includes("redirects.json")) return jsonResponse([]);
+      if (new URL(requestUrl).searchParams.get("forum_id") === "68") {
+        return pageFromUrl(requestUrl) === 6
+          ? jsonResponse({ topics: [topic({ topic_id: 22, offer: { dealer_name: "Legacy cached", url: "", expires_at: "2026-08-22" } })] })
+          : jsonResponse({ topics: [] });
+      }
+      if (pageFromUrl(requestUrl) !== 1) return jsonResponse({ topics: [] });
+      return jsonResponse({ topics: [
+        topic({ topic_id: 10, offer: { dealer_name: "Expired fresh", url: "", expires_at: "2026-08-30" } }),
+        topic({ topic_id: 11, offer: { dealer_name: "Expires today", url: "", expires_at: "2026-08-31" } }),
+        topic({ topic_id: 12, offer: { dealer_name: "Future", url: "", expires_at: "2026-09-01" } }),
+        topic({ topic_id: 13, offer: { dealer_name: "Unknown", url: "", expires_at: "not-a-date" } }),
+        topic({ topic_id: 14, offer: { dealer_name: "No date", url: "" } }),
+      ] });
+    }));
+
+    const refreshed = await refreshTopics({ TOPICS_KV: { get, put: vi.fn() } });
+
+    expect(refreshed.map(({ topic_id }) => topic_id)).toEqual([11, 12, 13, 14, 21]);
+    expect(refreshed.find(({ topic_id }) => topic_id === 12)?.Offer).toEqual({
+      dealer_name: "Future",
+      url: "",
+      expires_at: "2026-09-01",
+    });
   });
 
   it("refreshes all hot-deals pages and writes the newest API topics to KV", async () => {
@@ -149,7 +187,7 @@ describe("refreshTopics", () => {
 
     const refreshed = await refreshTopics({ TOPICS_KV: { get, put } });
 
-    expect(fetchMock).toHaveBeenCalledTimes(4);
+    expect(fetchMock).toHaveBeenCalledTimes(10);
     expect(refreshed).toHaveLength(1000);
     expect(refreshed).toContainEqual(expect.objectContaining({
       topic_id: 2818435,

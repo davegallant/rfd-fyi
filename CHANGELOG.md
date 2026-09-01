@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.17.1] - 2026-08-31
+
+### Fixed
+
+- Expired offers are removed during refresh using RedFlagDeals' `expires_at` date. The Worker also checks the recent Expired Deals feed so cached topics created before expiry dates were retained, such as completed event offers, are cleaned up.
+
 ## [0.17.0] - 2026-08-15
 
 ### Added

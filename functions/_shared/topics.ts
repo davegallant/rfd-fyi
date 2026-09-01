@@ -4,6 +4,7 @@ const RFD_FORUM_BASE = "https://forums.redflagdeals.com";
 const DEFAULT_REDIRECTS_URL = "https://raw.githubusercontent.com/davegallant/rfd-redirect-stripper/main/redirects.json";
 const DEALS_FETCH_CONCURRENCY = 5;
 const REFRESHED_HOT_DEALS_PAGE_COUNT = 3;
+const REFRESHED_EXPIRED_DEALS_PAGE_COUNT = 6;
 const MAX_STORED_TOPIC_COUNT = 1000;
 
 export interface Env {
@@ -50,6 +51,7 @@ interface Votes {
 interface Offer {
   dealer_name?: string;
   url?: string;
+  expires_at?: string;
 }
 
 interface Redirect {
@@ -96,8 +98,14 @@ export async function refreshTopics(env: Env): Promise<Topic[]> {
   const redirects = await getRedirects(env);
   refreshedTopics = stripRedirects(refreshedTopics, redirects);
 
+  const expiredTopics = await getDeals(env, 68, 1, REFRESHED_EXPIRED_DEALS_PAGE_COUNT + 1);
+  const expiredTopicIds = new Set(
+    expiredTopics.filter((topic) => isExpiredTopic(topic)).map((topic) => topic.topic_id),
+  );
   const existingTopics = (await readTopics(env)).map((topic) => compactTopic(normalizeTopic(topic)));
-  const topics = deduplicateTopics([...refreshedTopics, ...existingTopics]).slice(0, MAX_STORED_TOPIC_COUNT);
+  const topics = deduplicateTopics([...refreshedTopics, ...existingTopics])
+    .filter((topic) => !isExpiredTopic(topic) && !expiredTopicIds.has(topic.topic_id))
+    .slice(0, MAX_STORED_TOPIC_COUNT);
 
   await env.TOPICS_KV.put(TOPICS_KEY, JSON.stringify(topics));
   await writeRefreshStatus(env, {
@@ -232,10 +240,21 @@ function compactTopic(topic: Topic): Topic {
       ? {
           dealer_name: topic.Offer.dealer_name,
           url: topic.Offer.url,
+          ...(topic.Offer.expires_at !== undefined ? { expires_at: topic.Offer.expires_at } : {}),
         }
       : undefined,
     score: topic.score,
   };
+}
+
+function isExpiredTopic(topic: Topic, now = new Date()): boolean {
+  const expiresAt = topic.Offer?.expires_at ?? topic.offer?.expires_at;
+  if (typeof expiresAt !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(expiresAt)) return false;
+
+  const expiryTime = Date.parse(`${expiresAt}T00:00:00Z`);
+  if (!Number.isFinite(expiryTime) || new Date(expiryTime).toISOString().slice(0, 10) !== expiresAt) return false;
+
+  return expiresAt < now.toISOString().slice(0, 10);
 }
 
 export function stripRedirects(topics: Topic[], redirects: Redirect[]): Topic[] {
