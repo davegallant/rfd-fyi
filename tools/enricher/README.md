@@ -142,6 +142,37 @@ For an unattended timer, run the enricher on whichever machine is actually
 always on — hephaestus, which serves the proxy, is the obvious one. Running it
 on a laptop means tags only update while the laptop is awake.
 
+### Ubuntu LXC deployment
+
+The always-on deployment runs on the Proxmox LXC reachable as `root@rfd-enrich`.
+It keeps both the LiteLLM proxy and the timer in the container, so it does not
+depend on another machine being awake.
+
+- App checkout: `/opt/rfd-fyi`
+- LiteLLM virtual environment: `/opt/litellm-venv`
+- Service state and ChatGPT device-login token: `/var/lib/rfd-enrich`
+- Ingestion secret: `/etc/rfd-enrich/enricher.env` (mode `0600`)
+- Services: `rfd-enrich-litellm.service`, `rfd-enrich.service`, and
+  `rfd-enrich.timer`
+
+Check normal operation with:
+
+```sh
+ssh root@rfd-enrich 'systemctl status rfd-enrich-litellm rfd-enrich.timer --no-pager'
+ssh root@rfd-enrich 'journalctl -u rfd-enrich --no-pager -n 40'
+```
+
+If the ChatGPT session expires, restart LiteLLM, read the device code from its
+log, approve it at `https://auth.openai.com/codex/device`, then start one run:
+
+```sh
+ssh root@rfd-enrich 'systemctl restart rfd-enrich-litellm; journalctl -u rfd-enrich-litellm -f'
+ssh root@rfd-enrich 'systemctl start rfd-enrich'
+```
+
+The service uses `gpt-5.6-luna` with `ENRICH_STREAM=true`; the stream setting is
+required because current LiteLLM ChatGPT/Codex proxies return streamed output.
+
 ## First run
 
 ```sh
