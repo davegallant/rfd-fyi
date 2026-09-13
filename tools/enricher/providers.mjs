@@ -138,6 +138,7 @@ const litellm = {
       headers,
       body: {
         model: config.model || this.defaultModel,
+        ...(config.stream ? { stream: true } : {}),
         /**
          * The answer is ~10 tokens. The rest is headroom for reasoning models,
          * and it is not optional: `minimax-m3` emits `reasoning_content` whose

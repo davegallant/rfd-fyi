@@ -157,4 +157,22 @@ describe("classifyBatch through an OpenAI-compatible proxy", () => {
     const fetchImpl = vi.fn(async () => new Response("rate limit exceeded", { status: 429 }));
     await expect(runProxy(fetchImpl)).rejects.toThrow(/429/);
   });
+
+  it("tags a deal from a streamed ChatGPT response split across chunks", async () => {
+    const fetchImpl = vi.fn(async (_url, init) => {
+      expect(JSON.parse(init.body).stream).toBe(true);
+      const events = [
+        'data: {"choices":[{"delta":{"content":"{\\\"tags\\\":[\\\"comp"}}]}\n\n',
+        'data: {"choices":[{"delta":{"content":"uting\\\"]}"}}]}\n\n',
+        'data: [DONE]\n\n',
+      ].join("");
+      return new Response(events, { headers: { "content-type": "text/event-stream" } });
+    });
+
+    const { tags } = await run(TOPICS.slice(0, 1), fetchImpl, {
+      provider: resolveProvider("litellm"),
+      config: { stream: true },
+    });
+    expect(tags).toEqual({ 1: ["computing"] });
+  });
 });

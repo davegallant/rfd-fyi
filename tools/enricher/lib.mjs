@@ -248,5 +248,21 @@ export async function classifyTopic(topic, { provider, config, vocabulary, gloss
     throw new Error(`${provider.name} returned ${response.status} for topic ${topic.topic_id}: ${detail}`);
   }
 
-  return parseTags(provider.extractContent(await response.json()), vocabulary, maxTags);
+  const content = body.stream
+    ? await readStreamedContent(response)
+    : provider.extractContent(await response.json());
+  return parseTags(content, vocabulary, maxTags);
+}
+
+async function readStreamedContent(response) {
+  let content = "";
+  for (const line of (await response.text()).split(/\r?\n/)) {
+    if (!line.startsWith("data:")) continue;
+    const data = line.slice(5).trim();
+    if (data === "[DONE]") break;
+    const event = JSON.parse(data);
+    if (event.error) throw new Error(`streamed model error: ${JSON.stringify(event.error)}`);
+    content += event.choices?.[0]?.delta?.content ?? "";
+  }
+  return content || null;
 }

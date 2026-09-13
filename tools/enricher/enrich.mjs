@@ -27,6 +27,7 @@ function loadProvider() {
     model: process.env.ENRICH_MODEL || provider.defaultModel,
     baseUrl: process.env.ENRICH_BASE_URL || provider.defaultBaseUrl,
     apiKey: process.env.ENRICH_API_KEY,
+    stream: process.env.ENRICH_STREAM === "true",
   };
 
   if (!origin) {

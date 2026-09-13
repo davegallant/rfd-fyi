@@ -172,6 +172,7 @@ starting over. Steady state is only a handful of new deals per run.
 | `ENRICH_API_KEY` | *(unset)* | Bearer token for the proxy; unset sends no header |
 | `ENRICH_MODEL` | per provider | `minimax-m3` / `qwen2.5:7b-instruct` |
 | `ENRICH_BASE_URL` | per provider | `http://hephaestus:4000/v1` / `http://localhost:11434` |
+| `ENRICH_STREAM` | `false` | Set to `true` for ChatGPT/Codex models behind LiteLLM that require streaming responses |
 | `ENRICH_CONCURRENCY` | per provider | Requests in flight — `4` hosted, `1` for Ollama (one GPU gains nothing from more) |
 | `ENRICH_FLUSH_EVERY` | `50` | Topics per write back |
 | `ENRICH_LIMIT` | `0` (no limit) | Cap topics per run, for trying things out |
