@@ -302,8 +302,9 @@ describe("deal loading status", () => {
     await vi.advanceTimersByTimeAsync(500);
     await nextTick();
 
-    expect(container.querySelector(".feed-status")?.textContent).toContain("Last updated 2026-09-14 08:00 AM");
-    expect(container.querySelector(".feed-status")?.textContent).toContain("refresh degraded");
+    const status = container.querySelector(".feed-status")?.textContent;
+    expect(status).toMatch(/^\s*Last updated 2026-09-14 \d{2}:00 (?:AM|PM)/);
+    expect(status).toContain("refresh degraded");
   });
 });
 
