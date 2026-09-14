@@ -46,7 +46,8 @@ afterEach(() => {
   container = undefined;
   mounted = false;
   storage = undefined;
-  vi.clearAllMocks();
+  window.history.replaceState({}, "", "/");
+  vi.resetAllMocks();
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });
@@ -248,6 +249,66 @@ describe("merchant filters", () => {
     await nextTick();
     expect(vm.hiddenMerchants).toEqual([]);
     expect(container.querySelectorAll(".deal-row")).toHaveLength(2);
+  });
+});
+
+describe("deal loading status", () => {
+  it("shows a load error instead of an empty-filter message when topics cannot be fetched", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("matchMedia", () => ({
+      matches: false,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+    axios.get
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValueOnce({ data: {} })
+      .mockResolvedValueOnce({ data: { ok: true, completed_at: "2026-09-14T12:00:00.000Z" } });
+
+    container = document.createElement("div");
+    document.body.append(container);
+    app = createApp(App);
+    app.config.globalProperties.$router = { replace: () => {} };
+    app.mount(container);
+    mounted = true;
+    await vi.advanceTimersByTimeAsync(500);
+    await nextTick();
+
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain("Could not load deals");
+    expect(container.textContent).not.toContain("No deals match your filters");
+  });
+
+  it("shows the last successful server refresh after loading deals", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("matchMedia", () => ({
+      matches: false,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+    axios.get
+      .mockResolvedValueOnce({ data: [deal(1, "Amazon")] })
+      .mockResolvedValueOnce({ data: {} })
+      .mockResolvedValueOnce({ data: { ok: false, completed_at: "2026-09-14T12:00:00.000Z" } });
+
+    container = document.createElement("div");
+    document.body.append(container);
+    app = createApp(App);
+    app.config.globalProperties.$router = { replace: () => {} };
+    app.mount(container);
+    mounted = true;
+    await vi.advanceTimersByTimeAsync(500);
+    await nextTick();
+
+    expect(container.querySelector(".feed-status")?.textContent).toContain("Last updated 2026-09-14 08:00 AM");
+    expect(container.querySelector(".feed-status")?.textContent).toContain("refresh degraded");
+  });
+});
+
+describe("URL filters", () => {
+  it("drops non-string entries from shared filter URLs", () => {
+    window.history.replaceState({}, "", `/?filters=${encodeURIComponent(JSON.stringify(["ssd", 42, null, ""]))}`);
+
+    expect(App.methods.parseFiltersFromUrl()).toEqual(["ssd"]);
   });
 });
 

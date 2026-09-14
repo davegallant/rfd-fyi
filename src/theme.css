@@ -776,3 +776,27 @@ mark {
 .icon-button:disabled:hover .material-symbols-outlined {
   color: inherit;
 }
+.feed-status {
+  margin: 0 0 0.5rem;
+  color: var(--text-muted, #666);
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.feed-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  color: #a12622;
+}
+
+.feed-error button {
+  border: 1px solid currentColor;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}

@@ -264,13 +264,25 @@ describe("refreshTopics", () => {
     expect(fetchMock).toHaveBeenCalledWith("https://redirects.example.test/list.json", expect.any(Object));
   });
 
-  it("does not overwrite KV when every deals request fails", async () => {
+  it("preserves topics and records a failed attempt when every hot-deals request fails", async () => {
     const put = vi.fn();
+    const cached = [topic({ topic_id: 99 })];
     vi.stubGlobal("fetch", vi.fn(async () => new Response("nope", { status: 503 })));
 
-    await expect(refreshTopics({ TOPICS_KV: { get: vi.fn(), put } })).resolves.toEqual([]);
+    await expect(refreshTopics({
+      TOPICS_KV: { get: vi.fn(async (key) => key === "topics.json" ? JSON.stringify(cached) : null), put },
+    })).rejects.toThrow("all hot-deals pages failed");
 
-    expect(put).not.toHaveBeenCalled();
+    expect(put).not.toHaveBeenCalledWith("topics.json", expect.anything());
+    expect(JSON.parse(put.mock.calls.find(([key]) => key === "refresh-status.json")[1]))
+      .toEqual(expect.objectContaining({
+        ok: false,
+        refreshed: 0,
+        stored: 1,
+        completed_at: null,
+        attempted_at: expect.any(String),
+        error: "all hot-deals pages failed",
+      }));
   });
 
   it("treats thrown page fetches as empty pages", async () => {
@@ -305,6 +317,13 @@ describe("refreshTopics", () => {
     expect(refreshed).toHaveLength(2);
     expect(refreshed).not.toContainEqual(expect.objectContaining({ topic_id: 2 }));
     expect(put).toHaveBeenCalledTimes(2);
+    const storedStatus = JSON.parse(put.mock.calls.find(([key]) => key === "refresh-status.json")[1]);
+    expect(storedStatus).toEqual(expect.objectContaining({
+      ok: false,
+      error: "1 upstream page failed",
+      completed_at: expect.any(String),
+      attempted_at: expect.any(String),
+    }));
   });
 
   it("continues without redirects when the redirects endpoint fails", async () => {

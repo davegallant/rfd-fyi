@@ -24,7 +24,9 @@ export interface RefreshStatus {
   ok: boolean;
   refreshed: number;
   stored: number;
-  completed_at: string;
+  completed_at: string | null;
+  attempted_at?: string;
+  error?: string;
 }
 
 export interface Topic {
@@ -87,10 +89,23 @@ export async function readRefreshStatusJson(env: Env): Promise<string> {
 }
 
 export async function refreshTopics(env: Env): Promise<Topic[]> {
-  let refreshedTopics = await getDeals(env, 9, 1, REFRESHED_HOT_DEALS_PAGE_COUNT + 1);
+  const attemptedAt = new Date().toISOString();
+  const hotDeals = await getDeals(env, 9, 1, REFRESHED_HOT_DEALS_PAGE_COUNT + 1);
+  let refreshedTopics = hotDeals.topics;
 
-  if (refreshedTopics.length === 0) {
-    return [];
+  if (refreshedTopics.length === 0 && hotDeals.failedPages === REFRESHED_HOT_DEALS_PAGE_COUNT) {
+    const existingTopics = await readTopics(env);
+    const previousStatus = await readRefreshStatus(env);
+    const error = "all hot-deals pages failed";
+    await writeRefreshStatus(env, {
+      ok: false,
+      refreshed: 0,
+      stored: existingTopics.length,
+      completed_at: previousStatus?.completed_at ?? null,
+      attempted_at: attemptedAt,
+      error,
+    });
+    throw new Error(error);
   }
 
   refreshedTopics = deduplicateTopics(refreshedTopics);
@@ -98,19 +113,22 @@ export async function refreshTopics(env: Env): Promise<Topic[]> {
   const redirects = await getRedirects(env);
   refreshedTopics = stripRedirects(refreshedTopics, redirects);
 
-  const expiredTopics = await getDeals(env, 68, 1, REFRESHED_EXPIRED_DEALS_PAGE_COUNT + 1);
-  const expiredTopicIds = new Set(expiredTopics.map((topic) => topic.topic_id));
+  const expiredDeals = await getDeals(env, 68, 1, REFRESHED_EXPIRED_DEALS_PAGE_COUNT + 1);
+  const expiredTopicIds = new Set(expiredDeals.topics.map((topic) => topic.topic_id));
   const existingTopics = (await readTopics(env)).map((topic) => compactTopic(normalizeTopic(topic)));
   const topics = deduplicateTopics([...refreshedTopics, ...existingTopics])
     .filter((topic) => !isExpiredTopic(topic) && !expiredTopicIds.has(topic.topic_id))
     .slice(0, MAX_STORED_TOPIC_COUNT);
 
   await env.TOPICS_KV.put(TOPICS_KEY, JSON.stringify(topics));
+  const failedPages = hotDeals.failedPages + expiredDeals.failedPages;
   await writeRefreshStatus(env, {
-    ok: true,
+    ok: failedPages === 0,
     refreshed: refreshedTopics.length,
     stored: topics.length,
-    completed_at: new Date().toISOString(),
+    completed_at: attemptedAt,
+    attempted_at: attemptedAt,
+    ...(failedPages > 0 ? { error: `${failedPages} upstream page${failedPages === 1 ? "" : "s"} failed` } : {}),
   });
   return topics;
 }
@@ -119,21 +137,32 @@ async function writeRefreshStatus(env: Env, status: RefreshStatus): Promise<void
   await env.TOPICS_KV.put(REFRESH_STATUS_KEY, JSON.stringify(status));
 }
 
-async function getDeals(env: Env, id: number, firstPage: number, lastPage: number): Promise<Topic[]> {
+async function readRefreshStatus(env: Env): Promise<RefreshStatus | null> {
+  try {
+    const status = JSON.parse(await readRefreshStatusJson(env));
+    return status && typeof status === "object" ? status : null;
+  } catch {
+    return null;
+  }
+}
+
+async function getDeals(env: Env, id: number, firstPage: number, lastPage: number): Promise<{ topics: Topic[]; failedPages: number }> {
   const topics: Topic[] = [];
+  let failedPages = 0;
   const base = (env.RFD_BASE_URL || RFD_FORUM_BASE).replace(/\/$/, "");
   const pages = Array.from({ length: lastPage - firstPage }, (_, index) => firstPage + index);
 
   for (let index = 0; index < pages.length; index += DEALS_FETCH_CONCURRENCY) {
     const batch = pages.slice(index, index + DEALS_FETCH_CONCURRENCY);
     const results = await Promise.all(batch.map((page) => fetchDealsPage(base, id, page)));
-    topics.push(...results.flat());
+    failedPages += results.filter((result) => !result.ok).length;
+    topics.push(...results.flatMap((result) => result.topics));
   }
 
-  return topics;
+  return { topics, failedPages };
 }
 
-async function fetchDealsPage(base: string, id: number, page: number): Promise<Topic[]> {
+async function fetchDealsPage(base: string, id: number, page: number): Promise<{ ok: boolean; topics: Topic[] }> {
   const requestUrl = `${base}/api/topics?forum_id=${id}&per_page=40&page=${page}`;
 
   try {
@@ -147,14 +176,14 @@ async function fetchDealsPage(base: string, id: number, page: number): Promise<T
     });
     if (!response.ok) {
       console.warn(`unexpected status fetching deals page ${page}: ${response.status}`);
-      return [];
+      return { ok: false, topics: [] };
     }
 
     const body = await response.json<TopicsResponse>();
-    return filterNonSponsorTopics(body.topics ?? []).map(normalizeTopic);
+    return { ok: true, topics: filterNonSponsorTopics(body.topics ?? []).map(normalizeTopic) };
   } catch (error) {
     console.warn("error fetching deals", error);
-    return [];
+    return { ok: false, topics: [] };
   }
 }
 

@@ -71,7 +71,10 @@ export function filterTopicsByActiveFilters(topics, activeFilters) {
 
     return parsed.every(({ regex, literal }) => {
       // Regex terms search everything, so /#gam(ing|bling)/ stays possible.
-      if (regex) return regex.test(`${dealText} ${tagText}`);
+      if (regex) {
+        regex.lastIndex = 0;
+        return regex.test(`${dealText} ${tagText}`);
+      }
       // A #-prefixed term searches tags only; without it, tags are not searched.
       // Otherwise a plain search for "computing" would match the "#computing"
       // tag as a substring, silently widening every title search.

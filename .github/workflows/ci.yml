@@ -31,3 +31,9 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Build Pages Functions
+        run: npx wrangler pages functions build functions --outdir /tmp/rfd-fyi-pages-functions
+
+      - name: Validate scheduled Worker
+        run: npx wrangler deploy --dry-run --config worker/wrangler.toml

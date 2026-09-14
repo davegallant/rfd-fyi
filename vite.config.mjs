@@ -25,6 +25,7 @@ export default defineConfig({
     proxy: {
       "/topics.json": process.env.VITE_API_ORIGIN || "https://rfd-fyi.pages.dev",
       "/enrichment.json": process.env.VITE_API_ORIGIN || "https://rfd-fyi.pages.dev",
+      "/health.json": process.env.VITE_API_ORIGIN || "https://rfd-fyi.pages.dev",
       "/html": process.env.VITE_API_ORIGIN || "https://rfd-fyi.pages.dev",
     },
   },

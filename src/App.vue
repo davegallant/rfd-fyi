@@ -62,6 +62,11 @@ function hashString(str) {
   return Math.abs(hash);
 }
 
+function normalizeUrlFilters(value) {
+  if (!Array.isArray(value)) return [];
+  return value.filter((filter) => typeof filter === "string" && filter.trim() !== "");
+}
+
 export default {
   components: {
     InfoOverlay,
@@ -91,6 +96,9 @@ export default {
       darkModeQuery: null,
       themeChangeHandler: null,
       isLoading: false,
+      loadError: "",
+      lastSuccessfulRefresh: null,
+      refreshDegraded: false,
       menuOpen: false,
       infoOverlayVisible: false,
       settingsPanelVisible: false,
@@ -243,6 +251,13 @@ export default {
         dark: "Theme: Dark (click for Auto)",
       };
       return titles[this.currentTheme];
+    },
+
+    feedStatusText() {
+      if (!this.lastSuccessfulRefresh) return "";
+      const updated = dayjs(this.lastSuccessfulRefresh);
+      if (!updated.isValid()) return "";
+      return `Last updated ${updated.format("YYYY-MM-DD hh:mm A")}`;
     },
 
     sortOptions() {
@@ -447,7 +462,7 @@ export default {
       if (searchParam) {
         try {
           const parsed = JSON.parse(searchParam);
-          return Array.isArray(parsed) ? parsed : [];
+          return normalizeUrlFilters(parsed);
         } catch (e) {
           return [];
         }
@@ -458,7 +473,7 @@ export default {
         try {
           const decoded = decodeURIComponent(match[1]);
           const parsed = JSON.parse(decoded);
-          return Array.isArray(parsed) ? parsed : [];
+          return normalizeUrlFilters(parsed);
         } catch (e) {
           return [];
         }
@@ -589,6 +604,7 @@ export default {
 
     fetchDeals() {
       this.isLoading = true;
+      this.loadError = "";
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 500));
 
       Promise.all([
@@ -596,17 +612,23 @@ export default {
           headers: { "cache-control": "no-cache" },
         }),
         // Tags are optional garnish: a failure here must not cost us the deals.
-        axios.get(`/enrichment.json?_=${Date.now()}`, {
+        Promise.resolve(axios.get(`/enrichment.json?_=${Date.now()}`, {
           headers: { "cache-control": "no-cache" },
-        }).catch(() => ({ data: null })),
+        })).catch(() => ({ data: null })),
+        Promise.resolve(axios.get(`/health.json?_=${Date.now()}`, {
+          headers: { "cache-control": "no-cache" },
+        })).catch(() => ({ data: null })),
         minLoadingTime
       ])
-        .then(([response, enrichment]) => {
+        .then(([response, enrichment, health]) => {
           this.topics = attachTags(response.data, enrichment.data);
           this.tagVocabulary = Array.isArray(enrichment.data?.vocabulary) ? enrichment.data.vocabulary : [];
+          this.lastSuccessfulRefresh = health?.data?.completed_at ?? null;
+          this.refreshDegraded = health?.data?.ok === false;
           this.resetVisibleTopics();
         })
         .catch((err) => {
+          this.loadError = "Could not load deals. Check your connection and try again.";
           console.error("Failed to fetch deals:", err.response || err);
         })
         .finally(() => {
@@ -1182,7 +1204,16 @@ export default {
         >
         <p>Loading deals...</p>
       </div>
+      <div v-else-if="loadError && topics.length === 0" class="feed-error" role="alert">
+        <span class="material-symbols-outlined">error</span>
+        <span>{{ loadError }}</span>
+        <button type="button" @click="fetchDeals">Try again</button>
+      </div>
       <div class="cards-wrapper" v-else>
+        <div v-if="loadError" class="feed-error" role="alert">{{ loadError }}</div>
+        <p v-if="feedStatusText" class="feed-status">
+          {{ feedStatusText }}<span v-if="refreshDegraded"> · refresh degraded</span>
+        </p>
         <div v-if="isLoading" class="loading-overlay">
           <span class="material-symbols-outlined spinning loading-spinner"
             >refresh</span

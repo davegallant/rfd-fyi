@@ -216,6 +216,17 @@ describe("filterTopicsByActiveFilters", () => {
     expect(out.map((d) => d.topic_id).sort()).toEqual([1, 2]);
   });
 
+  it("applies stateful regex flags independently to every deal", () => {
+    const repeated = [
+      topic({ topic_id: 1, title: "sale" }),
+      topic({ topic_id: 2, title: "sale" }),
+      topic({ topic_id: 3, title: "sale" }),
+    ];
+
+    expect(filterTopicsByActiveFilters(repeated, ["/sale/g"]).map((deal) => deal.topic_id))
+      .toEqual([1, 2, 3]);
+  });
+
   it("case-sensitive regex /SSD/ does not match lowercase ssd", () => {
     const mixedCase = [
       topic({ topic_id: 1, title: "SSD Sale", Offer: { dealer_name: "Best Buy" } }),

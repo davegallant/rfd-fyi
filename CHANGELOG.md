@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.18.0] - 2026-09-14
+
+### Added
+
+- The deal list shows the last successful server refresh and reports degraded refreshes or loading failures instead of presenting them as empty filter results.
+
+### Changed
+
+- Refresh health now records every attempt and failed upstream pages while preserving cached topics and the last successful timestamp after a total outage.
+- CI compiles Pages Functions and validates the scheduled Worker configuration alongside the frontend build.
+
+### Fixed
+
+- Stateful regular-expression filters such as `/sale/g` now match each deal independently, and malformed shared filter URLs no longer inject non-string filters into the app.
+
 ## [0.17.1] - 2026-08-31
 
 ### Fixed
