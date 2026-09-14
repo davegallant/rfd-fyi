@@ -6,7 +6,7 @@ default:
 
 # Run the Cloudflare Pages app locally, including Pages Functions
 dev:
-    npm run pages:dev
+    SSL_CERT_FILE="${SSL_CERT_FILE:-/etc/ssl/certs/ca-certificates.crt}" npm run pages:dev
 
 # Seed local Pages KV by refreshing topics through the local admin endpoint
 seed-local-kv:
@@ -14,7 +14,7 @@ seed-local-kv:
 
 # Run the scheduled refresh Worker locally
 dev-worker:
-    npm run worker:dev
+    SSL_CERT_FILE="${SSL_CERT_FILE:-/etc/ssl/certs/ca-certificates.crt}" npm run worker:dev
 
 # Run frontend-only Vite dev server
 dev-vite:

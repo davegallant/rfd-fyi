@@ -132,6 +132,10 @@ Run the Cloudflare Pages build locally, including Pages Functions:
 npm run pages:dev
 ```
 
+On Nix systems, `just dev` also supplies `/etc/ssl/certs/ca-certificates.crt`
+to Workerd when `SSL_CERT_FILE` is unset, so local Functions can make outbound
+HTTPS requests. An existing `SSL_CERT_FILE` value takes precedence.
+
 Wrangler serves the app at:
 
 ```text
