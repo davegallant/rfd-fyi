@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 
 - Refresh health now records every attempt and failed upstream pages while preserving cached topics and the last successful timestamp after a total outage.
 - CI compiles Pages Functions and validates the scheduled Worker configuration alongside the frontend build.
+- The frontend now uses native `fetch` and browser history APIs, removing Axios, Vue Router, and an obsolete Vue CLI Babel configuration.
 
 ### Fixed
 

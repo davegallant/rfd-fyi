@@ -1,5 +1,4 @@
 <script>
-import axios from "axios";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 
@@ -65,6 +64,12 @@ function hashString(str) {
 function normalizeUrlFilters(value) {
   if (!Array.isArray(value)) return [];
   return value.filter((filter) => typeof filter === "string" && filter.trim() !== "");
+}
+
+async function fetchJson(path) {
+  const response = await fetch(path, { headers: { "cache-control": "no-cache" } });
+  if (!response.ok) throw new Error(`GET ${path} returned ${response.status}`);
+  return response.json();
 }
 
 export default {
@@ -494,7 +499,8 @@ export default {
       if (this.sortBySetByUser) {
         query.sort = this.sortMethod;
       }
-      this.$router.replace({ path: "/", query });
+      const search = new URLSearchParams(query).toString();
+      window.history.replaceState({}, "", search ? `/?${search}` : "/");
     },
 
     // Enter accepts the highlighted suggestion when there is one; otherwise it
@@ -608,23 +614,17 @@ export default {
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 500));
 
       Promise.all([
-        axios.get(`/topics.json?_=${Date.now()}`, {
-          headers: { "cache-control": "no-cache" },
-        }),
+        fetchJson(`/topics.json?_=${Date.now()}`),
         // Tags are optional garnish: a failure here must not cost us the deals.
-        Promise.resolve(axios.get(`/enrichment.json?_=${Date.now()}`, {
-          headers: { "cache-control": "no-cache" },
-        })).catch(() => ({ data: null })),
-        Promise.resolve(axios.get(`/health.json?_=${Date.now()}`, {
-          headers: { "cache-control": "no-cache" },
-        })).catch(() => ({ data: null })),
+        fetchJson(`/enrichment.json?_=${Date.now()}`).catch(() => null),
+        fetchJson(`/health.json?_=${Date.now()}`).catch(() => null),
         minLoadingTime
       ])
         .then(([response, enrichment, health]) => {
-          this.topics = attachTags(response.data, enrichment.data);
-          this.tagVocabulary = Array.isArray(enrichment.data?.vocabulary) ? enrichment.data.vocabulary : [];
-          this.lastSuccessfulRefresh = health?.data?.completed_at ?? null;
-          this.refreshDegraded = health?.data?.ok === false;
+          this.topics = attachTags(response, enrichment);
+          this.tagVocabulary = Array.isArray(enrichment?.vocabulary) ? enrichment.vocabulary : [];
+          this.lastSuccessfulRefresh = health?.completed_at ?? null;
+          this.refreshDegraded = health?.ok === false;
           this.resetVisibleTopics();
         })
         .catch((err) => {

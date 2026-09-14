@@ -40,7 +40,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          if (["axios", "dayjs", "vue-router"].some((pkg) => id.includes(`/node_modules/${pkg}/`))) {
+          if (["dayjs"].some((pkg) => id.includes(`/node_modules/${pkg}/`))) {
             return "vendor";
           }
         },

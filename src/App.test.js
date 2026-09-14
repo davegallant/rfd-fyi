@@ -1,11 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp, nextTick } from "vue";
 
-import axios from "axios";
 import App from "./App.vue";
 import { UI_PREFS_STORAGE_KEY } from "./preferences.js";
-
-vi.mock("axios", () => ({ default: { get: vi.fn() } }));
 
 let app;
 let container;
@@ -32,6 +29,19 @@ function deal(topicId, dealerName) {
     Offer: { dealer_name: dealerName, url: "" },
     web_path: `/deal-${topicId}`,
   };
+}
+
+function mockFeedApi({ topics = [], enrichment = {}, health = null, topicsError = null } = {}) {
+  vi.stubGlobal("fetch", vi.fn(async (input) => {
+    const path = String(input);
+    if (path.startsWith("/topics.json")) {
+      if (topicsError) throw topicsError;
+      return Response.json(topics);
+    }
+    if (path.startsWith("/enrichment.json")) return Response.json(enrichment);
+    if (path.startsWith("/health.json")) return Response.json(health);
+    return new Response("not found", { status: 404 });
+  }));
 }
 
 beforeEach(() => {
@@ -123,9 +133,7 @@ describe("merchant filters", () => {
       addEventListener: () => {},
       removeEventListener: () => {},
     }));
-    axios.get
-      .mockResolvedValueOnce({ data: [deal(1, "Amazon"), deal(2, "Best Buy")] })
-      .mockResolvedValueOnce({ data: {} });
+    mockFeedApi({ topics: [deal(1, "Amazon"), deal(2, "Best Buy")] });
 
     container = document.createElement("div");
     document.body.append(container);
@@ -207,9 +215,7 @@ describe("merchant filters", () => {
       addEventListener: () => {},
       removeEventListener: () => {},
     }));
-    axios.get
-      .mockResolvedValueOnce({ data: [deal(1, "Amazon"), deal(2, "Best Buy")] })
-      .mockResolvedValueOnce({ data: {} });
+    mockFeedApi({ topics: [deal(1, "Amazon"), deal(2, "Best Buy")] });
 
     container = document.createElement("div");
     document.body.append(container);
@@ -260,10 +266,7 @@ describe("deal loading status", () => {
       addEventListener: () => {},
       removeEventListener: () => {},
     }));
-    axios.get
-      .mockRejectedValueOnce(new Error("offline"))
-      .mockResolvedValueOnce({ data: {} })
-      .mockResolvedValueOnce({ data: { ok: true, completed_at: "2026-09-14T12:00:00.000Z" } });
+    mockFeedApi({ topicsError: new Error("offline") });
 
     container = document.createElement("div");
     document.body.append(container);
@@ -285,10 +288,10 @@ describe("deal loading status", () => {
       addEventListener: () => {},
       removeEventListener: () => {},
     }));
-    axios.get
-      .mockResolvedValueOnce({ data: [deal(1, "Amazon")] })
-      .mockResolvedValueOnce({ data: {} })
-      .mockResolvedValueOnce({ data: { ok: false, completed_at: "2026-09-14T12:00:00.000Z" } });
+    mockFeedApi({
+      topics: [deal(1, "Amazon")],
+      health: { ok: false, completed_at: "2026-09-14T12:00:00.000Z" },
+    });
 
     container = document.createElement("div");
     document.body.append(container);
@@ -320,9 +323,7 @@ describe("settings panel", () => {
       addEventListener: () => {},
       removeEventListener: () => {},
     }));
-    axios.get
-      .mockResolvedValueOnce({ data: [deal(1, "Amazon")] })
-      .mockResolvedValueOnce({ data: {} });
+    mockFeedApi({ topics: [deal(1, "Amazon")] });
 
     container = document.createElement("div");
     document.body.append(container);

@@ -15,10 +15,8 @@
     "lint": "npx --yes oxlint"
   },
   "dependencies": {
-    "axios": "^1.18.0",
     "dayjs": "^1.11.10",
-    "vue": "^3.5.17",
-    "vue-router": "^5.0.0"
+    "vue": "^3.5.17"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.0.0",
