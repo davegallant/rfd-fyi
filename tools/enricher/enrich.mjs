@@ -39,10 +39,10 @@ function loadProvider() {
   return { provider, config, concurrency };
 }
 
-async function flush(tags, model, progress) {
+async function flush(tags, model, vocabularyVersion, progress) {
   if (Object.keys(tags).length === 0) return;
 
-  const body = await postTags(origin, secret, tags, model);
+  const body = await postTags(origin, secret, tags, model, vocabularyVersion);
   console.log(`  flushed ${body.accepted} tagged, ${body.stored} stored — ${progress}`);
   for (const entry of body.rejected ?? []) {
     console.warn(`  rejected ${entry.topic_id}: ${entry.reason}`);
@@ -57,7 +57,7 @@ async function main() {
     fetchJson(`${origin}/enrichment.json`),
   ]);
 
-  const { vocabulary, glosses, instructions, max_tags: maxTags } = enrichment;
+  const { vocabulary_version: vocabularyVersion, vocabulary, glosses, instructions, max_tags: maxTags } = enrichment;
   if (!Array.isArray(vocabulary) || vocabulary.length === 0) {
     throw new Error("server published no vocabulary; is /enrichment.json deployed?");
   }
@@ -72,7 +72,7 @@ async function main() {
   if (pending.length === 0) return;
 
   // Prove the secret works before spending GPU time on a batch we cannot write.
-  await postTags(origin, secret, {}, config.model);
+  await postTags(origin, secret, {}, config.model, vocabularyVersion);
 
   const startedAt = Date.now();
   let tagged = 0;
@@ -91,7 +91,12 @@ async function main() {
       console.warn(`  no usable tags for ${topic.topic_id}: ${topic.title}`);
     }
 
-    await flush(result.tags, config.model, formatProgress(processed, pending.length, Date.now() - startedAt));
+    await flush(
+      result.tags,
+      config.model,
+      vocabularyVersion,
+      formatProgress(processed, pending.length, Date.now() - startedAt),
+    );
   }
 
   const seconds = Math.round((Date.now() - startedAt) / 1000);

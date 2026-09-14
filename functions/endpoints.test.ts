@@ -174,7 +174,7 @@ function enrichRequest(body, secret = "s3cret") {
   return new Request("https://rfd.davegallant.ca/admin/enrich", {
     method: "POST",
     headers: { authorization: `Bearer ${secret}`, "content-type": "application/json" },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ vocabulary_version: VOCABULARY_VERSION, ...body }),
   });
 }
 
@@ -266,6 +266,23 @@ describe("admin/enrich function", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual(expect.objectContaining({ accepted: 1, rejected: [] }));
     expect(JSON.parse(store.get("enrichment.json")).topics["42"].tags).toEqual(["computing"]);
+  });
+
+  it("rejects tags produced with a different vocabulary version without writing", async () => {
+    const { env, store } = envWithStore({ "topics.json": topicsJson }, { REFRESH_SECRET: "s3cret" });
+
+    const response = await postEnrich({
+      request: enrichRequest({ vocabulary_version: VOCABULARY_VERSION - 1, topics: { 42: ["computing"] } }),
+      env,
+    });
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      error: "vocabulary version mismatch",
+      expected: VOCABULARY_VERSION,
+      received: VOCABULARY_VERSION - 1,
+    });
+    expect(store.has("enrichment.json")).toBe(false);
   });
 
   it("accepts valid entries and reports invalid ones in the same batch", async () => {

@@ -6,6 +6,11 @@ It pulls `topics.json` and `enrichment.json`, classifies whatever is untagged,
 and posts the result to `/admin/enrich`. If it doesn't run, tags simply go stale
 — the deal feed is unaffected.
 
+Each write includes the `vocabulary_version` fetched before classification. The
+server rejects a mismatched version with `409`, preventing results generated
+from an older vocabulary or prompt from being stored as current during a
+deployment.
+
 It runs on a machine that can reach both the model and the internet. Cloudflare
 Workers cannot reach a LAN, which is why the tagging pushes results in rather
 than being called.

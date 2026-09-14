@@ -206,13 +206,17 @@ describe("postTags", () => {
   it("posts the tags and model, and returns the server's report", async () => {
     const fetchImpl = vi.fn(async () => Response.json({ accepted: 2, rejected: [], stored: 900 }));
 
-    const body = await postTags(origin, "s3cret", { 1: ["gaming"] }, "qwen2.5:7b-instruct", fetchImpl);
+    const body = await postTags(origin, "s3cret", { 1: ["gaming"] }, "qwen2.5:7b-instruct", 20, fetchImpl);
 
     expect(body.accepted).toBe(2);
     const [url, init] = fetchImpl.mock.calls[0];
     expect(url).toBe("https://rfd.example/admin/enrich");
     expect(init.headers.authorization).toBe("Bearer s3cret");
-    expect(JSON.parse(init.body)).toEqual({ model: "qwen2.5:7b-instruct", topics: { 1: ["gaming"] } });
+    expect(JSON.parse(init.body)).toEqual({
+      model: "qwen2.5:7b-instruct",
+      vocabulary_version: 20,
+      topics: { 1: ["gaming"] },
+    });
   });
 
   /**
@@ -223,7 +227,7 @@ describe("postTags", () => {
   it("reads a 404 as an auth problem, since that is what it means here", async () => {
     const fetchImpl = vi.fn(async () => new Response("not found", { status: 404 }));
 
-    const error = await postTags(origin, "wrong", {}, "m", fetchImpl).catch((e) => e);
+    const error = await postTags(origin, "wrong", {}, "m", 20, fetchImpl).catch((e) => e);
 
     expect(error.message).toMatch(/REFRESH_SECRET/);
     expect(error.message).toMatch(/404/);
@@ -231,7 +235,7 @@ describe("postTags", () => {
 
   it("reports other failures with their status", async () => {
     const fetchImpl = vi.fn(async () => new Response("boom", { status: 500 }));
-    await expect(postTags(origin, "s", {}, "m", fetchImpl)).rejects.toThrow(/500/);
+    await expect(postTags(origin, "s", {}, "m", 20, fetchImpl)).rejects.toThrow(/500/);
   });
 });
 

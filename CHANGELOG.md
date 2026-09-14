@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - Stateful regular-expression filters such as `/sale/g` now match each deal independently, and malformed shared filter URLs no longer inject non-string filters into the app.
+- Enrichment writes carry the vocabulary version used for classification and are rejected if the deployed vocabulary changed during a run.
 
 ## [0.17.1] - 2026-08-31
 

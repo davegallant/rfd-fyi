@@ -1,5 +1,6 @@
 import {
   ENRICHMENT_KEY,
+  VOCABULARY_VERSION,
   mergeEnrichment,
   parseEnrichment,
   sanitizeModelName,
@@ -30,6 +31,13 @@ export async function onRequestPost({ request, env }) {
   }
 
   const payload = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+  if (payload.vocabulary_version !== VOCABULARY_VERSION) {
+    return jsonResponse({
+      error: "vocabulary version mismatch",
+      expected: VOCABULARY_VERSION,
+      received: payload.vocabulary_version ?? null,
+    }, 409);
+  }
   const { accepted, rejected } = validateTagBatch(payload.topics);
   const model = sanitizeModelName(payload.model);
 

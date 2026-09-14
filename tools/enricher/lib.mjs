@@ -50,14 +50,14 @@ export async function fetchJson(url, fetchImpl = fetch) {
  * advertise itself, which makes a wrong secret indistinguishable from a missing
  * route — hence the explicit hint.
  */
-export async function postTags(origin, secret, tags, model, fetchImpl = fetch) {
+export async function postTags(origin, secret, tags, model, vocabularyVersion, fetchImpl = fetch) {
   const url = `${origin}/admin/enrich`;
   let response;
   try {
     response = await fetchImpl(url, {
       method: "POST",
       headers: { authorization: `Bearer ${secret}`, "content-type": "application/json" },
-      body: JSON.stringify({ model, topics: tags }),
+      body: JSON.stringify({ model, vocabulary_version: vocabularyVersion, topics: tags }),
     });
   } catch (error) {
     throw new Error(`POST ${url} failed: ${error.message}`);
