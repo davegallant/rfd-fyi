@@ -191,6 +191,68 @@ describe("refreshTopics", () => {
     expect(refreshed.map(({ topic_id }) => topic_id)).toEqual([1]);
   });
 
+  it("removes an old cached deal after its individual RFD topic is marked expired", async () => {
+    const get = vi.fn(async (key) => key === "topics.json"
+      ? JSON.stringify([topic({ topic_id: 2823788, title: "Domino's August 22", offer: { dealer_name: "Domino's Pizza", url: "" } })])
+      : null);
+    vi.stubGlobal("fetch", vi.fn(async (url) => {
+      const requestUrl = String(url);
+      if (requestUrl.endsWith("/api/topics/2823788")) return jsonResponse({ topic: topic({
+        topic_id: 2823788,
+        forum_id: 68,
+        offer: { dealer_name: "Domino's Pizza", url: "", expires_at: "2026-08-23" },
+      }), users: [] });
+      if (requestUrl.includes("redirects.json")) return jsonResponse([]);
+      return jsonResponse({ topics: isExpiredDealsRequest(url) ? [] : [topic({ topic_id: 3 })] });
+    }));
+
+    const refreshed = await refreshTopics({ TOPICS_KV: { get, put: vi.fn() } });
+
+    expect(refreshed.map(({ topic_id }) => topic_id)).toEqual([3]);
+  });
+
+  it("continues checking unknown-expiry cached deals across refreshes", async () => {
+    const stored = new Map([["topics.json", JSON.stringify(Array.from({ length: 25 }, (_, index) => topic({ topic_id: 100 + index })))]]);
+    const kv = {
+      get: vi.fn(async (key) => stored.get(key) ?? null),
+      put: vi.fn(async (key, value) => { stored.set(key, value); }),
+    };
+    vi.stubGlobal("fetch", vi.fn(async (url) => {
+      const requestUrl = String(url);
+      if (requestUrl.includes("redirects.json")) return jsonResponse([]);
+      if (requestUrl.includes("/api/topics/")) {
+        const id = Number(requestUrl.split("/").at(-1));
+        return jsonResponse({ topic: topic({ topic_id: id, forum_id: id === 104 ? 68 : 9 }), users: [] });
+      }
+      return jsonResponse({ topics: isExpiredDealsRequest(url) ? [] : [topic({ topic_id: 999 })] });
+    }));
+
+    const first = await refreshTopics({ TOPICS_KV: kv });
+    const second = await refreshTopics({ TOPICS_KV: kv });
+
+    expect(first.some(({ topic_id }) => topic_id === 104)).toBe(true);
+    expect(second.some(({ topic_id }) => topic_id === 104)).toBe(false);
+  });
+
+  it("stores a recovered expiry date for a cached deal", async () => {
+    const get = vi.fn(async (key) => key === "topics.json"
+      ? JSON.stringify([topic({ topic_id: 50, offer: { dealer_name: "Dealer", url: "" } })])
+      : null);
+    vi.stubGlobal("fetch", vi.fn(async (url) => {
+      const requestUrl = String(url);
+      if (requestUrl.endsWith("/api/topics/50")) return jsonResponse({ topic: topic({
+        topic_id: 50,
+        offer: { dealer_name: "Dealer", url: "", expires_at: "2099-12-31" },
+      }), users: [] });
+      if (requestUrl.includes("redirects.json")) return jsonResponse([]);
+      return jsonResponse({ topics: isExpiredDealsRequest(url) ? [] : [topic({ topic_id: 1 })] });
+    }));
+
+    const refreshed = await refreshTopics({ TOPICS_KV: { get, put: vi.fn() } });
+
+    expect(refreshed.find(({ topic_id }) => topic_id === 50)?.Offer?.expires_at).toBe("2099-12-31");
+  });
+
   it("refreshes all hot-deals pages and writes the newest API topics to KV", async () => {
     const target = topic({
       topic_id: 2818435,
@@ -224,7 +286,7 @@ describe("refreshTopics", () => {
 
     const refreshed = await refreshTopics({ TOPICS_KV: { get, put } });
 
-    expect(fetchMock).toHaveBeenCalledTimes(10);
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).includes("/api/topics?"))).toHaveLength(9);
     expect(refreshed).toHaveLength(1000);
     expect(refreshed).toContainEqual(expect.objectContaining({
       topic_id: 2818435,
@@ -232,7 +294,7 @@ describe("refreshTopics", () => {
       score: 18,
       Offer: expect.objectContaining({ dealer_name: "Shell" }),
     }));
-    expect(put).toHaveBeenCalledTimes(2);
+    expect(put).toHaveBeenCalledTimes(3);
     const storedTopicsJson = put.mock.calls.find(([key]) => key === "topics.json")[1];
     const storedStatusJson = put.mock.calls.find(([key]) => key === "refresh-status.json")[1];
     const storedTarget = JSON.parse(storedTopicsJson).find((row) => row.topic_id === 2818435);

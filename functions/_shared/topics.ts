@@ -1,11 +1,13 @@
 const TOPICS_KEY = "topics.json";
 const REFRESH_STATUS_KEY = "refresh-status.json";
+const EXPIRY_CHECK_CURSOR_KEY = "expiry-check-cursor";
 const RFD_FORUM_BASE = "https://forums.redflagdeals.com";
 const DEFAULT_REDIRECTS_URL = "https://raw.githubusercontent.com/davegallant/rfd-redirect-stripper/main/redirects.json";
 const DEALS_FETCH_CONCURRENCY = 5;
 const REFRESHED_HOT_DEALS_PAGE_COUNT = 3;
 const REFRESHED_EXPIRED_DEALS_PAGE_COUNT = 6;
 const MAX_STORED_TOPIC_COUNT = 1000;
+const EXPIRY_CHECK_BATCH_SIZE = 20;
 
 export interface Env {
   TOPICS_KV: {
@@ -116,7 +118,12 @@ export async function refreshTopics(env: Env): Promise<Topic[]> {
   const expiredDeals = await getDeals(env, 68, 1, REFRESHED_EXPIRED_DEALS_PAGE_COUNT + 1);
   const expiredTopicIds = new Set(expiredDeals.topics.map((topic) => topic.topic_id));
   const existingTopics = (await readTopics(env)).map((topic) => compactTopic(normalizeTopic(topic)));
+  const checkedTopics = await checkCachedExpiry(env, existingTopics, expiredTopicIds);
   const topics = deduplicateTopics([...refreshedTopics, ...existingTopics])
+    .map((topic) => checkedTopics.has(topic.topic_id) ? {
+      ...topic,
+      Offer: { ...topic.Offer, expires_at: checkedTopics.get(topic.topic_id) },
+    } : topic)
     .filter((topic) => !isExpiredTopic(topic) && !expiredTopicIds.has(topic.topic_id))
     .slice(0, MAX_STORED_TOPIC_COUNT);
 
@@ -131,6 +138,46 @@ export async function refreshTopics(env: Env): Promise<Topic[]> {
     ...(failedPages > 0 ? { error: `${failedPages} upstream page${failedPages === 1 ? "" : "s"} failed` } : {}),
   });
   return topics;
+}
+
+async function checkCachedExpiry(env: Env, topics: Topic[], expiredTopicIds: Set<number>): Promise<Map<number, string>> {
+  const candidates = topics.filter((topic) => !expiredTopicIds.has(topic.topic_id) && !topic.Offer?.expires_at).reverse();
+  const checked = new Map<number, string>();
+  if (candidates.length === 0) return checked;
+
+  const storedCursor = Number(await env.TOPICS_KV.get(EXPIRY_CHECK_CURSOR_KEY));
+  const start = Number.isSafeInteger(storedCursor) && storedCursor >= 0 ? storedCursor % candidates.length : 0;
+  const batchSize = Math.min(EXPIRY_CHECK_BATCH_SIZE, candidates.length);
+  const batch = Array.from({ length: batchSize }, (_, index) => candidates[(start + index) % candidates.length]);
+  const base = (env.RFD_BASE_URL || RFD_FORUM_BASE).replace(/\/$/, "");
+
+  for (let index = 0; index < batch.length; index += DEALS_FETCH_CONCURRENCY) {
+    const results = await Promise.all(batch.slice(index, index + DEALS_FETCH_CONCURRENCY).map(async (topic) => {
+      try {
+        const response = await fetch(`${base}/api/topics/${topic.topic_id}`, {
+          headers: { "accept": "application/json, text/plain, */*" },
+        });
+        if (!response.ok) return null;
+        const body = await response.json<{ topic?: Topic }>();
+        if (body.topic?.topic_id !== topic.topic_id) return null;
+        return { topic, current: normalizeTopic(body.topic) };
+      } catch (error) {
+        console.warn(`error checking cached topic ${topic.topic_id}`, error);
+        return null;
+      }
+    }));
+
+    for (const result of results) {
+      if (!result) continue;
+      if (result.current.forum_id === 68) expiredTopicIds.add(result.topic.topic_id);
+      else if (typeof result.current.Offer?.expires_at === "string") {
+        checked.set(result.topic.topic_id, result.current.Offer.expires_at);
+      }
+    }
+  }
+
+  await env.TOPICS_KV.put(EXPIRY_CHECK_CURSOR_KEY, String(start + batchSize));
+  return checked;
 }
 
 async function writeRefreshStatus(env: Env, status: RefreshStatus): Promise<void> {

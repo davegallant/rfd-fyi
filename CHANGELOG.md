@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.18.1] - 2026-09-19
+
+### Fixed
+
+- Refreshes now revisit cached deals with unknown expiry dates in small batches, removing those RFD has since marked expired and saving newly available expiry dates. Older expired deals no longer remain in the cache after leaving the recent Expired Deals feed.
+
 ## [0.18.0] - 2026-09-14
 
 ### Added
