@@ -1,9 +1,11 @@
 <script>
 import dayjs from "dayjs";
+import { markRaw } from "vue";
+import { fetchJson } from "./fetchJson.js";
 import utc from "dayjs/plugin/utc";
 
 import { attachTags, tagFilterTerm, tagSuggestions as suggestTagTerms, visibleTags } from "./enrichment.js";
-import { getFilteredSortedTopics, getMerchantOptions, parseFilterTerm } from "./filterTopics.js";
+import { createHighlighter, getFilteredSortedTopics, getMerchantOptions, parseFilterTerm } from "./filterTopics.js";
 import { loadUiPreferences, persistUiPreferences, SORT_METHOD_KEYS } from "./preferences.js";
 import { exportLocalStorageSettings, importLocalStorageSettings } from "./settingsTransfer.js";
 import { seen, markSeen, markUnseen, isSeen, markAllSeen, clearSeen, reloadSeenDeals } from "./composables/useSeenDeals.js";
@@ -15,6 +17,7 @@ import "./theme.css";
 dayjs.extend(utc);
 
 const TOPICS_BATCH_SIZE = 100;
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 const INFINITE_SCROLL_THRESHOLD_PX = 600;
 
 // Color palette for dealer labels - muted, visually distinct colors
@@ -66,12 +69,6 @@ function normalizeUrlFilters(value) {
   return value.filter((filter) => typeof filter === "string" && filter.trim() !== "");
 }
 
-async function fetchJson(path) {
-  const response = await fetch(path, { headers: { "cache-control": "no-cache" } });
-  if (!response.ok) throw new Error(`GET ${path} returned ${response.status}`);
-  return response.json();
-}
-
 export default {
   components: {
     InfoOverlay,
@@ -95,6 +92,13 @@ export default {
       sortBySetByUser: false,
       sortDropdownOpen: false,
       topics: [],
+      rawTopics: [],
+      enrichment: null,
+      pendingTopics: null,
+      pendingEnrichment: null,
+      refreshController: null,
+      lastCheckedAt: null,
+      readingAnchors: null,
       isMobile: false,
       currentTheme: "auto",
       resolvedTheme: "light",
@@ -128,13 +132,18 @@ export default {
     window.addEventListener("click", this.handleClickOutside);
     this.detectMobile();
     this.fetchDeals();
-    this.refreshIntervalId = window.setInterval(() => this.fetchDeals(), 5 * 60 * 1000);
+    document.addEventListener("visibilitychange", this.refreshIfStale);
+    this.refreshIntervalId = window.setInterval(() => {
+      if (!document.hidden && !this.isLoading) this.fetchDeals({ background: true });
+    }, REFRESH_INTERVAL_MS);
     this.initializeSortMethod();
     this.initializeTheme();
     this.setupThemeListener();
   },
 
   beforeUnmount() {
+    this.refreshController?.abort();
+    document.removeEventListener("visibilitychange", this.refreshIfStale);
     window.removeEventListener("keydown", this.handleKeyDown);
     window.removeEventListener("resize", this.handleResize);
     window.removeEventListener("scroll", this.handleScroll);
@@ -182,8 +191,21 @@ export default {
   },
 
   computed: {
+    parsedFilters() {
+      return this.activeFilters.map(parseFilterTerm);
+    },
+
+    highlightText() {
+      return createHighlighter(this.parsedFilters);
+    },
+
+    pendingNewCount() {
+      const existing = new Set(this.rawTopics.map(topic => topic.topic_id));
+      return (this.pendingTopics ?? []).filter(topic => !existing.has(topic.topic_id)).length;
+    },
+
     filteredTopics() {
-      const base = getFilteredSortedTopics(this.topics, this.activeFilters, this.sortMethod, this.hiddenMerchants);
+      const base = getFilteredSortedTopics(this.topics, this.activeFilters, this.sortMethod, this.hiddenMerchants, this.parsedFilters);
       if (!this.hideSeen && !this.hideBadDeals) return base;
       // Access seen.value so Vue tracks reactivity
       const seenMap = this.seen;
@@ -285,34 +307,6 @@ export default {
   methods: {
     formatDate(dateString) {
       return dayjs(String(dateString)).format("YYYY-MM-DD hh:mm A");
-    },
-
-    highlightText(text) {
-      // Always escape HTML entities first to prevent XSS from external API data
-      const escapeHtml = (s) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      let result = escapeHtml(text);
-
-      if (!this.activeFilters || this.activeFilters.length === 0) return result;
-
-      for (const filter of this.activeFilters) {
-        const { regex, literal, isRegexError } = parseFilterTerm(filter);
-        if (regex && !isRegexError) {
-          // Use a version of the regex with the global flag for replace
-          const globalRegex = new RegExp(regex.source, regex.flags.includes("g") ? regex.flags : regex.flags + "g");
-          result = result.replace(globalRegex, (match) => `<mark>${match}</mark>`);
-        } else {
-          // Plain literal: escape the filter term too so e.g. "H&M" matches "H&amp;M" in escaped text
-          const escapedLiteral = escapeHtml(literal);
-          const lowerText = result.toLowerCase();
-          const lowerFilter = escapedLiteral.toLowerCase();
-          if (lowerFilter && lowerText.includes(lowerFilter)) {
-            const escapedForRegex = escapedLiteral.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-            const substringRegex = new RegExp(escapedForRegex, "ig");
-            result = result.replace(substringRegex, (match) => `<mark>${match}</mark>`);
-          }
-        }
-      }
-      return result;
     },
 
     initializeTheme() {
@@ -608,32 +602,111 @@ export default {
       }
     },
 
-    fetchDeals() {
+    refreshIfStale() {
+      if (document.hidden || this.isLoading) return;
+      if (this.lastCheckedAt === null || Date.now() - this.lastCheckedAt >= REFRESH_INTERVAL_MS) {
+        this.fetchDeals({ background: true });
+      }
+    },
+
+    // Batch topic/tag patches into one correction. If a deal disappears, keep
+    // the next surviving visible deal at its original viewport offset.
+    preserveReadingPosition(update) {
+      const scheduled = this.readingAnchors !== null;
+      if (!scheduled) {
+        this.readingAnchors = [...this.$el.querySelectorAll(".deal-row")].flatMap(row => {
+          const rect = row.getBoundingClientRect();
+          return rect.bottom > 0 && rect.top < window.innerHeight
+            ? [{ id: row.dataset.topicId, top: rect.top }]
+            : [];
+        });
+      }
+      update();
+      const positions = new Map(this.filteredTopics.map((topic, index) => [String(topic.topic_id), index]));
+      const anchor = this.readingAnchors.find(({ id }) => positions.has(id));
+      if (anchor) this.visibleTopicCount = Math.max(this.visibleTopicCount, positions.get(anchor.id) + 1);
+      if (!scheduled) this.$nextTick(() => {
+        const anchors = this.readingAnchors;
+        this.readingAnchors = null;
+        if (!this.$el?.isConnected) return;
+        for (const { id, top } of anchors) {
+          const row = this.$el.querySelector(`[data-topic-id="${id}"]`);
+          if (!row) continue;
+          const delta = row.getBoundingClientRect().top - top;
+          if (delta) window.scrollBy(0, delta);
+          break;
+        }
+      });
+    },
+
+    applyPendingDeals() {
+      this.preserveReadingPosition(() => {
+        if (this.pendingTopics !== null) this.rawTopics = this.pendingTopics;
+        if (this.pendingEnrichment !== null) this.enrichment = this.pendingEnrichment;
+        this.topics = attachTags(this.rawTopics, this.enrichment);
+        this.tagVocabulary = Array.isArray(this.enrichment?.vocabulary) ? this.enrichment.vocabulary : [];
+        this.pendingTopics = null;
+        this.pendingEnrichment = null;
+      });
+    },
+
+    fetchDeals({ background = false } = {}) {
+      // A manual refresh supersedes all outstanding requests, including optional ones.
+      this.refreshController?.abort();
+      const controller = markRaw(new AbortController());
+      this.refreshController = controller;
+      const current = () => !controller.signal.aborted && this.refreshController === controller;
+      const stageChanges = background && this.topics.length > 0;
       this.isLoading = true;
       this.loadError = "";
-      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 500));
 
-      Promise.all([
-        fetchJson(`/topics.json?_=${Date.now()}`),
-        // Tags are optional garnish: a failure here must not cost us the deals.
-        fetchJson(`/enrichment.json?_=${Date.now()}`).catch(() => null),
-        fetchJson(`/health.json?_=${Date.now()}`).catch(() => null),
-        minLoadingTime
-      ])
-        .then(([response, enrichment, health]) => {
-          this.topics = attachTags(response, enrichment);
-          this.tagVocabulary = Array.isArray(enrichment?.vocabulary) ? enrichment.vocabulary : [];
-          this.lastSuccessfulRefresh = health?.completed_at ?? null;
-          this.refreshDegraded = health?.ok === false;
-          this.resetVisibleTopics();
+      const topicsRequest = fetchJson("/topics.json", controller.signal)
+        .then(response => {
+          if (!current()) return;
+          if (!Array.isArray(response)) throw new Error("Invalid topics response");
+          this.lastCheckedAt = Date.now();
+          if (stageChanges) {
+            this.pendingTopics = JSON.stringify(response) === JSON.stringify(this.rawTopics) ? null : response;
+          } else {
+            this.preserveReadingPosition(() => {
+              this.rawTopics = response;
+              this.topics = attachTags(response, this.enrichment);
+              this.pendingTopics = null;
+              this.pendingEnrichment = null;
+            });
+          }
         })
-        .catch((err) => {
+        .catch(error => {
+          if (!current()) return;
           this.loadError = "Could not load deals. Check your connection and try again.";
-          console.error("Failed to fetch deals:", err.response || err);
+          console.error("Failed to fetch deals:", error);
         })
         .finally(() => {
-          this.isLoading = false;
+          if (current()) this.isLoading = false;
         });
+
+      const enrichmentRequest = fetchJson("/enrichment.json", controller.signal)
+        .then(enrichment => {
+          if (!current() || !enrichment || typeof enrichment !== "object" || Array.isArray(enrichment)) return;
+          if (stageChanges) {
+            this.pendingEnrichment = JSON.stringify(enrichment) === JSON.stringify(this.enrichment) ? null : enrichment;
+          } else {
+            this.preserveReadingPosition(() => {
+              this.enrichment = enrichment;
+              this.tagVocabulary = Array.isArray(enrichment.vocabulary) ? enrichment.vocabulary : [];
+              this.topics = attachTags(this.rawTopics, enrichment);
+            });
+          }
+        }).catch(() => {}); // Keep the last known tags on a transient failure.
+
+      const healthRequest = fetchJson("/health.json", controller.signal)
+        .then(health => {
+          if (!current() || !health) return;
+          this.lastSuccessfulRefresh = health.completed_at ?? null;
+          this.refreshDegraded = health.ok === false;
+        }).catch(() => {});
+
+      return Promise.all([topicsRequest, enrichmentRequest, healthRequest]);
     },
 
     initializeSortMethod() {
@@ -1212,13 +1285,16 @@ export default {
       <div class="cards-wrapper" v-else>
         <div v-if="loadError" class="feed-error" role="alert">{{ loadError }}</div>
         <p v-if="feedStatusText" class="feed-status">
-          {{ feedStatusText }}<span v-if="refreshDegraded"> · refresh degraded</span>
+          {{ feedStatusText }}<span v-if="refreshDegraded" class="feed-status-warning"> · refresh degraded</span>
         </p>
-        <div v-if="isLoading" class="loading-overlay">
-          <span class="material-symbols-outlined spinning loading-spinner"
-            >refresh</span
-          >
-        </div>
+        <button
+          v-if="pendingTopics !== null || pendingEnrichment !== null"
+          type="button"
+          class="feed-update"
+          @click="applyPendingDeals"
+        >
+          Update deals<span v-if="pendingNewCount"> · {{ pendingNewCount }} new</span>
+        </button>
         <div class="list-view">
           <div v-if="filteredTopics.length === 0" class="empty-state">
             <span class="material-symbols-outlined">search_off</span>
@@ -1235,6 +1311,7 @@ export default {
             <div
               v-for="topic in displayedTopics"
               :key="topic.topic_id"
+              :data-topic-id="topic.topic_id"
               class="deal-row"
               :class="{
                 'deal-row--seen': seen.has(String(topic.topic_id)),
@@ -1413,25 +1490,6 @@ export default {
 
 .cards-wrapper {
   position: relative;
-}
-
-.loading-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(128, 128, 128, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-  border-radius: 16px;
-}
-
-.loading-overlay .loading-spinner {
-  font-size: 3rem;
-  color: var(--text-primary);
 }
 
 .empty-state {
@@ -1887,5 +1945,22 @@ export default {
 .deal-row--seen:hover,
 .deal-row--seen:focus-within {
   opacity: 1;
+}
+
+.feed-update {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  white-space: nowrap;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid currentColor;
+  border-radius: 0.4rem;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  box-shadow: 0 2px 8px #0003;
+  font: inherit;
+  cursor: pointer;
 }
 </style>

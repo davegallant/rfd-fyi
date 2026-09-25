@@ -778,9 +778,15 @@ mark {
 }
 .feed-status {
   margin: 0 0 0.5rem;
-  color: var(--text-muted, #666);
-  font-size: 0.8rem;
+  color: var(--text-meta);
+  font-size: 0.7rem;
+  font-weight: 400;
+  line-height: 1.4;
   text-align: right;
+}
+
+.feed-status-warning {
+  color: var(--text-secondary);
 }
 
 .feed-error {

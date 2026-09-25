@@ -355,3 +355,161 @@ describe("settings panel", () => {
     expect(vm.settingsPanelVisible).toBe(false);
   });
 });
+
+function mountFeed() {
+  vi.useFakeTimers();
+  vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
+  container = document.createElement("div");
+  document.body.append(container);
+  app = createApp(App);
+  const vm = app.mount(container);
+  mounted = true;
+  return vm;
+}
+
+function deferred() {
+  let resolve;
+  const promise = new Promise((done) => { resolve = done; });
+  return { promise, resolve };
+}
+
+describe("refresh without interrupting browsing", () => {
+  it("renders topics immediately while optional requests are still pending", async () => {
+    const optional = deferred();
+    vi.stubGlobal("fetch", vi.fn((path) => path === "/topics.json"
+      ? Promise.resolve(Response.json([deal(1, "Amazon")])) : optional.promise));
+    const vm = mountFeed();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(container.querySelector(".deal-title")?.textContent).toBe("Amazon deal");
+    expect(vm.isLoading).toBe(false);
+    optional.resolve(Response.json({}));
+    await vi.advanceTimersByTimeAsync(0);
+  });
+
+  it("stages background changes and preserves the loaded count when applied", async () => {
+    const topics = Array.from({ length: 250 }, (_, i) => deal(i + 1, "Amazon"));
+    mockFeedApi({ topics });
+    const vm = mountFeed();
+    await vi.advanceTimersByTimeAsync(500);
+    vm.visibleTopicCount = 200;
+    mockFeedApi({ topics: [deal(999, "New shop"), ...topics] });
+    vm.fetchDeals({ background: true });
+    await vi.advanceTimersByTimeAsync(500);
+    expect(vm.topics).toHaveLength(250);
+    expect(container.querySelector(".feed-update")?.textContent).toContain("1 new");
+    container.querySelector(".feed-update").click();
+    await nextTick();
+    expect(vm.topics).toHaveLength(251);
+    expect(vm.visibleTopicCount).toBe(200);
+    expect(container.querySelector(".feed-update")).toBeNull();
+  });
+
+  it("keeps tags after enrichment fails on a later refresh", async () => {
+    mockFeedApi({ topics: [deal(1, "Amazon")], enrichment: { vocabulary: ["gaming"], topics: { 1: { tags: ["gaming"] } } } });
+    const vm = mountFeed();
+    await vi.advanceTimersByTimeAsync(500);
+    vi.stubGlobal("fetch", vi.fn(async (path) => {
+      if (path.startsWith("/enrichment")) throw new Error("offline");
+      return Response.json(path.startsWith("/topics") ? [deal(1, "Amazon")] : null);
+    }));
+    vm.fetchDeals();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(vm.topics[0].tags).toEqual(["gaming"]);
+    expect(vm.tagVocabulary).toEqual(["gaming"]);
+  });
+
+  it("ignores a superseded request even if its response arrives late", async () => {
+    const old = deferred();
+    vi.stubGlobal("fetch", vi.fn((path) => path.startsWith("/topics") ? old.promise : Promise.resolve(Response.json({}))));
+    const vm = mountFeed();
+    mockFeedApi({ topics: [deal(2, "Latest")] });
+    vm.fetchDeals();
+    await vi.advanceTimersByTimeAsync(500);
+    old.resolve(Response.json([deal(1, "Old")]));
+    await vi.advanceTimersByTimeAsync(500);
+    expect(vm.topics.map(t => t.topic_id)).toEqual([2]);
+  });
+
+  it("skips hidden-tab polling and refreshes on return only when stale", async () => {
+    mockFeedApi({ topics: [deal(1, "Amazon")] });
+    const vm = mountFeed();
+    await vi.advanceTimersByTimeAsync(500);
+    let hidden = true;
+    vi.spyOn(document, "hidden", "get").mockImplementation(() => hidden);
+    mockFeedApi({ topics: [deal(2, "New shop")] });
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+    expect(fetch).not.toHaveBeenCalled();
+    hidden = false;
+    document.dispatchEvent(new Event("visibilitychange"));
+    await vi.advanceTimersByTimeAsync(500);
+    expect(vm.pendingTopics?.[0].topic_id).toBe(2);
+    fetch.mockClear();
+    document.dispatchEvent(new Event("visibilitychange"));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fetch).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
+});
+
+describe("refresh reading position and lifecycle", () => {
+  it("keeps the visible deal anchored after manual refresh inserts rows above it", async () => {
+    mockFeedApi({ topics: [deal(1, "Amazon")] });
+    const vm = mountFeed();
+    await vi.advanceTimersByTimeAsync(0);
+    const row = container.querySelector('[data-topic-id="1"]');
+    let offset = 100;
+    row.getBoundingClientRect = () => ({ top: offset, bottom: offset + 80 });
+    vi.stubGlobal("scrollBy", vi.fn());
+    vm.visibleTopicCount = 200;
+    mockFeedApi({ topics: [{ ...deal(2, "New shop"), score: 10 }, deal(1, "Amazon")] });
+    // Simulate the browser layout after Vue patches the existing keyed row.
+    const patch = new MutationObserver(() => { offset = 180; });
+    patch.observe(container, { childList: true, subtree: true });
+    vm.fetchDeals();
+    await vi.advanceTimersByTimeAsync(0);
+    patch.disconnect();
+    expect(vm.visibleTopicCount).toBe(200);
+    expect(scrollBy).toHaveBeenCalledWith(0, 80);
+    expect(scrollBy).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not offer an update when the feed has not changed", async () => {
+    mockFeedApi({ topics: [deal(1, "Amazon")] });
+    const vm = mountFeed();
+    await vi.advanceTimersByTimeAsync(0);
+    vm.fetchDeals({ background: true });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(container.querySelector(".feed-update")).toBeNull();
+  });
+
+  it("discards responses after unmount and removes polling", async () => {
+    const pending = deferred();
+    vi.stubGlobal("fetch", vi.fn(() => pending.promise));
+    const vm = mountFeed();
+    app.unmount();
+    mounted = false;
+    pending.resolve(Response.json([deal(1, "Late")]));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(vm.topics).toEqual([]);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+it("anchors to a surviving visible deal when the first visible deal disappears", async () => {
+  mockFeedApi({ topics: [deal(1, "Expired"), deal(2, "Survivor")] });
+  const vm = mountFeed();
+  await vi.advanceTimersByTimeAsync(0);
+  const first = container.querySelector('[data-topic-id="1"]');
+  const second = container.querySelector('[data-topic-id="2"]');
+  first.getBoundingClientRect = () => ({ top: 100, bottom: 180 });
+  let offset = 180;
+  second.getBoundingClientRect = () => ({ top: offset, bottom: offset + 80 });
+  vi.stubGlobal("scrollBy", vi.fn());
+  const patch = new MutationObserver(() => { offset = 100; });
+  patch.observe(container, { childList: true, subtree: true });
+  mockFeedApi({ topics: [deal(2, "Survivor")] });
+  vm.fetchDeals();
+  await vi.advanceTimersByTimeAsync(0);
+  patch.disconnect();
+  expect(scrollBy).toHaveBeenCalledExactlyOnceWith(0, -80);
+});

@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.0] - 2026-09-25
+
+### Changed
+
+- Background refreshes offer an Update deals button instead of replacing the list while browsing. Applying updates preserves the loaded count and anchors the current deal in view.
+- Deals load immediately without waiting for tags or health status. Requests time out, superseded responses are ignored, and temporary tag failures retain the last known tags.
+- Feed requests reuse stable URLs and ETag validators to avoid transferring unchanged data. Automatic polling pauses in hidden tabs and checks for stale data when returning.
+- Filtering and highlighting reuse prepared expressions and rendered text; date sorting reuses parsed timestamps.
+- The last-updated timestamp uses smaller, muted text in both themes while refresh warnings retain stronger contrast.
+
 ## [0.18.1] - 2026-09-19
 
 ### Fixed

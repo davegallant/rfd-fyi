@@ -1,5 +1,6 @@
+import type { Env } from "./_shared/topics";
 import { ENRICHMENT_KEY, parseEnrichment } from "./_shared/enrichment";
-import { withSecurityHeaders } from "./_shared/responses";
+import { conditionalJsonResponse } from "./_shared/responses";
 
 /**
  * Serves stored tags with the *deployed* vocabulary, version and glosses around
@@ -12,13 +13,8 @@ import { withSecurityHeaders } from "./_shared/responses";
  * version. The document is small (tens of KB, one entry per topic), so the
  * parse is cheap; `topics.json` avoids parsing because it is 1000 objects.
  */
-export async function onRequestGet({ env }) {
+export async function onRequestGet({ env, request }: { env: Env; request?: Request }) {
   const enrichment = parseEnrichment(await env.TOPICS_KV.get(ENRICHMENT_KEY));
 
-  return new Response(JSON.stringify(enrichment), {
-    headers: withSecurityHeaders({
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "public, max-age=30",
-    }),
-  });
+  return conditionalJsonResponse(JSON.stringify(enrichment), request);
 }

@@ -368,3 +368,35 @@ describe("admin/enrich function", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
   });
 });
+
+describe.each([
+  ["topics", getTopicsJson],
+  ["enrichment", getEnrichmentJson],
+])("conditional %s responses", (_name, get) => {
+  it("returns a bodyless 304 for a matching validator, including weak validators in a list", async () => {
+    const env = envWithTopics(null);
+    const initial = await get({ env });
+    const etag = initial.headers.get("etag");
+    expect(etag).toBeTruthy();
+    const response = await get({ env, request: new Request("https://example.com/feed", {
+      headers: { "if-none-match": `"old", W/${etag}` },
+    }) });
+    expect(response.status).toBe(304);
+    expect(await response.text()).toBe("");
+    expect(response.headers.get("etag")).toBe(etag);
+    expect(response.headers.get("cache-control")).toBe("public, max-age=30");
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+  });
+
+  it("returns a new representation when the data changes", async () => {
+    const env = envWithTopics(null);
+    const initial = await get({ env });
+    env.TOPICS_KV.get.mockResolvedValue(JSON.stringify({ topics: { 1: { tags: ["gaming"], vv: 1 } } }));
+    const response = await get({ env, request: new Request("https://example.com/feed", {
+      headers: { "if-none-match": initial.headers.get("etag") ?? "missing" },
+    }) });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("etag")).not.toBe(initial.headers.get("etag"));
+    expect(await response.text()).not.toBe("");
+  });
+});

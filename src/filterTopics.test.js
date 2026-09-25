@@ -286,3 +286,27 @@ describe("sortTopics", () => {
     expect(out.map((d) => d.topic_id)).toEqual([2, 1]);
   });
 });
+
+describe("reusable filter preparation", () => {
+  it("highlights original text safely across repeated renders and overlapping filters", () => {
+    const highlight = topicFilters.createHighlighter(["sale", "/sale & more/i"].map(parseFilterTerm));
+    expect(highlight("SALE & more <img>")).toBe("<mark>SALE &amp; more</mark> &lt;img&gt;");
+    expect(highlight("SALE & more <img>")).toBe("<mark>SALE &amp; more</mark> &lt;img&gt;");
+    expect(highlight("Other sale")).toBe("Other <mark>sale</mark>");
+  });
+
+  it("uses prepared regex filters without leaking lastIndex between runs", () => {
+    const topics = [topic({ title: "Sale" }), topic({ title: "Sale", topic_id: 2 })];
+    const parsed = [parseFilterTerm("/Sale/g")];
+    expect(topicFilters.filterTopicsByParsedFilters(topics, parsed)).toHaveLength(2);
+    expect(topicFilters.filterTopicsByParsedFilters(topics, parsed)).toHaveLength(2);
+  });
+
+  it("sorts cached dates correctly after a topic timestamp changes", () => {
+    const topics = [topic({ topic_id: 1, post_time: "2024-01-01" }), topic({ topic_id: 2, post_time: "2024-02-01" })];
+    expect(sortTopics(topics, "thread_start").map(t => t.topic_id)).toEqual([2, 1]);
+    topics[0].post_time = "2024-03-01";
+    expect(sortTopics(topics, "thread_start").map(t => t.topic_id)).toEqual([1, 2]);
+    expect(topics.map(t => t.topic_id)).toEqual([1, 2]);
+  });
+});
