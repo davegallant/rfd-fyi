@@ -175,7 +175,7 @@ ssh root@rfd-enrich 'systemctl restart rfd-enrich-litellm; journalctl -u rfd-enr
 ssh root@rfd-enrich 'systemctl start rfd-enrich'
 ```
 
-The service uses `gpt-5.6-luna` with `ENRICH_STREAM=true`; the stream setting is
+The service uses `gpt-6-luna` with `ENRICH_STREAM=true`; the stream setting is
 required because current LiteLLM ChatGPT/Codex proxies return streamed output.
 
 ## First run
