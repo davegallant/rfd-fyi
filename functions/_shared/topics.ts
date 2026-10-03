@@ -8,6 +8,9 @@ const REFRESHED_HOT_DEALS_PAGE_COUNT = 3;
 const REFRESHED_EXPIRED_DEALS_PAGE_COUNT = 6;
 const MAX_STORED_TOPIC_COUNT = 1000;
 const EXPIRY_CHECK_BATCH_SIZE = 20;
+// Cached deals expiring within this window are re-checked individually: RFD
+// sometimes extends a deal past its first expiry date.
+const EXPIRY_RECHECK_WINDOW_DAYS = 7;
 
 export interface Env {
   TOPICS_KV: {
@@ -141,7 +144,12 @@ export async function refreshTopics(env: Env): Promise<Topic[]> {
 }
 
 async function checkCachedExpiry(env: Env, topics: Topic[], expiredTopicIds: Set<number>): Promise<Map<number, string>> {
-  const candidates = topics.filter((topic) => !expiredTopicIds.has(topic.topic_id) && !topic.Offer?.expires_at).reverse();
+  // Deals with no expiry date are always candidates; deals expiring soon are
+  // re-checked too, since RFD sometimes extends a deal past its first date.
+  const candidates = topics.filter((topic) =>
+    !expiredTopicIds.has(topic.topic_id) &&
+    (!topic.Offer?.expires_at || expiresWithinDays(topic.Offer.expires_at, EXPIRY_RECHECK_WINDOW_DAYS))
+  ).reverse();
   const checked = new Map<number, string>();
   if (candidates.length === 0) return checked;
 
@@ -319,6 +327,14 @@ function compactTopic(topic: Topic): Topic {
       : undefined,
     score: topic.score,
   };
+}
+
+/** True when a YYYY-MM-DD expiry date falls within the next `days` days (inclusive of today). */
+function expiresWithinDays(expiresAt: string | undefined, days: number, now = new Date()): boolean {
+  if (typeof expiresAt !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(expiresAt)) return false;
+  const today = now.toISOString().slice(0, 10);
+  const latest = new Date(Date.parse(`${today}T00:00:00Z`) + days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  return expiresAt >= today && expiresAt <= latest;
 }
 
 function isExpiredTopic(topic: Topic, now = new Date()): boolean {

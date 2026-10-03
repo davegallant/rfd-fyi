@@ -1,15 +1,18 @@
 <script>
 import dayjs from "dayjs";
 import { markRaw } from "vue";
-import { fetchJson } from "./fetchJson.js";
+import { fetchJson, isUnchangedPayload, NOT_MODIFIED } from "./fetchJson.js";
 import utc from "dayjs/plugin/utc";
 
-import { attachTags, tagFilterTerm, tagSuggestions as suggestTagTerms, visibleTags } from "./enrichment.js";
+import { attachTags, tagFilterTerm, tagSuggestions as suggestTagTerms } from "./enrichment.js";
 import { createHighlighter, getFilteredSortedTopics, getMerchantOptions, parseFilterTerm } from "./filterTopics.js";
 import { loadUiPreferences, persistUiPreferences, SORT_METHOD_KEYS } from "./preferences.js";
 import { exportLocalStorageSettings, importLocalStorageSettings } from "./settingsTransfer.js";
 import { seen, markSeen, markUnseen, isSeen, markAllSeen, clearSeen, reloadSeenDeals } from "./composables/useSeenDeals.js";
+import DealRow from "./components/DealRow.vue";
+import FilterBar from "./components/FilterBar.vue";
 import InfoOverlay from "./components/InfoOverlay.vue";
+import MerchantSheet from "./components/MerchantSheet.vue";
 import SettingsPanel from "./components/SettingsPanel.vue";
 
 import "./theme.css";
@@ -19,50 +22,8 @@ dayjs.extend(utc);
 const TOPICS_BATCH_SIZE = 100;
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 const INFINITE_SCROLL_THRESHOLD_PX = 600;
-
-// Color palette for dealer labels - muted, visually distinct colors
-const DEALER_COLORS = [
-  { bg: '#e8eef4', border: '#5a7a9a', text: '#4a6a8a' },  // Muted Blue
-  { bg: '#ece8f0', border: '#7a6a8a', text: '#6a5a7a' },  // Muted Purple
-  { bg: '#e8f0e8', border: '#5a7a5a', text: '#4a6a4a' },  // Muted Green
-  { bg: '#f0ebe5', border: '#9a7a5a', text: '#8a6a4a' },  // Muted Orange
-  { bg: '#f0e8ec', border: '#8a5a6a', text: '#7a4a5a' },  // Muted Pink
-  { bg: '#e5efed', border: '#5a7a75', text: '#4a6a65' },  // Muted Teal
-  { bg: '#f0ede5', border: '#9a8a5a', text: '#8a7a4a' },  // Muted Amber
-  { bg: '#eaf0e8', border: '#6a8a5a', text: '#5a7a4a' },  // Muted Light Green
-  { bg: '#e8e9f0', border: '#5a5a8a', text: '#4a4a7a' },  // Muted Indigo
-  { bg: '#ece9e6', border: '#6a5a50', text: '#5a4a40' },  // Muted Brown
-  { bg: '#e5f0f0', border: '#5a8a8a', text: '#4a7a7a' },  // Muted Cyan
-  { bg: '#f0e8e5', border: '#9a6a5a', text: '#8a5a4a' },  // Muted Deep Orange
-];
-
-// Dark theme color palette - muted colors
-const DEALER_COLORS_DARK = [
-  { bg: '#2a3a4a', border: '#7a9ab0', text: '#9ab0c0' },  // Muted Blue
-  { bg: '#3a3040', border: '#9a8aaa', text: '#b0a0c0' },  // Muted Purple
-  { bg: '#2a3a2a', border: '#7a9a7a', text: '#9ab09a' },  // Muted Green
-  { bg: '#3a3025', border: '#a09070', text: '#b0a080' },  // Muted Orange
-  { bg: '#3a2a30', border: '#a07a8a', text: '#b09aa0' },  // Muted Pink
-  { bg: '#253a38', border: '#7a9a95', text: '#9ab0aa' },  // Muted Teal
-  { bg: '#3a3525', border: '#a09a70', text: '#b0aa80' },  // Muted Amber
-  { bg: '#2a3a25', border: '#8a9a7a', text: '#a0b090' },  // Muted Light Green
-  { bg: '#30304a', border: '#8a8aaa', text: '#a0a0c0' },  // Muted Indigo
-  { bg: '#352d28', border: '#8a7a70', text: '#a09a90' },  // Muted Brown
-  { bg: '#253a3a', border: '#7a9a9a', text: '#9ab0b0' },  // Muted Cyan
-  { bg: '#3a2a25', border: '#a08070', text: '#b09a8a' },  // Muted Deep Orange
-];
-
-// Simple hash function for consistent color assignment
-function hashString(str) {
-  let hash = 0;
-  const normalizedStr = str.toLowerCase().trim();
-  for (let i = 0; i < normalizedStr.length; i++) {
-    const char = normalizedStr.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return Math.abs(hash);
-}
+// Scores at or below this mark a deal as "bad" for the hide-bad-deals filter.
+const BAD_DEAL_SCORE_THRESHOLD = -5;
 
 function normalizeUrlFilters(value) {
   if (!Array.isArray(value)) return [];
@@ -71,7 +32,10 @@ function normalizeUrlFilters(value) {
 
 export default {
   components: {
+    DealRow,
+    FilterBar,
     InfoOverlay,
+    MerchantSheet,
     SettingsPanel,
   },
 
@@ -122,6 +86,9 @@ export default {
       seenDropdownOpen: false,
       visibleTopicCount: TOPICS_BATCH_SIZE,
       refreshIntervalId: null,
+      isBackgroundLoading: false,
+      lastTopicsEtag: null,
+      lastEnrichmentEtag: null,
     };
   },
 
@@ -211,7 +178,7 @@ export default {
       const seenMap = this.seen;
       return base.filter(t => {
         if (this.hideSeen && seenMap.has(String(t.topic_id))) return false;
-        if (this.hideBadDeals && Number(t.score) < -5) return false;
+        if (this.hideBadDeals && Number(t.score) < BAD_DEAL_SCORE_THRESHOLD) return false;
         return true;
       });
     },
@@ -305,10 +272,6 @@ export default {
   },
 
   methods: {
-    formatDate(dateString) {
-      return dayjs(String(dateString)).format("YYYY-MM-DD hh:mm A");
-    },
-
     initializeTheme() {
       const savedTheme = loadUiPreferences().theme;
       this.currentTheme = savedTheme;
@@ -398,7 +361,7 @@ export default {
 
       if (event.key === "/" && !isInput) {
         event.preventDefault();
-        this.$refs.filterInput.focus();
+        this.$refs.filterBar?.focusInput();
       }
 
       if (event.key === "r" && !isInput) {
@@ -494,7 +457,8 @@ export default {
         query.sort = this.sortMethod;
       }
       const search = new URLSearchParams(query).toString();
-      window.history.replaceState({}, "", search ? `/?${search}` : "/");
+      const path = window.location.pathname;
+      window.history.replaceState({}, "", search ? `${path}?${search}` : path);
     },
 
     // Enter accepts the highlighted suggestion when there is one; otherwise it
@@ -523,7 +487,7 @@ export default {
         event.stopPropagation();
         this.tagCompletionDismissed = true;
       } else {
-        this.$refs.filterInput.blur();
+        this.$refs.filterBar?.blurInput();
       }
     },
 
@@ -540,10 +504,8 @@ export default {
     acceptTagSuggestion(term) {
       this.filterInput = term;
       this.$nextTick(() => {
-        const input = this.$refs.filterInput;
-        if (!input) return;
-        input.focus();
-        input.setSelectionRange(term.length, term.length);
+        this.$refs.filterBar?.focusInput();
+        this.$refs.filterBar?.moveCursorToEnd();
       });
     },
 
@@ -560,7 +522,7 @@ export default {
       if (trimmed && !this.activeFilters.includes(trimmed)) {
         this.activeFilters.push(trimmed);
         this.filterInput = "";
-        this.$refs.filterInput.blur();
+        this.$refs.filterBar?.blurInput();
         this.updateUrl();
       }
     },
@@ -584,15 +546,9 @@ export default {
       }
       this.filterInput = "";
       this.$nextTick(() => {
-        const input = this.$refs.filterInput;
-        if (input) {
-          input.scrollIntoView({ behavior: "smooth", block: "nearest" });
-          input.focus();
-        }
+        this.$refs.filterBar?.focusAndScrollIntoView();
       });
     },
-
-    visibleTags,
 
     filterByTag(tag) {
       const term = tagFilterTerm(tag);
@@ -658,15 +614,31 @@ export default {
       const current = () => !controller.signal.aborted && this.refreshController === controller;
       const stageChanges = background && this.topics.length > 0;
       this.isLoading = true;
+      this.isBackgroundLoading = stageChanges;
       this.loadError = "";
 
+      const finishLoading = () => {
+        if (current()) {
+          this.isLoading = false;
+          this.isBackgroundLoading = false;
+        }
+      };
+
       const topicsRequest = fetchJson("/topics.json", controller.signal)
-        .then(response => {
+        .then(result => {
           if (!current()) return;
+          if (isUnchangedPayload(result, this.lastTopicsEtag, this.rawTopics)) {
+            this.lastCheckedAt = Date.now();
+            // An unchanged poll carries nothing new, so it clears any staged update.
+            this.pendingTopics = null;
+            return;
+          }
+          const response = result.data;
           if (!Array.isArray(response)) throw new Error("Invalid topics response");
           this.lastCheckedAt = Date.now();
+          this.lastTopicsEtag = result.etag ?? null;
           if (stageChanges) {
-            this.pendingTopics = JSON.stringify(response) === JSON.stringify(this.rawTopics) ? null : response;
+            this.pendingTopics = response;
           } else {
             this.preserveReadingPosition(() => {
               this.rawTopics = response;
@@ -681,15 +653,20 @@ export default {
           this.loadError = "Could not load deals. Check your connection and try again.";
           console.error("Failed to fetch deals:", error);
         })
-        .finally(() => {
-          if (current()) this.isLoading = false;
-        });
+        .finally(finishLoading);
 
       const enrichmentRequest = fetchJson("/enrichment.json", controller.signal)
-        .then(enrichment => {
-          if (!current() || !enrichment || typeof enrichment !== "object" || Array.isArray(enrichment)) return;
+        .then(result => {
+          if (!current()) return;
+          if (isUnchangedPayload(result, this.lastEnrichmentEtag, this.enrichment)) {
+            this.pendingEnrichment = null;
+            return;
+          }
+          const enrichment = result.data;
+          if (!enrichment || typeof enrichment !== "object" || Array.isArray(enrichment)) return;
+          this.lastEnrichmentEtag = result.etag ?? null;
           if (stageChanges) {
-            this.pendingEnrichment = JSON.stringify(enrichment) === JSON.stringify(this.enrichment) ? null : enrichment;
+            this.pendingEnrichment = enrichment;
           } else {
             this.preserveReadingPosition(() => {
               this.enrichment = enrichment;
@@ -700,8 +677,10 @@ export default {
         }).catch(() => {}); // Keep the last known tags on a transient failure.
 
       const healthRequest = fetchJson("/health.json", controller.signal)
-        .then(health => {
-          if (!current() || !health) return;
+        .then(result => {
+          if (!current() || result === NOT_MODIFIED) return;
+          const health = result.data;
+          if (!health) return;
           this.lastSuccessfulRefresh = health.completed_at ?? null;
           this.refreshDegraded = health.ok === false;
         }).catch(() => {});
@@ -749,7 +728,7 @@ export default {
           this.hiddenMerchants = [name, ...this.hiddenMerchants];
           this.$nextTick(() => {
             if (this.mobileMerchantSheetOpen) {
-              this.$refs.mobileMerchantSheetPanel
+              this.$refs.merchantSheet?.$refs.sheetPanel
                 ?.querySelector(".mobile-merchant-option--hidden")
                 ?.focus();
             }
@@ -769,7 +748,7 @@ export default {
       this.mobileMerchantBodyOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
       this.mobileMerchantSheetOpen = true;
-      this.$nextTick(() => this.$refs.mobileMerchantSearch?.focus());
+      this.$nextTick(() => this.$refs.merchantSheet?.focusSearch());
     },
 
     closeMobileMerchantSheet() {
@@ -786,7 +765,9 @@ export default {
     },
 
     trapMobileMerchantFocus(event) {
-      const focusable = [...this.$refs.mobileMerchantSheetPanel.querySelectorAll("button:not(:disabled), input:not(:disabled)")];
+      const panel = this.$refs.merchantSheet?.$refs.sheetPanel;
+      if (!panel) return;
+      const focusable = [...panel.querySelectorAll("button:not(:disabled), input:not(:disabled)")];
       const first = focusable[0];
       const last = focusable.at(-1);
       if (!first || !last) return;
@@ -829,35 +810,6 @@ export default {
       if (this.merchantDropdownOpen && !event.target.closest('.merchant-dropdown-wrapper')) {
         this.merchantDropdownOpen = false;
       }
-    },
-
-    getDealerColor(dealerName) {
-      if (!dealerName) return null;
-      const colors = this.resolvedTheme === 'dark' ? DEALER_COLORS_DARK : DEALER_COLORS;
-      const index = hashString(dealerName) % colors.length;
-      return colors[index];
-    },
-
-    getDealerStyle(dealerName) {
-      const color = this.getDealerColor(dealerName);
-      if (!color) return {};
-      return {
-        backgroundColor: color.bg,
-        borderColor: color.border,
-        color: color.text,
-      };
-    },
-
-    isHotDeal(topic) {
-      const score = Number(topic.score) || 0;
-      if (score < 15) return false;
-
-      const postedAt = dayjs(topic.post_time);
-      if (!postedAt.isValid()) return false;
-
-      const ageHours = Math.max(dayjs().diff(postedAt, "hour", true), 1);
-      const hotness = score / Math.pow(ageHours + 2, 0.6);
-      return hotness >= 5;
     },
 
     toggleInfoOverlay() {
@@ -913,70 +865,23 @@ export default {
     <div class="container">
       <div class="header">
         <div class="header-controls">
-          <div class="filter-wrapper">
-            <div
-              class="filter-container"
-              :class="{ 'has-active-filters': activeFilters.length > 0 }"
-            >
-              <span
-                v-for="(filter, index) in activeFilters"
-                :key="index"
-                class="filter-tag"
-              >
-                {{ filter }}
-                <button
-                  class="filter-tag-clear"
-                  @click="clearFilter(index)"
-                  title="Clear filter"
-                >
-                  <span class="material-symbols-outlined">close</span>
-                </button>
-              </span>
-              <input
-                ref="filterInput"
-                v-model="filterInput"
-                type="text"
-                placeholder="filter"
-                class="search-input"
-                :class="{ 'search-input--regex-error': isRegexError }"
-                :title="isRegexError ? 'Invalid regex' : ''"
-                @keydown.enter="onFilterEnter"
-                @keydown.tab="onFilterTab"
-                @keydown.esc="onFilterEscape"
-                @keydown.down="moveTagSuggestion(1, $event)"
-                @keydown.up="moveTagSuggestion(-1, $event)"
-                @blur="onFilterBlur"
-                @focus="onFilterFocus"
-              />
-            </div>
-            <!-- mousedown.prevent keeps the input focused so the click lands -->
-            <ul
-              v-if="tagSuggestions.length"
-              class="tag-suggestions"
-              role="listbox"
-              @mousedown.prevent
-            >
-              <li
-                v-for="(suggestion, i) in tagSuggestions"
-                :key="suggestion"
-                role="option"
-                :aria-selected="i === tagSuggestionIndex"
-              >
-                <button
-                  type="button"
-                  tabindex="-1"
-                  class="tag-suggestion"
-                  :class="{
-                    'tag-suggestion--highlighted': i === tagSuggestionIndex,
-                  }"
-                  @mouseenter="tagSuggestionIndex = i"
-                  @click="acceptTagSuggestion(suggestion)"
-                >
-                  {{ suggestion }}
-                </button>
-              </li>
-            </ul>
-          </div>
+          <FilterBar
+            ref="filterBar"
+            v-model="filterInput"
+            :active-filters="activeFilters"
+            :suggestions="tagSuggestions"
+            :suggestion-index="tagSuggestionIndex"
+            :regex-error="isRegexError"
+            @apply="onFilterEnter"
+            @tab-complete="onFilterTab"
+            @escape="onFilterEscape"
+            @move-suggestion="moveTagSuggestion"
+            @highlight-suggestion="tagSuggestionIndex = $event"
+            @accept-suggestion="acceptTagSuggestion"
+            @clear-filter="clearFilter"
+            @focus="onFilterFocus"
+            @blur="onFilterBlur"
+          />
           <!-- Desktop buttons -->
           <button
             class="icon-button desktop-only"
@@ -986,7 +891,7 @@ export default {
           >
             <span
               class="material-symbols-outlined"
-              :class="{ spinning: isLoading }"
+              :class="{ spinning: isLoading && !isBackgroundLoading }"
               >refresh</span
             >
           </button>
@@ -1177,7 +1082,7 @@ export default {
               >
                 <span
                   class="material-symbols-outlined"
-                  :class="{ spinning: isLoading }"
+                  :class="{ spinning: isLoading && !isBackgroundLoading }"
                   >refresh</span
                 >
                 <span>Refresh</span>
@@ -1308,90 +1213,17 @@ export default {
             </button>
           </div>
           <template v-else>
-            <div
+            <DealRow
               v-for="topic in displayedTopics"
               :key="topic.topic_id"
-              :data-topic-id="topic.topic_id"
-              class="deal-row"
-              :class="{
-                'deal-row--seen': seen.has(String(topic.topic_id)),
-                'deal-row--hot': isHotDeal(topic),
-              }"
-              @click.capture="onDealClick(topic)"
-            >
-              <div class="card-header">
-                <div class="title-with-link">
-                  <span class="deal-text">
-                    <span
-                      v-if="isHotDeal(topic)"
-                      class="hot-deal-icon"
-                      title="Hot deal"
-                      aria-label="Hot deal"
-                      >🔥</span
-                    >
-                    <button
-                      v-if="topic.Offer.dealer_name"
-                      class="dealer-name dealer-label dealer-label--clickable"
-                      :style="getDealerStyle(topic.Offer.dealer_name)"
-                      :title="`Filter by ${topic.Offer.dealer_name}`"
-                      @click="filterByDealer(topic.Offer.dealer_name)"
-                      v-html="highlightText(topic.Offer.dealer_name)"
-                    ></button
-                    ><span
-                      v-if="topic.Offer.dealer_name"
-                      class="dealer-title-gap"
-                      aria-hidden="true"
-                    ></span>
-                    <a
-                      :href="`https://forums.redflagdeals.com${topic.web_path}`"
-                      target="_blank"
-                      class="deal-title"
-                      v-html="highlightText(topic.title)"
-                    ></a
-                    ><span
-                      v-if="visibleTags(topic.tags).length"
-                      class="tag-chips"
-                    >
-                      <button
-                        v-for="tag in visibleTags(topic.tags)"
-                        :key="tag"
-                        class="tag-chip"
-                        :title="`Filter by ${tag}`"
-                        @click.stop="filterByTag(tag)"
-                      >
-                        {{ tag }}
-                      </button>
-                    </span>
-                  </span>
-                  <a
-                    v-if="topic.Offer.url"
-                    :href="topic.Offer.url"
-                    target="_blank"
-                    class="card-link"
-                    title="Open direct link to deal"
-                  >
-                    <span class="material-symbols-outlined">open_in_new</span>
-                  </a>
-                </div>
-                <div
-                  class="score-bubble"
-                  :class="{
-                    positive: topic.score > 0,
-                    negative: topic.score < 0,
-                    neutral: topic.score === 0,
-                  }"
-                >
-                  <span v-if="topic.score > 0">+{{ topic.score }}</span>
-                  <span v-else>{{ topic.score }}</span>
-                </div>
-              </div>
-              <div class="row-stats">
-                <span class="stat-compact"
-                  >{{ formatDate(topic.post_time) }} -
-                  {{ formatDate(topic.last_post_time) }}</span
-                >
-              </div>
-            </div>
+              :topic="topic"
+              :seen="seen.has(String(topic.topic_id))"
+              :highlight="highlightText"
+              :theme="resolvedTheme"
+              @deal-click="onDealClick"
+              @filter-dealer="filterByDealer"
+              @filter-tag="filterByTag"
+            />
             <div v-if="hasMoreDisplayedTopics" class="load-more-status">
               Showing {{ displayedTopics.length }} of
               {{ filteredTopics.length }} deals. Scroll for more.
@@ -1410,63 +1242,18 @@ export default {
       @export-settings="exportSettings"
       @import-settings="importSettings"
     />
-    <div
+    <MerchantSheet
       v-if="mobileMerchantSheetOpen"
-      class="mobile-merchant-sheet"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="mobile-merchant-sheet-title"
-      @click.self="closeMobileMerchantSheet"
-    >
-      <section ref="mobileMerchantSheetPanel" class="mobile-merchant-sheet-panel">
-        <header class="mobile-merchant-sheet-header">
-          <h2 id="mobile-merchant-sheet-title">Merchants</h2>
-          <button class="mobile-merchant-sheet-close" aria-label="Close merchants" @click="closeMobileMerchantSheet">
-            <span class="material-symbols-outlined">close</span>
-          </button>
-        </header>
-        <div class="mobile-merchant-sheet-controls">
-          <input
-            ref="mobileMerchantSearch"
-            v-model="mobileMerchantSearch"
-            class="merchant-search"
-            type="search"
-            placeholder="Search merchants"
-            aria-label="Search merchants"
-          />
-          <button class="merchant-reset" :disabled="hiddenMerchants.length === 0" @click="clearHiddenMerchants">Show all</button>
-        </div>
-        <div class="mobile-merchant-sheet-results">
-          <section v-if="mobileHiddenMerchantOptions.length" aria-labelledby="hidden-merchants-title">
-            <h3 id="hidden-merchants-title">Hidden</h3>
-            <button
-              v-for="merchant in mobileHiddenMerchantOptions"
-              :key="merchant.key"
-              class="mobile-merchant-option mobile-merchant-option--hidden"
-              @click="setMerchantHidden(merchant.name, false)"
-            >
-              <span>{{ merchant.name }}</span>
-              <small>{{ merchant.count ?? "Not in feed" }}</small>
-              <strong>Restore</strong>
-            </button>
-          </section>
-          <section v-if="mobileVisibleMerchantOptions.length" aria-labelledby="visible-merchants-title">
-            <h3 id="visible-merchants-title">Visible</h3>
-            <button
-              v-for="merchant in mobileVisibleMerchantOptions"
-              :key="merchant.key"
-              class="mobile-merchant-option"
-              @click="setMerchantHidden(merchant.name, true)"
-            >
-              <span>{{ merchant.name }}</span>
-              <small>{{ merchant.count }}</small>
-              <strong>Hide</strong>
-            </button>
-          </section>
-          <p v-if="!mobileHiddenMerchantOptions.length && !mobileVisibleMerchantOptions.length" class="merchant-empty">No merchants match.</p>
-        </div>
-      </section>
-    </div>
+      ref="merchantSheet"
+      v-model:search="mobileMerchantSearch"
+      :hidden-options="mobileHiddenMerchantOptions"
+      :visible-options="mobileVisibleMerchantOptions"
+      :hidden-count="hiddenMerchants.length"
+      @close="closeMobileMerchantSheet"
+      @hide-merchant="(name) => setMerchantHidden(name, true)"
+      @unhide-merchant="(name) => setMerchantHidden(name, false)"
+      @clear-hidden="clearHiddenMerchants"
+    />
   </div>
 </template>
 
@@ -1544,134 +1331,6 @@ export default {
   text-align: center;
 }
 
-/* ============================================
-   Filter Wrapper & Regex UI
-   ============================================ */
-
-.filter-wrapper {
-  flex: 1;
-  max-width: 31.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  /* Anchors the tag-completion dropdown */
-  position: relative;
-}
-
-.tag-suggestions {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color-light);
-  border-radius: 14px;
-  box-shadow: 0 6px 20px var(--shadow-medium);
-  max-height: 16rem;
-  overflow-y: auto;
-  z-index: 100;
-}
-
-.tag-suggestion {
-  display: block;
-  width: 100%;
-  padding: 8px 14px;
-  border: none;
-  background: transparent;
-  color: var(--text-primary);
-  font: inherit;
-  font-size: 0.875rem;
-  text-align: left;
-  cursor: pointer;
-}
-
-.tag-suggestion--highlighted {
-  background-color: var(--accent-subtle);
-  color: var(--accent);
-}
-
-/* Override filter-container's own flex sizing since wrapper owns the width */
-.filter-wrapper .filter-container {
-  max-width: 100%;
-  flex: unset;
-}
-
-.search-input--regex-error {
-  border-color: #c0392b !important;
-  box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.25) !important;
-}
-
-.dealer-label--clickable {
-  /* reset button chrome */
-  appearance: none;
-  border: none;
-  padding: 0;
-  font-family: inherit;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  line-height: 1.2;
-  cursor: pointer;
-  /* subtle interactive cue */
-  text-decoration: underline;
-  text-decoration-style: dotted;
-  text-underline-offset: 2px;
-  transition:
-    opacity 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.dealer-label--clickable:hover,
-.dealer-label--clickable:focus-visible {
-  opacity: 0.8;
-  box-shadow: 0 0 0 2px currentColor;
-  outline: none;
-}
-
-/* ============================================
-   Tag chips
-   ============================================ */
-
-/* Chips sit inline after the title, not in .row-stats — putting them beside the
-   dates threw the date column out of alignment across rows. */
-.tag-chips {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-left: 8px;
-  vertical-align: baseline;
-}
-
-.tag-chip {
-  appearance: none;
-  padding: 1px 8px;
-  border: 1px solid var(--border-color-light);
-  border-radius: 10px;
-  background-color: var(--bg-input);
-  color: var(--text-secondary);
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.6875rem;
-  line-height: 1.5;
-  letter-spacing: 0.02em;
-  transition:
-    color 0.15s ease,
-    border-color 0.15s ease;
-}
-
-.tag-chip:hover,
-.tag-chip:focus-visible {
-  border-color: color-mix(
-    in srgb,
-    var(--accent) 40%,
-    var(--border-color-hover)
-  );
-  color: var(--accent);
-  outline: none;
-}
-
 .merchant-dropdown-wrapper,
 .seen-dropdown-wrapper {
   position: relative;
@@ -1699,33 +1358,6 @@ export default {
   display: flex;
   justify-content: space-between;
   padding: 10px 12px 6px;
-}
-
-.merchant-reset {
-  background: none;
-  border: none;
-  color: var(--accent);
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.75rem;
-  padding: 2px 4px;
-}
-
-.merchant-reset:disabled {
-  color: var(--text-secondary);
-  cursor: default;
-}
-
-.merchant-search {
-  background: var(--bg-input);
-  border: 1px solid var(--border-color-light);
-  border-radius: 8px;
-  box-sizing: border-box;
-  color: var(--text-primary);
-  font: inherit;
-  margin: 4px 12px 8px;
-  padding: 7px 8px;
-  width: calc(100% - 24px);
 }
 
 .merchant-options {
@@ -1757,12 +1389,6 @@ export default {
   color: var(--text-secondary);
 }
 
-.merchant-empty {
-  color: var(--text-secondary);
-  margin: 0;
-  padding: 10px 12px;
-}
-
 .merchant-missing {
   border-top: 1px solid var(--border-color-light);
   display: flex;
@@ -1786,139 +1412,6 @@ export default {
   text-align: left;
 }
 
-.mobile-merchant-sheet {
-  align-items: stretch;
-  background: var(--bg-primary);
-  display: flex;
-  inset: 0;
-  min-height: 100dvh;
-  position: fixed;
-  z-index: 1000;
-}
-
-.mobile-merchant-sheet-panel {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-height: 100dvh;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-}
-
-.mobile-merchant-sheet-header,
-.mobile-merchant-sheet-controls {
-  align-items: center;
-  display: flex;
-  gap: 12px;
-  padding: 12px 16px;
-}
-
-.mobile-merchant-sheet-header {
-  border-bottom: 1px solid var(--border-color-light);
-  justify-content: space-between;
-}
-
-.mobile-merchant-sheet-header h2,
-.mobile-merchant-sheet-results h3 {
-  margin: 0;
-}
-
-.mobile-merchant-sheet-header h2 {
-  font-size: 1.125rem;
-}
-
-.mobile-merchant-sheet-close {
-  align-items: center;
-  background: none;
-  border: none;
-  color: var(--text-primary);
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  min-height: 44px;
-  min-width: 44px;
-  padding: 0;
-}
-
-.mobile-merchant-sheet-controls {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: var(--bg-primary);
-  border-bottom: 1px solid var(--border-color-light);
-}
-
-.mobile-merchant-sheet-controls .merchant-search {
-  flex: 1;
-  margin: 0;
-  min-height: 44px;
-  width: auto;
-}
-
-.mobile-merchant-sheet-controls .merchant-reset {
-  min-height: 44px;
-  white-space: nowrap;
-}
-
-.mobile-merchant-sheet-results {
-  flex: 1;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 8px 0;
-}
-
-.mobile-merchant-sheet-results section + section {
-  border-top: 1px solid var(--border-color-light);
-  margin-top: 8px;
-  padding-top: 8px;
-}
-
-.mobile-merchant-sheet-results h3 {
-  color: var(--text-secondary);
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
-  padding: 8px 16px;
-  text-transform: uppercase;
-}
-
-.mobile-merchant-option {
-  align-items: center;
-  background: none;
-  border: none;
-  color: var(--text-primary);
-  cursor: pointer;
-  display: grid;
-  font: inherit;
-  gap: 12px;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  min-height: 52px;
-  padding: 8px 16px;
-  text-align: left;
-  width: 100%;
-}
-
-.mobile-merchant-option:active {
-  background: var(--accent-subtle);
-}
-
-.mobile-merchant-option span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.mobile-merchant-option small {
-  color: var(--text-secondary);
-}
-
-.mobile-merchant-option strong {
-  color: var(--accent);
-  font-size: 0.8125rem;
-}
-
-.mobile-merchant-option--hidden {
-  background: var(--accent-subtle);
-}
-
 .seen-dropdown {
   position: absolute;
   top: calc(100% + 8px);
@@ -1935,16 +1428,6 @@ export default {
 /* Active state for the eye icon button when hide-seen is on */
 .icon-button.active {
   color: var(--accent);
-}
-
-.deal-row--seen {
-  opacity: 0.4;
-  transition: opacity 0.2s ease;
-}
-
-.deal-row--seen:hover,
-.deal-row--seen:focus-within {
-  opacity: 1;
 }
 
 .feed-update {

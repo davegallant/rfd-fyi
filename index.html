@@ -41,7 +41,9 @@
       data-website-id="59ffe8be-509a-471e-8cd6-a63c5b35b7aa"
     ></script>
 
-    <!-- Theme detection script - runs before Vue loads to prevent flash of unstyled content -->
+    <!-- Theme detection script - runs before Vue loads to prevent flash of unstyled content.
+         Reads the legacy 'theme' key, which persistUiPreferences() dual-writes alongside the
+         rfd-fyi-ui JSON blob — keep both in sync or the pre-paint theme will disagree with the app. -->
     <script>
       (function() {
         // Check for saved theme preference only

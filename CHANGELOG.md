@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- Split the App.vue monolith into DealRow, FilterBar, and MerchantSheet components, with dealer colors and hot-deal detection extracted to `dealerColors.js` and `hotDeals.js`.
+- Background polls detect changes via the server's ETag (304 / If-None-Match) instead of stringifying the whole feed, and a 304 no longer surfaces as a load error.
+- Background refreshes no longer spin the refresh icon; only manual loads do.
+- The expiry sweep now re-checks cached deals expiring within 7 days, picking up extended expiry dates.
+
+### Fixed
+
+- Corrected the README's manual-refresh example (`refreshed` counts the fresh pull, ~120, not the stored total).
+
+### Removed
+
+- Deleted the redundant Makefile; the Justfile covers the same recipes plus local-dev SSL and KV seeding.
+
 ## [0.19.0] - 2026-09-25
 
 ### Changed

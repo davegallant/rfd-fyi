@@ -253,6 +253,35 @@ describe("refreshTopics", () => {
     expect(refreshed.find(({ topic_id }) => topic_id === 50)?.Offer?.expires_at).toBe("2099-12-31");
   });
 
+  it("revisits cached deals expiring soon and leaves distant expiry dates alone", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-31T15:00:00Z"));
+    const get = vi.fn(async (key) => key === "topics.json"
+      ? JSON.stringify([
+        topic({ topic_id: 60, offer: { dealer_name: "Soon", url: "", expires_at: "2026-09-02" } }),
+        topic({ topic_id: 61, offer: { dealer_name: "Distant", url: "", expires_at: "2026-12-31" } }),
+      ])
+      : null);
+    const fetchMock = vi.fn(async (url) => {
+      const requestUrl = String(url);
+      if (requestUrl.endsWith("/api/topics/60")) return jsonResponse({ topic: topic({
+        topic_id: 60,
+        offer: { dealer_name: "Soon", url: "", expires_at: "2026-09-10" },
+      }), users: [] });
+      if (requestUrl.includes("redirects.json")) return jsonResponse([]);
+      return jsonResponse({ topics: isExpiredDealsRequest(url) ? [] : [topic({ topic_id: 1 })] });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const refreshed = await refreshTopics({ TOPICS_KV: { get, put: vi.fn() } });
+
+    // The soon-expiring deal was re-checked and picked up its extended date;
+    // the distant one was never fetched individually.
+    expect(refreshed.find(({ topic_id }) => topic_id === 60)?.Offer?.expires_at).toBe("2026-09-10");
+    expect(refreshed.find(({ topic_id }) => topic_id === 61)?.Offer?.expires_at).toBe("2026-12-31");
+    expect(fetchMock).not.toHaveBeenCalledWith(expect.stringContaining("/api/topics/61"), expect.anything());
+  });
+
   it("refreshes all hot-deals pages and writes the newest API topics to KV", async () => {
     const target = topic({
       topic_id: 2818435,

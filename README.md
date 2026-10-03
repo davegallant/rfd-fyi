@@ -151,7 +151,7 @@ curl -X POST -H "Authorization: Bearer dev" http://localhost:8788/admin/refresh
 A successful refresh returns something like:
 
 ```json
-{"refreshed":1000}
+{"refreshed":120}
 ```
 
 After that, these local endpoints should return populated data:
