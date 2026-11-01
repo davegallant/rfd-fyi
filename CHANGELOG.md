@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.20.0] - 2026-11-01
 
 ### Changed
 
@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 - Background polls detect changes via the server's ETag (304 / If-None-Match) instead of stringifying the whole feed, and a 304 no longer surfaces as a load error.
 - Background refreshes no longer spin the refresh icon; only manual loads do.
 - The expiry sweep now re-checks cached deals expiring within 7 days, picking up extended expiry dates.
+- Updated the app and deployment toolchain dependencies, including moving the container runtime to Node.js 26 LTS.
 
 ### Fixed
 
