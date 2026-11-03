@@ -1,0 +1,9 @@
+FROM docker.io/library/node:24-bookworm-slim@sha256:c86ecead9e55a5210ac1727de38a4ca840bf03dcaf34dc9749addbf383b1920c
+
+WORKDIR /app
+
+COPY --chown=node:node tools/enricher/enrich.mjs tools/enricher/lib.mjs tools/enricher/providers.mjs /app/tools/enricher/
+
+USER node
+
+ENTRYPOINT ["node", "/app/tools/enricher/enrich.mjs"]
